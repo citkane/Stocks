@@ -1,0 +1,25 @@
+{
+	"http_port": 5001,
+	"ws_port": 5002,
+	"saxo": {
+		"app_key": "",
+		"app_secret": "",
+		"client_key": "",
+		"url": {
+			"api": "https://gateway.saxobank.com/openapi/port/v1",
+			"auth": "https://live.logonvalidation.net",
+			"redirect": {
+				"code": "saxo/code",
+				"token": "saxo/token"
+			}
+		}
+	},
+	"ibkr": {
+		"url": {
+			"base": "https://localhost:5000",
+			"endpoints": {
+				"api": "v1/api"
+			}
+		}
+	}
+}
