@@ -37,4 +37,5 @@ clientportal.beta.gw
 .vscode
 conf.json
 .saxo_token
+saxo_token.json
 .ibkr_pid
