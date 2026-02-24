@@ -5,16 +5,15 @@ import type { Brokers } from "./brokers"
 type auth_code_t = saxo_t.auth_code_t;
 
 export class Api {
-
-	init(app: App) {
-		this.brokers = app.brokers;
-	}
-
 	req_accounts = (p: req_t) => res_accounts.bind(this, p)();
 	req_positions = (p: req_t) => res_positions.bind(this, p)();
 	req_is_authorised = (p: req_t, broker: broker_t) => res_is_authorised.bind(this, p)(broker)
 	req_saxo_auth_url = (p: req_t) => res_saxo_auth_url.bind(this, p)()
 	req_saxo_authorise = (p: req_t, auth_code: auth_code_t) => res_saxo_authorise.bind(this, p)(auth_code);
+
+	init(app: App) {
+		this.brokers = app.brokers;
+	}
 
 	protected brokers!: Brokers;
 

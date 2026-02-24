@@ -1,44 +1,26 @@
 import * as conf from "../../../conf.json";
 import { Messenger } from "../../Messenger"
-import { Ws, type action_t, type respond_t } from "../../Ws";
+import { Ws } from "../../Ws";
 
 import type { Api, App } from "..";
-import type { saxo_t, message_t, topic_t, data_t } from "../../types";
+import type { topic_t, data_t } from "../../types";
 
 
 export class ServerWs extends Ws {
 
-	constructor(private app: App) {
+	constructor(app: App) {
 		super()
-		this.api = this.app.api;
-		this.ws = this.make_ws_server();
-	}
-
-	private respond(mssg: message_t, p: req_t) {
-		const _mssg = mssg as unknown as message_t<"backend">;
-		switch (_mssg.topic) {
-			case "req_is_authorised":
-				const broker = mssg.data as broker_t;
-				this.api.req_is_authorised(p, broker);
-				break;
-			case "req_saxo_authorise":
-				const auth_code = mssg.data as saxo_t.auth_code_t;
-				this.api.req_saxo_authorise(p, auth_code);
-				break;
-			case "req_saxo_auth_url":
-				this.api.req_saxo_auth_url(p)
-				break
-			case "req_accounts":
-				this.api.req_accounts(p)
-				break;
-			case "req_positions":
-				this.api.req_positions(p)
-				break;
-		}
-	}
-	private action(mssg: message_t) {
-		const _mssg = mssg as unknown as message_t<"backend">;
-		switch (_mssg.topic) { }
+		this.api = app.api
+		this.ws = Bun.serve({
+			port: conf.ws_port,
+			fetch: this.ws_fetch,
+			websocket: {
+				message: (ws, message) => this.router(ws, message.toString()),
+				open: this.ws_open,
+				close: this.ws_close,
+				drain: this.ws_drain
+			}
+		})
 	}
 
 	publish(
@@ -55,41 +37,28 @@ export class ServerWs extends Ws {
 		const messenger = this.messengers.get(ws)!;
 		const requests = messenger.requests;
 
-		//console.log(mssg)
-		const { req_uid, res_uid } = mssg
-
-		if (!req_uid && !res_uid) return this.action(mssg);
-		if (res_uid) return this.resolve_response(requests, mssg);
-		if (req_uid) this.respond(mssg, { messenger, req_uid })
+		this.route(this.api, requests, messenger, mssg);
 	}
 
-
-	private ws_actions: Bun.WebSocketHandler<undefined> = {
-		message: (ws, message) => { this.router(ws, message.toString()) },
-		open: (ws) => {
-			const messenger = new Messenger(ws);
-			this.messengers.set(ws, messenger)
-
-			!!this.target_topics ?
-				this.subscribe_all(ws) :
-				this.request_frontend_topics(ws, messenger)
-		},
-		close: (ws, _code, _message) => {
-			this.messengers.delete(ws)
-		},
-		drain(_ws) { }, // the socket is ready to receive more data
+	private ws_fetch(req: Request, server: Bun.Server<undefined>) {
+		if (server.upgrade(req)) return;
+		return new Response("Upgrade failed", { status: 500 });
 	}
-
-	private make_ws_server() {
-		return Bun.serve({
-			port: conf.ws_port,
-			fetch(req, server) {
-				if (server.upgrade(req)) return;
-				return new Response("Upgrade failed", { status: 500 });
-			},
-			websocket: this.ws_actions
-		})
+	private ws_open = (ws: Bun.ServerWebSocket) => {
+		const messenger = new Messenger(ws);
+		this.messengers.set(ws, messenger)
+		!!this.target_topics ?
+			this.subscribe_all(ws) :
+			this.request_frontend_topics(ws, messenger)
 	}
+	private ws_close = (ws: Bun.ServerWebSocket) => {
+		this.messengers.delete(ws);
+		setTimeout(() => {
+			if (!this.messengers.size) process.exit(0);
+		}, 1000)
+	}
+	private ws_drain = (_ws: Bun.ServerWebSocket) => { }
+
 	private request_frontend_topics(ws: Bun.ServerWebSocket, messenger: Messenger) {
 		messenger.request<"frontend", topic_t<"frontend">[]>("req_topics")
 			.then((message) => {
@@ -104,14 +73,10 @@ export class ServerWs extends Ws {
 	}
 
 
-	private ws: ReturnType<typeof this.make_ws_server>;
+	private ws: Bun.Server<undefined>;
 	private target_topics?: topic_t<"frontend">[];
-	private messengers = new Map<ws_t, Messenger>;
-	private api: Api
+	private messengers = new Map<ws_t, Messenger>();
+	private api: Api;
 
 }
-
-
-
-
 

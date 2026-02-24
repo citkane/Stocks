@@ -12,20 +12,32 @@ export class Account {
 		private account: saxo_t.account_t | ibkr_t.account_t,
 		private broker: broker_t
 	) { }
-	map = () => {
-		if (this.broker === "saxo") {
-			const a = this.account as saxo_t.account_t;
-			return {
-				id: a.AccountId,
-				broker: "saxo",
-				alias: "alias",
-				currency: a.Currency
-			} as account_t
-		} else {
-			const p = this.account as ibkr_t.account_t;
-			return {
 
-			} as account_t
+	map = () => {
+		let a: saxo_t.account_t | ibkr_t.account_t
+		let account: account_t
+		switch (this.broker) {
+			case "saxo":
+				a = this.account as saxo_t.account_t;
+				account = {
+					id: `${this.broker}_${a.AccountId}`,
+					broker: this.broker,
+					alias: "???",
+					currency: a.Currency
+				} as account_t
+				break;
+			case "ibkr":
+				a = this.account as ibkr_t.account_t;
+				account = {
+					id: `${this.broker}_${a.accountId}`,
+					broker: this.broker,
+					alias: a.accountAlias,
+					currency: a.accountVan || a.currency
+				} as account_t
+				break;
+			default:
+				account = {} as account_t
 		}
+		return account;
 	}
 }

@@ -1,14 +1,12 @@
 export class Cache {
 	add = {
 		position: (position: position_t) => {
-			const { id, broker } = position;
-			const uid = `${broker}_${id}`
-			this.positions.set(uid, position);
+			const { id } = position;
+			this.positions.set(id, position);
 		},
 		account: (account: account_t) => {
-			const { id, broker } = account;
-			const uid = `${broker}_${id}`
-			this.accounts.set(uid, account)
+			const { id } = account;
+			this.accounts.set(id, account)
 		}
 	}
 	private accounts = new Map<string, account_t>()

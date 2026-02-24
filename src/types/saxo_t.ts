@@ -9,46 +9,46 @@ export type auth_token_t = {
 
 export type Data_t<T> = { Data: T };
 export type account_t = {
-	AccountGroupKey: string,
-	AccountId: string,
-	AccountKey: string,
-	AccountSubType: string,
-	AccountType: string,
-	AccountValueProtectionLimit: number,
-	Active: boolean,
-	CanUseCashPositionsAsMarginCollateral: boolean,
-	CfdBorrowingCostsActive: boolean,
-	ClientId: string,
-	ClientKey: string,
-	CreationDate: string,
-	Currency: string,
-	CurrencyDecimals: number,
-	DirectMarketAccess: boolean,
-	ExternalReference: string,
-	FractionalOrderEnabled: boolean,
-	FractionalOrderEnabledAssetTypes: [],
-	IndividualMargining: boolean,
-	IsCurrencyConversionAtSettlementTime: boolean,
-	IsMarginTradingAllowed: boolean,
-	IsShareable: boolean,
-	IsTrialAccount: boolean,
-	LegalAssetTypes: string[],
-	ManagementType: string,
-	MarginCalculationMethod: string,
-	MarginLendingEnabled: string,
-	PortfolioBasedMarginEnabled: boolean,
-	Sharing: string[],
-	SupportsAccountValueProtectionLimit: boolean,
-	UseCashPositionsAsMarginCollateral: boolean,
+	AccountGroupKey: string;
+	AccountId: string;
+	AccountKey: string;
+	AccountSubType: string;
+	AccountType: string;
+	AccountValueProtectionLimit: number;
+	Active: boolean;
+	CanUseCashPositionsAsMarginCollateral: boolean;
+	CfdBorrowingCostsActive: boolean;
+	ClientId: string;
+	ClientKey: string;
+	CreationDate: string;
+	Currency: currency_t;
+	CurrencyDecimals: number;
+	DirectMarketAccess: boolean;
+	ExternalReference: string;
+	FractionalOrderEnabled: boolean;
+	FractionalOrderEnabledAssetTypes: [];
+	IndividualMargining: boolean;
+	IsCurrencyConversionAtSettlementTime: boolean;
+	IsMarginTradingAllowed: boolean;
+	IsShareable: boolean;
+	IsTrialAccount: boolean;
+	LegalAssetTypes: string[];
+	ManagementType: string;
+	MarginCalculationMethod: string;
+	MarginLendingEnabled: string;
+	PortfolioBasedMarginEnabled: boolean;
+	Sharing: string[];
+	SupportsAccountValueProtectionLimit: boolean;
+	UseCashPositionsAsMarginCollateral: boolean;
 }
 
 export type position_t = {
 	PositionId: string;
 	DisplayAndFormat: {
-		"Currency": currency_t,
-		"Decimals": number,
-		"Description": string,
-		"Format": string,
+		"Currency": currency_t;
+		"Decimals": number;
+		"Description": string;
+		"Format": string;
 		"Symbol": string
 	}
 }
