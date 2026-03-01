@@ -14,19 +14,19 @@ export type account_t = {
 	AccountKey: string;
 	AccountSubType: string;
 	AccountType: string;
-	AccountValueProtectionLimit: number;
 	Active: boolean;
 	CanUseCashPositionsAsMarginCollateral: boolean;
 	CfdBorrowingCostsActive: boolean;
-	ClientId: string;
+	ClientId: number;
 	ClientKey: string;
 	CreationDate: string;
-	Currency: currency_t;
+	Currency: string;
 	CurrencyDecimals: number;
 	DirectMarketAccess: boolean;
+	DisplayName: string;
 	ExternalReference: string;
 	FractionalOrderEnabled: boolean;
-	FractionalOrderEnabledAssetTypes: [];
+	FractionalOrderEnabledAssetTypes: string[];
 	IndividualMargining: boolean;
 	IsCurrencyConversionAtSettlementTime: boolean;
 	IsMarginTradingAllowed: boolean;
@@ -39,17 +39,17 @@ export type account_t = {
 	PortfolioBasedMarginEnabled: boolean;
 	Sharing: string[];
 	SupportsAccountValueProtectionLimit: boolean;
-	UseCashPositionsAsMarginCollateral: boolean;
+	UseCashPositionsAsMarginCollateral: boolean
 }
 
 export type position_t = {
 	PositionId: string;
 	DisplayAndFormat: {
-		"Currency": currency_t;
-		"Decimals": number;
-		"Description": string;
-		"Format": string;
-		"Symbol": string
+		Currency: currency_t;
+		Decimals: number;
+		Description: string;
+		Format: string;
+		Symbol: string
 	}
 }
 export type accounts_t = {

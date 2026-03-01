@@ -13,13 +13,13 @@ export class Router {
 
 	private async route() {
 		const url = new URL(window.location.href);
-		const { pathname } = url;
+		const { pathname, hash } = url;
 		switch (pathname) {
 			case "/":
-				this.app.run();
+				this.app.run().then(this.app.ready);
 				break;
 			case `/${conf.saxo.url.redirect.code}`:
-				this.brokers.login("saxo");
+				this.brokers.saxo_login();
 				break;
 		}
 	}

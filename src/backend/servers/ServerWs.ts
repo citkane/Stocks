@@ -3,7 +3,7 @@ import { Messenger } from "../../Messenger"
 import { Ws } from "../../Ws";
 
 import type { Api, App } from "..";
-import type { topic_t, data_t } from "../../types";
+import type { topic_set_t, data_t } from "../../types";
 
 
 export class ServerWs extends Ws {
@@ -24,7 +24,7 @@ export class ServerWs extends Ws {
 	}
 
 	publish(
-		topic: topic_t<"frontend">,
+		topic: topic_set_t<"frontend">,
 		data?: data_t,
 		params?: string[]
 	) {
@@ -60,7 +60,7 @@ export class ServerWs extends Ws {
 	private ws_drain = (_ws: Bun.ServerWebSocket) => { }
 
 	private request_frontend_topics(ws: Bun.ServerWebSocket, messenger: Messenger) {
-		messenger.request<"frontend", topic_t<"frontend">[]>("req_topics")
+		messenger.request<"frontend", topic_set_t<"frontend">[]>("topics")
 			.then((message) => {
 				this.target_topics = message.data;
 				this.subscribe_all(ws);
@@ -74,7 +74,7 @@ export class ServerWs extends Ws {
 
 
 	private ws: Bun.Server<undefined>;
-	private target_topics?: topic_t<"frontend">[];
+	private target_topics?: topic_set_t<"frontend">[];
 	private messengers = new Map<ws_t, Messenger>();
 	private api: Api;
 

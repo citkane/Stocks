@@ -3,13 +3,8 @@ import type { Api as frontend_api_t } from "./frontend";
 import type { Messenger } from "."
 import type { message_t } from "./types";
 
-//export type respond_t = (mssg: message_t, p: req_t) => void
-//export type action_t = (mssg: message_t) => void
-
 type api_t = frontend_api_t | backend_api_t
 type requests_t = Messenger["requests"]
-
-
 
 export class Ws {
 	protected route = (
@@ -35,17 +30,27 @@ export class Ws {
 	) {
 		const { topic } = mssg;
 		const params = get_params(mssg);
-		const key = topic as keyof api_t;
-		const fnc = api[key] as Function;
-		return fnc(p, ...params)
+		const key = topic as keyof api_t["request"];
+		const fnc = api.request[key] as Function;
+		try {
+			fnc(p, ...params)
+		} catch (err) {
+			console.error(mssg);
+			console.error(err)
+		}
 	}
 
 	private action = (api: api_t, mssg: message_t) => {
 		const { topic } = mssg;
 		const params = get_params(mssg);
-		const key = topic as keyof api_t;
-		const fnc = api[key] as Function;
-		return fnc(...params);
+		const key = topic as keyof api_t["set"];
+		const fnc = api.set[key] as Function;
+		try {
+			fnc(...params)
+		} catch (err) {
+			console.error(mssg);
+			console.error(err)
+		}
 	}
 
 	private resolve_response(

@@ -3,8 +3,8 @@ import * as conf from "../../../../conf.json"
 import type { Saxo } from "."
 import type { saxo_t } from "../../../types";
 
-const token_file = `saxo_token.json`;
 const endpoint = "token"
+const token_file = `.temp/saxo.token.json`;
 const keepalive_interval = 1190000;
 let base_uri: string;
 let redirect: string;

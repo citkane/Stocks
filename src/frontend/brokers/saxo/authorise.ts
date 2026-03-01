@@ -40,12 +40,12 @@ function authorised(this: Saxo, success: boolean) {
 }
 
 function req_login_url(this: Saxo): Promise<string> {
-	return this.messenger.request<"backend", string>("req_saxo_auth_url")
+	return this.messenger.request<"backend", string>("saxo_auth_url")
 		.then(mssg => mssg.data)
 }
 
 function is_backend_authorised(this: Saxo) {
-	return this.messenger.request<"backend", boolean>("req_is_authorised", "saxo")
+	return this.messenger.request<"backend", boolean>("is_authorised", "saxo")
 		.then(mssg => mssg.data)
 }
 

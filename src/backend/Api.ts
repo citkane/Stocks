@@ -4,12 +4,15 @@ import type { Brokers } from "./brokers"
 
 type auth_code_t = saxo_t.auth_code_t;
 
-export class Api {
-	req_accounts = (p: req_t) => res_accounts.bind(this, p)();
-	req_positions = (p: req_t) => res_positions.bind(this, p)();
-	req_is_authorised = (p: req_t, broker: broker_t) => res_is_authorised.bind(this, p)(broker)
-	req_saxo_auth_url = (p: req_t) => res_saxo_auth_url.bind(this, p)()
-	req_saxo_authorise = (p: req_t, auth_code: auth_code_t) => res_saxo_authorise.bind(this, p)(auth_code);
+export class Api implements Api_t {
+	request = {
+		accounts: (p: req_t) => res_accounts.bind(this, p)(),
+		positions: (p: req_t) => res_positions.bind(this, p)(),
+		is_authorised: (p: req_t, broker: broker_t) => res_is_authorised.bind(this, p)(broker),
+		saxo_auth_url: (p: req_t) => res_saxo_auth_url.bind(this, p)(),
+		saxo_authorise: (p: req_t, auth_code: auth_code_t) => res_saxo_authorise.bind(this, p)(auth_code),
+	}
+	set = {}
 
 	init(app: App) {
 		this.brokers = app.brokers;
@@ -52,4 +55,6 @@ function server_error(p: req_t, err: any) {
 	p.messenger.error(p.req_uid, 500, err)
 }
 
-export type topic_t = keyof InstanceType<typeof Api>;
+export type topic_req_t = keyof InstanceType<typeof Api>["request"];
+export type topic_set_t = keyof InstanceType<typeof Api>["set"];
+

@@ -1,10 +1,13 @@
-export type { Api } from "./Api.ts";
-export type { App } from "./App.ts";
-export type { Cache } from "./Cache.ts"
-export type { Messenger } from "../Messenger.ts";
+export type { Api } from "./Api";
+export type { App } from "./App";
+export type { Cache } from "./Cache"
+export type { Messenger } from "../Messenger";
+export type { Events, event_data_t, component_key_t } from "./Events.ts"
 
+import "./components"
 import { Router } from './servers'
 import { App } from "./App.ts";
+
 
 const app = new App()
 

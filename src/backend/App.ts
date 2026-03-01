@@ -1,16 +1,20 @@
+import { Api } from "./Api"
 import { ServerHttp, ServerWs } from "./servers";
-import { Api } from "./Api.ts"
-import { Brokers, Cache } from "./brokers"
+import { Brokers } from "./brokers";
+import { Cache } from "./Cache";
+
+const browser_script = "./src/scripts/browser.sh";
 
 export class App {
 	constructor() {
 		this.http = new ServerHttp();
 		this.api = new Api();
 		this.ws = new ServerWs(this);
-		this.cache = new Cache(this);
+		this.cache = new Cache();
 		this.brokers = new Brokers(this);
 
 		this.api.init(this);
+		this.open_browser()
 		this.add_shutdown_fnc(this.close_clients)
 
 		process.on("SIGINT", this.shutdown)
@@ -20,6 +24,9 @@ export class App {
 	}
 	add_shutdown_fnc = (fnc: Function) => {
 		this.shutdown_fncs.push(fnc);
+	}
+	private open_browser() {
+		Bun.spawn([browser_script, this.http.url])
 	}
 	private close_clients = () => {
 		this.ws.publish("shutdown", "")
@@ -32,7 +39,7 @@ export class App {
 				setTimeout(() => {
 					console.info("process ended")
 					process.exit(0);
-				}, 1000)
+				}, 10)
 			})
 			.catch(err => {
 				console.error(err);

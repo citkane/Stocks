@@ -14,7 +14,7 @@ export class Fetch {
 	) {
 		const default_params = this.default_params.bind(this)();
 		params.headers = { ...default_params.headers, ...(params.headers || {}) };
-		const req = new Request(`${base_url}/${endpoint}`);
+		const req = new Request(encodeURI(`${base_url}/${endpoint}`));
 
 		return this.limiter.fetch(() => fetch(req, params));
 	}

@@ -1,18 +1,25 @@
 #!/usr/bin/env bash
-app_pid=
+
+app_pid_file="$(pwd)/$temp_dir/app.pid"
+app_index="$(pwd)/src/backend/index.ts"
 
 function app_start {
-	app_running && echo "App already running"
-	bun "$app_index" "saxo_token_file" &
-	app_pid=$!
-	echo "running: $app_pid"
+	app_stop
+	(
+		bun "$app_index" &
+		pid=$!
+		echo "$pid" > "$app_pid_file"
+	)
+	sleep 1
+	echo "App started"
 }
 
 function app_stop {
-	app_running && kill "$app_pid"
+	process_stop "$app_pid_file"
+	sleep 1
 }
 
 function app_running {
-	[ $app_pid ] && [ -d "/proc/$app_pid" ] && return 0
+	process_running "$app_pid_file" && return 0
 	return 1
 }

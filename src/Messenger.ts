@@ -1,14 +1,19 @@
-import { type topic_t as topic_backend_t } from "./backend/Api.ts"
-import { type topic_t as topic_frontend_t } from "./frontend/Api.ts"
+import type { topic_req_t as topic_req_b_t, topic_set_t as topic_set_b_t } from "./backend/Api.ts"
+import type { topic_req_t as topic_req_f_t, topic_set_t as topic_set_f_t } from "./frontend/Api.ts"
 
 type context_t = void | "backend" | "frontend"
-
-export type data_t = object | string | number | boolean;
-export type topic_t<T = void> =
-	[T] extends [void] ? topic_backend_t | topic_frontend_t :
-	T extends 'backend' ? topic_backend_t :
-	T extends 'frontend' ? topic_frontend_t :
+type topic_t<T = void> = topic_req_t<T> | topic_set_t<T>
+type topic_req_t<T = void> =
+	[T] extends [void] ? topic_req_b_t | topic_req_f_t :
+	T extends 'backend' ? topic_req_b_t :
+	T extends 'frontend' ? topic_req_f_t :
 	never;
+export type topic_set_t<T = void> =
+	[T] extends [void] ? topic_set_b_t | topic_set_f_t :
+	T extends 'backend' ? topic_set_b_t :
+	T extends 'frontend' ? topic_set_f_t :
+	never;
+export type data_t = object | string | number | boolean;
 export type message_t<T = void, D = data_t> = {
 	topic: topic_t<T>;
 	data: D;
@@ -45,21 +50,21 @@ export class Messenger {
 	}
 
 	request<T = context_t, D = data_t>(
-		topic: topic_t<T>,
+		topic: topic_req_t<T>,
 		data: data_t = "",
 		params?: string[]
 	) {
 		const req_uid = this.get_uid();
 		return new Promise<message_t<T, D>>((resolve, reject) => {
 			this.requests.set(req_uid, { resolve, reject });
-			this.send(topic, data, req_uid, undefined, params);
+			this.send(topic as topic_set_t, data, req_uid, undefined, params);
 		})
 	}
-	response = (res_uid: string, data: data_t) => {
+	response = (res_uid: string, data: data_t): void => {
 		this.send("", data, undefined, res_uid)
 	}
 	send(
-		topic: topic_t | "",
+		topic: topic_set_t | "",
 		data: data_t,
 		req_uid?: string,
 		res_uid?: string,

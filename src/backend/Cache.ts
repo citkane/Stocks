@@ -1,7 +1,5 @@
-import { Account, Position } from ".";
-import type { ibkr_t, saxo_t } from "../../types";
-import type { App } from "..";
-import type { ServerWs } from "../servers";
+import { Account, Position } from "./brokers";
+import type { ibkr_t, saxo_t } from "../types";
 
 
 type native_position_t = saxo_t.position_t | ibkr_t.position_t
@@ -9,18 +7,15 @@ type native_account_t = saxo_t.account_t | ibkr_t.account_t
 
 
 export class Cache {
-	constructor(app: App) {
-		this.ws = app.ws;
+	get ibkr_accounts() {
+		return this._ibkr_accounts.size ? [...this._ibkr_accounts.values()] : undefined
 	}
-
 	get accounts() {
-		return this._accounts;
+		const size = this._ibkr_accounts.size + this._saxo_accounts.size;
+		return size ? [...this._ibkr_accounts.values(), ...this._saxo_accounts.values()] : undefined
 	}
 	get positions() {
-		return this._positions.entries().map(entry => {
-			const [_id, position] = entry;
-			return position;
-		});
+		return this._positions.size ? [...this._positions.values()] : undefined
 	}
 	add = {
 		account: (
@@ -28,8 +23,9 @@ export class Cache {
 			broker: broker_t
 		) => {
 			const account = new Account(native_account, broker).map();
-			this._accounts.set(account.id, account);
-			this.ws.publish("account", account, [broker]);
+			const { original_id } = account;
+			if (account.broker === "saxo") this._saxo_accounts.set(original_id, account)
+			if (account.broker === "ibkr") this._ibkr_accounts.set(original_id, account)
 		},
 		position: (
 			native_position: native_position_t,
@@ -37,7 +33,6 @@ export class Cache {
 		) => {
 			const position = new Position(native_position, broker).map();
 			this._positions.set(position.id, position);
-			this.ws.publish("position", position, [broker]);
 		},
 		accounts: (
 			native_accounts: native_account_t[],
@@ -53,8 +48,8 @@ export class Cache {
 		},
 
 	}
-	private _accounts = new Map<string, account_t>();
+	private _saxo_accounts = new Map<string, account_t>();
+	private _ibkr_accounts = new Map<string, account_t>();
 	private _positions = new Map<string, position_t>();
-	private ws: ServerWs;
 
 }

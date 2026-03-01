@@ -11,14 +11,13 @@ const default_params: RequestInit = {
 } as RequestInit
 
 export class Fetch {
-
 	protected fetch(
 		this: Ibkr,
 		endpoint: string,
 		params: RequestInit = {}
 	) {
 		params = { ...default_params, ...(params || {}) };
-		const req = new Request(`${base_url}/${endpoint}`);
+		const req = new Request(encodeURI(`${base_url}/${endpoint}`));
 		return this.limiter.fetch(() => fetch(req, params));
 	}
 

@@ -1,12 +1,5 @@
 import type { ibkr_t, saxo_t } from "../../types";
 
-type account_t = {
-	id: string;
-	broker: broker_t;
-	alias: string;
-	currency: currency_t
-}
-
 export class Account {
 	constructor(
 		private account: saxo_t.account_t | ibkr_t.account_t,
@@ -21,18 +14,20 @@ export class Account {
 				a = this.account as saxo_t.account_t;
 				account = {
 					id: `${this.broker}_${a.AccountId}`,
+					original_id: a.AccountId,
 					broker: this.broker,
-					alias: "???",
-					currency: a.Currency
+					alias: a.DisplayName,
+					currency: a.Currency.toUpperCase().slice(0, 3)
 				} as account_t
 				break;
 			case "ibkr":
 				a = this.account as ibkr_t.account_t;
 				account = {
 					id: `${this.broker}_${a.accountId}`,
+					original_id: a.accountId,
 					broker: this.broker,
 					alias: a.accountAlias,
-					currency: a.accountVan || a.currency
+					currency: (a.accountVan || a.currency).toUpperCase().slice(0, 3)
 				} as account_t
 				break;
 			default:

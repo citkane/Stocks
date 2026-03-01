@@ -11,6 +11,7 @@ export function accounts(this: Ibkr) {
 			return this.fetch(endpoints.accounts())
 				.then(res => res.json())
 				.then((accounts: ibkr_t.accounts_t) => {
+					console.json("IBKR accounts", accounts)
 					this.cache.add.accounts(accounts, "ibkr")
 					return true
 				})

@@ -1,5 +1,6 @@
 import { ibkr as conf } from "../../../../conf.json"
 import type { Ibkr } from ".";
+import { Brokers } from "../Brokers";
 
 let resolve_login: resolve_t;
 let login_window: ReturnType<typeof window.open>;
@@ -14,7 +15,7 @@ export function login(this: Ibkr) {
 }
 
 function is_authorised(this: Ibkr) {
-	return this.messenger.request<"backend", boolean>("req_is_authorised", "ibkr")
+	return this.messenger.request<"backend", boolean>("is_authorised", "ibkr")
 		.then(mssg => mssg.data)
 }
 
@@ -26,14 +27,14 @@ async function await_login(this: Ibkr): Promise<boolean> {
 	})
 }
 function got_login() {
+	if (!resolve_login) return;
+	window.focus();
 	popup_close();
 	resolve_login(true);
 }
 
 function popup_login(url: string) {
-	const windowFeatures = "popup,innerWidth=1600,innerHeight=1900";
-	login_window = window.open(url, "ibkrWindow", windowFeatures);
-	login_window?.resizeTo(600, 900)
+	login_window = Brokers.popup_login(url, "IBKR")
 }
 function popup_close() {
 	login_window?.close();

@@ -29,7 +29,6 @@
 	},
 	"include": [
 		"src/**/*.ts",
-		"src/types/*.d.ts",
-		"src/Messenger.ts"
+		"src/types/*.d.ts"
 	]
 }

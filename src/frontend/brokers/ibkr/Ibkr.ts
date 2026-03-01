@@ -13,15 +13,6 @@ export class Ibkr {
 	await_login = () => this.login.await_login();
 	authorised = (_success: boolean) => this.login.got_login();
 
-	get_accounts() {
-		return this.messenger.request<"backend", boolean>("req_accounts")
-			.then(() => console.info("Got Saxo accounts"))
-	}
-	get_positions() {
-		return this.messenger.request<"backend", boolean>("req_positions")
-			.then(() => console.info("Got Saxo positions"))
-	}
-
 	protected login: login_f
 	protected messenger: Messenger;
 }

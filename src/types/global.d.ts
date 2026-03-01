@@ -19,19 +19,33 @@ type currency_t = "EUR" | "HKD" | "CNH"
 type broker_t = "saxo" | "ibkr";
 type position_t = {
 	id: string;
+	original_id: string,
 	broker: broker_t;
 	account_id: string;
 	description: string;
 	ticker: string;
 	currency: currency_t
+	exchange: string
 }
 type account_t = {
 	id: string;
+	original_id: string,
 	broker: broker_t;
 	alias: string;
 	currency: currency_t
 }
+type stock_t = {
+	ticker: string;
+	description: string;
+	positions: Set<position_t>
+}
 
-
-
-
+interface Api_t {
+	request: {
+		[key: string]: (p: req_t, ...params: any[]) => void
+	};
+	set: {
+		[key: string]: (...params: any[]) => void;
+	}
+	init: (app: Class) => void
+}

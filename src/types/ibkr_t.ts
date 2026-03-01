@@ -89,6 +89,33 @@ export type position_t = {
 	isEventContract: boolean;
 	pageSize: number;
 }
+export type positions_t = position_t[]
+
+export type authstatus_t = {
+	authenticated: boolean,
+	established: boolean,
+	competing: boolean,
+	connected: boolean,
+	message: string,
+	MAC: string,
+	serverInfo: {
+		serverName: string,
+		serverVersion: string
+	},
+	hardware_info: string
+}
+export type tickle_t = {
+	session: string,
+	ssoExpires: number,
+	collission: boolean,
+	userId: number,
+	hmds: {
+		error: string
+	},
+	iserver: {
+		authStatus: authstatus_t
+	}
+}
 
 
 

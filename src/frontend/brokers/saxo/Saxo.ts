@@ -16,14 +16,6 @@ export class Saxo {
 	authorised = (success: boolean) => this.auth.authorised.bind(this)(success);
 	login_backend = () => this.login.login_backend();
 
-	get_accounts() {
-		return this.messenger.request<"backend", boolean>("req_accounts")
-			.then(() => console.info("Got Saxo accounts"))
-	}
-	get_positions() {
-		return this.messenger.request<"backend", boolean>("req_positions")
-			.then(() => console.info("Got Saxo positions"))
-	}
 
 	protected auth: authorise_f
 	protected login: login_f

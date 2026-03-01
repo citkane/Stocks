@@ -1,5 +1,6 @@
 import type { Saxo } from ".";
 import type { saxo_t } from "../../../types";
+import { Brokers } from "../Brokers";
 
 let login_window: window_t;
 window.addEventListener("focus", () => login_window?.focus())
@@ -15,9 +16,7 @@ export function login(this: Saxo) {
 }
 
 function popup_login(url: string) {
-	const windowFeatures = "popup,innerWidth=1600,innerHeight=1900";
-	login_window = window.open(url, "saxoWindow", windowFeatures);
-	login_window?.resizeTo(600, 900)
+	login_window = login_window = Brokers.popup_login(url, "SAXO")
 }
 function popup_close() {
 	login_window?.close();
@@ -30,7 +29,7 @@ function go_back() {
 
 function login_backend(this: Saxo) {
 	const auth_code = parse_code_from_url();
-	this.messenger.request<"backend", boolean>("req_saxo_authorise", auth_code)
+	this.messenger.request<"backend", boolean>("saxo_authorise", auth_code)
 		.then(messg => messg.data ? popup_close() : go_back())
 		.catch(go_back)
 }

@@ -12,6 +12,8 @@ function browser_open {
 		echo "FIREFOX"
 		firefox "$url"
 	fi
+
+	exit 0
 }
 
 browser_open
