@@ -1,17 +1,16 @@
+import { Authorise } from "./Authorise";
+import { Positions } from "./Positions";
+import { Accounts } from "./Accounts";
+import type { Ibkr } from "..";
 
-import { authorise } from "./authorise"
-import { positions } from "./positions"
-import { accounts } from "./accounts"
+export { Fetch } from "./Fetch";
 
-export { Fetch } from "./Fetch"
-export { Ibkr } from "./Ibkr"
+export type factory_t = ReturnType<typeof factory>;
 
-export type authorise_f = ReturnType<typeof authorise>
-export type positions_f = ReturnType<typeof positions>
-export type accounts_f = ReturnType<typeof accounts>
-
-export const factory = {
-	authorise,
-	positions,
-	accounts
+export function factory(broker: Ibkr) {
+  return {
+    authorise: new Authorise(broker),
+    positions: new Positions(broker),
+    accounts: new Accounts(broker),
+  };
 }

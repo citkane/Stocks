@@ -1,128 +1,113 @@
 * {
-	box-sizing: border-box;
-
+  box-sizing: border-box;
 }
 
 html {
-	width: 100vw;
-	position: relative;
-	font-family: sans-serif;
-
+  width: 100vw;
+  position: relative;
+  font-family: sans-serif;
 }
 
 body {
-	position: relative;
-	width: 100%;
-	display: block;
-	padding: 2em;
+  position: relative;
+  width: 100%;
+  display: block;
+  padding: 2em;
 
-	.root-container {
-		display: block;
-		position: relative;
-		width: 100%;
+  .root-container {
+    display: block;
+    position: relative;
+    width: 100%;
+  }
 
-	}
-
-	h1 {
-		font-size: 1.5em;
-		font-weight: bold;
-		margin-top: 2em;
-		margin-bottom: 2em;
-	}
+  h1 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
 }
-
-
 
 table,
 thead,
 tbody,
 tr {
-	width: 100%;
+  width: 100%;
 }
 
 table {
+  td,
+  th {
+    padding: 0.75em;
+    text-align: left;
+  }
 
-	td,
-	th {
-		padding: 0.75em;
-		text-align: left;
-	}
-
-	thead {
-		color: rgb(83, 83, 83);
-		font-weight: bold;
-	}
+  thead {
+    color: rgb(83, 83, 83);
+    font-weight: bold;
+  }
 }
 
 positions-root {
-	display: block;
-	position: relative;
-	overflow-y: hidden;
+  display: block;
+  position: relative;
+  overflow-y: hidden;
 
-	transition: height 0.75s;
+  transition: height 0.75s;
 
-	>table {
-		margin: 2em;
+  > table {
+    margin: 2em;
+  }
 
-	}
+  > table > thead {
+    position: relative;
+    z-index: 0;
+  }
 
-	>table>thead {
-		position: relative;
-		z-index: 0;
-	}
-
-	&[state="closed"] {
-
-		height: 0 !important;
-	}
-
+  &[state="closed"] {
+    height: 0 !important;
+  }
 }
 
 stocks-root {
-	>table {
-		>tbody {
-			>tr {
-				border: 1px solid;
-				border-bottom: none;
-				border-collapse: collapse;
-				background-color: lightgray;
+  > table {
+    > tbody {
+      > tr {
+        border: 1px solid;
+        border-bottom: none;
+        border-collapse: collapse;
+        background-color: lightgray;
 
-				&:last-of-type {
-					border-bottom: 1px solid;
+        &:last-of-type {
+          border-bottom: 1px solid;
+        }
+      }
 
-				}
+      td[name="positions"] {
+        display: block;
+        text-align: center;
 
-			}
+        button {
+          padding: 1em;
+          cursor: pointer;
+        }
+      }
+    }
 
-			td[name="positions"] {
-				display: block;
-				text-align: center;
+    > thead {
+      th[name="positions"] {
+        text-align: center;
+      }
 
-				button {
-					padding: 1em;
-					cursor: pointer;
-				}
+      th {
+        background-color: white;
 
-			}
-
-		}
-
-		>thead {
-			th[name="positions"] {
-				text-align: center
-			}
-
-			th {
-				background-color: white;
-
-				border: 1px solid;
-				border-collapse: collapse;
-				position: sticky;
-				z-index: 100;
-				top: 0;
-
-			}
-		}
-	}
-
+        border: 1px solid;
+        border-collapse: collapse;
+        position: sticky;
+        z-index: 100;
+        top: 0;
+      }
+    }
+  }
 }

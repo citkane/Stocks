@@ -1,66 +1,69 @@
-import { Api } from "./Api";
-import { Events } from "./Events"
-import { Brokers } from "./brokers"
-import { Cache } from "./Cache";
-import { ClientWs } from "./servers"
-import "../types/frontend"
+import { Api } from "./app";
+import { ClientWs } from "./app/servers";
 
+import "../types/frontend";
+import type { Messenger } from "..";
+import type { Brokers, Events, Cache } from "./app";
+import type { Saxo, Ibkr } from "./app/broker";
 
 export class App {
-	constructor() {
-		window.app = this;
+  constructor(
+    public brokers: Brokers,
+    public api: Api,
+    public ws: ClientWs,
+    public cache: Cache,
+    public events: Events,
+    public messenger: Messenger,
+    public saxo: Saxo,
+    public ibkr: Ibkr,
+  ) {
+    window.app = this;
+    this.init_app();
 
-		this.cache = new Cache()
-		this.events = new Events();
-		this.api = new Api()
-		this.ws = new ClientWs(this)
-		this.brokers = new Brokers(this);
-		this.api.init(this);
+    window.addEventListener("beforeunload", this.shutdown);
+  }
 
-		window.addEventListener("beforeunload", this.shutdown)
-	}
-	get set_topics() {
-		return Object.keys(this.api.set)
-	}
-	async run() {
-		try {
-			console.info("App awaiting authorisation")
-			await this.brokers.authorise();
+  public run = async () => {
+    try {
+      console.info("App awaiting authorisation");
+      await this.brokers.authorise_brokers();
 
-			console.info("App awaiting accounts and positions")
-			await Promise.all([
-				this.brokers.get_accounts(),
-				this.brokers.get_positions()
-			])
+      console.info("App awaiting warm cache");
+      await this.brokers.is_data_ready();
+      await this.warm_the_cache();
 
-			//this.events.dispatch("AccountsRoot", this.events.message("ready"))
-			console.info("App ready")
-		} catch (err) {
-			//throw err;
-			console.error(err)
-		}
-	}
-	ready() {
-		const app_element = document.getElementsByTagName("app-root")[0];
-		app_element?.setAttribute("ready", "true")
+      console.info("App ready");
+      this.init_components();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  public add_shutdown_task = (task: Function) => {
+    this.shutdown_tasks.push(task);
+  };
 
-		//this.events.dispatch("AppRoot", this.events.message("init", this))
-	}
+  private init_app = () => {
+    this.api.init(this);
+    this.ws.init(this);
+    this.brokers.init(this);
+    this.api.init(this);
+    this.saxo.init(this);
+    this.ibkr.init(this);
+  };
+  private init_components = () => {
+    const app_element = document.getElementsByTagName("app-root")[0];
+    app_element?.setAttribute("ready", "true");
+  };
+  private warm_the_cache = async () => {
+    const [accounts, positions] = await this.brokers.request_data();
+    accounts.forEach(this.cache.add.account);
+    positions.forEach(this.cache.add.position);
+  };
+  private shutdown = async (_e: Event) => {
+    console.info("Shutting down");
+    await Promise.all(this.shutdown_tasks.map((fnc) => fnc(), []));
+    console.info("Shut down");
+  };
 
-	add_shutdown_task(task: Function) {
-		this.shutdown_tasks.push(task);
-	}
-
-	private shutdown = (e: Event) => {
-		//e.preventDefault();
-		Promise.all(this.shutdown_tasks.map(fnc => fnc(), []))
-			.then(() => console.info("Shutting down"))
-	}
-
-	public brokers: Brokers
-	public api: Api
-	public ws: ClientWs
-	public cache: Cache
-	public events: Events
-	private shutdown_tasks: Function[] = [];
+  private shutdown_tasks: Function[] = [];
 }

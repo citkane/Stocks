@@ -1,5 +1,5 @@
 import { App } from "./App";
-import "./logger"
+import "./logger";
 
 export type { App } from "./App";
 export type { Api } from "./Api";

@@ -1,22 +1,23 @@
-import { authorise } from "./authorise"
-import { positions } from "./positions"
-import { accounts } from "./accounts"
-import { oauth } from "./oauth"
+import { authorise } from "./authorise";
+import { positions } from "./positions";
+import { Accounts } from "./Accounts";
+import { oauth } from "./oauth";
 
-export { Fetch } from "./Fetch"
-export { Saxo } from "./Saxo"
+import type { Saxo } from "..";
 
-export type authorise_f = ReturnType<typeof authorise>
-export type positions_f = ReturnType<typeof positions>
-export type accounts_f = ReturnType<typeof accounts>
-export type outh_f = ReturnType<typeof oauth>
+export { Fetch } from "./Fetch";
 
+export type authorise_f = ReturnType<typeof authorise>;
+export type positions_f = ReturnType<typeof positions>;
+export type outh_f = ReturnType<typeof oauth>;
 
+export type factory_t = ReturnType<typeof factory>;
 
-export const factory = {
-	authorise,
-	oauth,
-	positions,
-	accounts
+export function factory(broker: Saxo) {
+  return {
+    authorise,
+    oauth,
+    positions,
+    accounts: new Accounts(broker),
+  };
 }
-

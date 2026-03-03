@@ -1,4 +1,3 @@
-import { AppRoot } from "./AppRoot"
+import { AppRoot } from "./AppRoot";
 
-customElements.define("app-root", AppRoot)
-
+customElements.define("app-root", AppRoot);

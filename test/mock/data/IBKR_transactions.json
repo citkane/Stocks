@@ -1,0 +1,2373 @@
+[
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 4.96912,
+      "qty": 2500,
+      "acctid": "U22612428",
+      "amt": -1507.8794639999999,
+      "conid": 619192659,
+      "type": "Buy",
+      "desc": "SHANGHAI ZHENHUA HEAVY IND-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Wed Jan 07 00:00:00 EST 2026",
+      "rawDate": "20260107",
+      "fxRate": 0.12247,
+      "acctid": "U22612428",
+      "amt": 6.1235,
+      "conid": 619192659,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1563.904,
+      "conid": 619192659,
+      "type": "Transfer",
+      "desc": "Shanghai Zhenhua Heavy Ind-a (600320) Quantity: -2,500"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1563.904,
+      "conid": 619192659,
+      "type": "Transfer",
+      "desc": "Shanghai Zhenhua Heavy Ind-a (600320) Quantity: 2,500"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 11.58,
+      "qty": 400,
+      "acctid": "U22612428",
+      "amt": -563.29752,
+      "conid": 165301359,
+      "type": "Buy",
+      "desc": "CHINA AEROSPACE TIMES ELEC-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Fri Jan 30 00:00:00 EST 2026",
+      "rawDate": "20260130",
+      "fxRate": 0.12126,
+      "pr": 25.82,
+      "qty": -300,
+      "acctid": "U22612428",
+      "amt": 939.27996,
+      "conid": 165301359,
+      "type": "Sell",
+      "desc": "CHINA AEROSPACE TIMES ELEC-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -314.6135,
+      "conid": 165301359,
+      "type": "Transfer",
+      "desc": "China Aerospace Times Elec-a (600879) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 314.6135,
+      "conid": 165301359,
+      "type": "Transfer",
+      "desc": "China Aerospace Times Elec-a (600879) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 0.12087,
+      "pr": 23.04333333,
+      "qty": 300,
+      "acctid": "U22612428",
+      "amt": -835.57431,
+      "conid": 165303087,
+      "type": "Buy",
+      "desc": "SANY HEAVY INDUSTRY CO LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -803.45568,
+      "conid": 165303087,
+      "type": "Transfer",
+      "desc": "Sany Heavy Industry Co Ltd-a (600031) Quantity: -300"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 803.45568,
+      "conid": 165303087,
+      "type": "Transfer",
+      "desc": "Sany Heavy Industry Co Ltd-a (600031) Quantity: 300"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 22.24,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -540.92128,
+      "conid": 257312291,
+      "type": "Buy",
+      "desc": "AEROSPACE CH UAV CO LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 23.67,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -574.61292,
+      "conid": 257312291,
+      "type": "Buy",
+      "desc": "AEROSPACE CH UAV CO LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1144.09352,
+      "conid": 257312291,
+      "type": "Transfer",
+      "desc": "Aerospace Ch Uav Co Ltd-a (002389) Quantity: -400"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1144.09352,
+      "conid": 257312291,
+      "type": "Transfer",
+      "desc": "Aerospace Ch Uav Co Ltd-a (002389) Quantity: 400"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 30.83,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -374.92363,
+      "conid": 257312867,
+      "type": "Buy",
+      "desc": "BEIJING BDSTAR NAVIGATION -A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -533.56006,
+      "conid": 257312867,
+      "type": "Transfer",
+      "desc": "Beijing Bdstar Navigation -A (002151) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 533.56006,
+      "conid": 257312867,
+      "type": "Transfer",
+      "desc": "Beijing Bdstar Navigation -A (002151) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 44.88,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -545.78568,
+      "conid": 257312485,
+      "type": "Buy",
+      "desc": "GUIZHOU SPACE APPLIANCE CO-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -614.32104,
+      "conid": 257312485,
+      "type": "Transfer",
+      "desc": "Guizhou Space Appliance Co-a (002025) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 614.32104,
+      "conid": 257312485,
+      "type": "Transfer",
+      "desc": "Guizhou Space Appliance Co-a (002025) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 60,
+      "qty": 300,
+      "acctid": "U22612428",
+      "amt": -2184.84,
+      "conid": 257313637,
+      "type": "Buy",
+      "desc": "CHANGCHUN UP OPTOTECH CO-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1994.34414,
+      "conid": 257313637,
+      "type": "Transfer",
+      "desc": "Changchun Up Optotech Co-a (002338) Quantity: -300"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1994.34414,
+      "conid": 257313637,
+      "type": "Transfer",
+      "desc": "Changchun Up Optotech Co-a (002338) Quantity: 300"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 42.35,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -1030.0366999999999,
+      "conid": 165301611,
+      "type": "Buy",
+      "desc": "CHINA SPACESAT CO LTD -A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -2230.02936,
+      "conid": 165301611,
+      "type": "Transfer",
+      "desc": "China Spacesat Co Ltd -A (600118) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 2230.02936,
+      "conid": 165301611,
+      "type": "Transfer",
+      "desc": "China Spacesat Co Ltd -A (600118) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Fri Oct 31 00:00:00 EDT 2025",
+      "rawDate": "20251031",
+      "fxRate": 0.1217,
+      "pr": 54.66,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -665.2122,
+      "conid": 496999664,
+      "type": "Buy",
+      "desc": "SHAANXI ZHONGTIAN ROCKET T-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -833.2676,
+      "conid": 496999664,
+      "type": "Transfer",
+      "desc": "Shaanxi Zhongtian Rocket T-a (003009) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 833.2676,
+      "conid": 496999664,
+      "type": "Transfer",
+      "desc": "Shaanxi Zhongtian Rocket T-a (003009) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 14.61,
+      "qty": 300,
+      "acctid": "U22612428",
+      "amt": -533.01663,
+      "conid": 165302705,
+      "type": "Buy",
+      "desc": "NORTH NAVIGATION CONTROL T-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 14.9,
+      "qty": 300,
+      "acctid": "U22612428",
+      "amt": -542.5686,
+      "conid": 165302705,
+      "type": "Buy",
+      "desc": "NORTH NAVIGATION CONTROL T-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1209.582,
+      "conid": 165302705,
+      "type": "Transfer",
+      "desc": "North Navigation Control T-a (600435) Quantity: -600"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1209.582,
+      "conid": 165302705,
+      "type": "Transfer",
+      "desc": "North Navigation Control T-a (600435) Quantity: 600"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 16.14,
+      "qty": 300,
+      "acctid": "U22612428",
+      "amt": -588.83562,
+      "conid": 165302448,
+      "type": "Buy",
+      "desc": "AVIC HEAVY MACHINERY CO LT-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -685.79634,
+      "conid": 165302448,
+      "type": "Transfer",
+      "desc": "Avic Heavy Machinery Co Lt-a (600765) Quantity: -300"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 685.79634,
+      "conid": 165302448,
+      "type": "Transfer",
+      "desc": "Avic Heavy Machinery Co Lt-a (600765) Quantity: 300"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 22.48,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -273.37928,
+      "conid": 165302186,
+      "type": "Buy",
+      "desc": "AEROSUN CORP-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Tue Dec 30 00:00:00 EST 2025",
+      "rawDate": "20251230",
+      "fxRate": 0.12174,
+      "pr": 25.96,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -316.03704,
+      "conid": 165302186,
+      "type": "Buy",
+      "desc": "AEROSUN CORP-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -656.1066,
+      "conid": 165302186,
+      "type": "Transfer",
+      "desc": "Aerosun Corp-a (600501) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 656.1066,
+      "conid": 165302186,
+      "type": "Transfer",
+      "desc": "Aerosun Corp-a (600501) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 34.64,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -421.25704,
+      "conid": 165302333,
+      "type": "Buy",
+      "desc": "JIANGXI HONGDU AVIATION-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -510.59022,
+      "conid": 165302333,
+      "type": "Transfer",
+      "desc": "Jiangxi Hongdu Aviation-a (600316) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 510.59022,
+      "conid": 165302333,
+      "type": "Transfer",
+      "desc": "Jiangxi Hongdu Aviation-a (600316) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 106.01,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -1289.18761,
+      "conid": 567117615,
+      "type": "Buy",
+      "desc": "CHINA MOBILE LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1177.57084,
+      "conid": 567117615,
+      "type": "Transfer",
+      "desc": "China Mobile Ltd-a (600941) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1177.57084,
+      "conid": 567117615,
+      "type": "Transfer",
+      "desc": "China Mobile Ltd-a (600941) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 53.7,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -653.0457,
+      "conid": 257312052,
+      "type": "Buy",
+      "desc": "IFLYTEK CO LTD - A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -728.1928,
+      "conid": 257312052,
+      "type": "Transfer",
+      "desc": "Iflytek Co Ltd - A (002230) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 728.1928,
+      "conid": 257312052,
+      "type": "Transfer",
+      "desc": "Iflytek Co Ltd - A (002230) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "pr": 23.11,
+      "qty": 100,
+      "acctid": "U24238397",
+      "amt": -282.35798,
+      "conid": 395827952,
+      "type": "Buy",
+      "desc": "HBIS RESOURCES CO LTD-A"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 161,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -3908.436,
+      "conid": 257313782,
+      "type": "Buy",
+      "desc": "SIEYUAN ELECTRIC CO LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -4515.7728,
+      "conid": 257313782,
+      "type": "Transfer",
+      "desc": "Sieyuan Electric Co Ltd-a (002028) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 4515.7728,
+      "conid": 257313782,
+      "type": "Transfer",
+      "desc": "Sieyuan Electric Co Ltd-a (002028) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.11978,
+      "pr": 39.1,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -936.6796,
+      "conid": 257312247,
+      "type": "Buy",
+      "desc": "GREE ELECTRIC APPLIANCES I-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -945.6732,
+      "conid": 257312247,
+      "type": "Transfer",
+      "desc": "Gree Electric Appliances I-a (000651) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 945.6732,
+      "conid": 257312247,
+      "type": "Transfer",
+      "desc": "Gree Electric Appliances I-a (000651) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 11.14,
+      "qty": 600,
+      "acctid": "U22612428",
+      "amt": -812.84124,
+      "conid": 345370376,
+      "type": "Buy",
+      "desc": "KTK GROUP CO LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1104.75156,
+      "conid": 345370376,
+      "type": "Transfer",
+      "desc": "Ktk Group Co Ltd-a (603680) Quantity: -600"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1104.75156,
+      "conid": 345370376,
+      "type": "Transfer",
+      "desc": "Ktk Group Co Ltd-a (603680) Quantity: 600"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "pr": 38.15,
+      "qty": 100,
+      "acctid": "U24238397",
+      "amt": -466.1167,
+      "conid": 165302458,
+      "type": "Buy",
+      "desc": "ZIJIN MINING GROUP CO LTD-A"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 8.78,
+      "qty": 1700,
+      "acctid": "U22612428",
+      "amt": -1811.71788,
+      "conid": 215287502,
+      "type": "Buy",
+      "desc": "CHINA NATIONAL NUCLEAR POW-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Tue Jan 13 00:00:00 EST 2026",
+      "rawDate": "20260113",
+      "fxRate": 0.12316,
+      "acctid": "U22612428",
+      "amt": 4.18744,
+      "conid": 215287502,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1788.34866,
+      "conid": 215287502,
+      "type": "Transfer",
+      "desc": "China National Nuclear Pow-a (601985) Quantity: -1,700"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1788.34866,
+      "conid": 215287502,
+      "type": "Transfer",
+      "desc": "China National Nuclear Pow-a (601985) Quantity: 1,700"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "pr": 7.05,
+      "qty": 300,
+      "acctid": "U24238397",
+      "amt": -258.4107,
+      "conid": 257311821,
+      "type": "Buy",
+      "desc": "SHENZHEN ZHONGJIN LINGNAN-A"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 0.12087,
+      "pr": 60.1,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -726.4287,
+      "conid": 257310479,
+      "type": "Buy",
+      "desc": "LUXSHARE PRECISION INDUSTR-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -631.54842,
+      "conid": 257310479,
+      "type": "Transfer",
+      "desc": "Luxshare Precision Industr-a (002475) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 631.54842,
+      "conid": 257310479,
+      "type": "Transfer",
+      "desc": "Luxshare Precision Industr-a (002475) Quantity: 100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Thu Feb 12 00:00:00 EST 2026",
+      "rawDate": "20260212",
+      "fxRate": 0.1221,
+      "acctid": "U24238397",
+      "amt": 1.952379,
+      "conid": 257310479,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 38.87,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -471.80406,
+      "conid": 301403360,
+      "type": "Buy",
+      "desc": "GUANGZHOU SHIYUAN ELECTRON-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -482.611,
+      "conid": 301403360,
+      "type": "Transfer",
+      "desc": "Guangzhou Shiyuan Electron-a (002841) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 482.611,
+      "conid": 301403360,
+      "type": "Transfer",
+      "desc": "Guangzhou Shiyuan Electron-a (002841) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 31.26,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -380.15286,
+      "conid": 426792420,
+      "type": "Buy",
+      "desc": "CHINA MARINE INFORMATION I-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Thu Jan 15 00:00:00 EST 2026",
+      "rawDate": "20260115",
+      "fxRate": 0.12371,
+      "acctid": "U22612428",
+      "amt": 0.86597,
+      "conid": 426792420,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -328.29766,
+      "conid": 426792420,
+      "type": "Transfer",
+      "desc": "China Marine Information I-a (600764) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 328.29766,
+      "conid": 426792420,
+      "type": "Transfer",
+      "desc": "China Marine Information I-a (600764) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 33.28,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -404.71808,
+      "conid": 257311705,
+      "type": "Buy",
+      "desc": "HANGZHOU HIKVISION DIGITAL-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -382.78994,
+      "conid": 257311705,
+      "type": "Transfer",
+      "desc": "Hangzhou Hikvision Digital-a (002415) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 382.78994,
+      "conid": 257311705,
+      "type": "Transfer",
+      "desc": "Hangzhou Hikvision Digital-a (002415) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 17.88,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -1085.1372000000001,
+      "conid": 257311300,
+      "type": "Buy",
+      "desc": "NORTH INDUSTRIES GROUP RED-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1152.1574,
+      "conid": 257311300,
+      "type": "Transfer",
+      "desc": "North Industries Group Red-a (000519) Quantity: -500"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1152.1574,
+      "conid": 257311300,
+      "type": "Transfer",
+      "desc": "North Industries Group Red-a (000519) Quantity: 500"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 0.12087,
+      "pr": 11.25,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -679.89375,
+      "conid": 257311815,
+      "type": "Buy",
+      "desc": "XCMG CONSTRUCTION MACHIN-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 11.37,
+      "qty": 400,
+      "acctid": "U22612428",
+      "amt": -552.03624,
+      "conid": 257311815,
+      "type": "Buy",
+      "desc": "XCMG CONSTRUCTION MACHIN-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1180.99188,
+      "conid": 257311815,
+      "type": "Transfer",
+      "desc": "Xcmg Construction Machin-a (000425) Quantity: -900"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1180.99188,
+      "conid": 257311815,
+      "type": "Transfer",
+      "desc": "Xcmg Construction Machin-a (000425) Quantity: 900"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.12138,
+      "pr": 5.9,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -716.142,
+      "conid": 165301844,
+      "type": "Buy",
+      "desc": "HENAN HUANGHE WHIRLWIND CO-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -800.279,
+      "conid": 165301844,
+      "type": "Transfer",
+      "desc": "Henan Huanghe Whirlwind Co-a (600172) Quantity: -1,000"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 800.279,
+      "conid": 165301844,
+      "type": "Transfer",
+      "desc": "Henan Huanghe Whirlwind Co-a (600172) Quantity: 1,000"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Fri Oct 31 00:00:00 EDT 2025",
+      "rawDate": "20251031",
+      "fxRate": 0.1217,
+      "pr": 17.758,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -1080.5743,
+      "conid": 301403257,
+      "type": "Buy",
+      "desc": "SINOTRUK JINAN TRUCK CO LT-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Fri Nov 14 00:00:00 EST 2025",
+      "rawDate": "20251114",
+      "fxRate": 0.1212,
+      "acctid": "U22612428",
+      "amt": 19.089,
+      "conid": 301403257,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1156.4337,
+      "conid": 301403257,
+      "type": "Transfer",
+      "desc": "Sinotruk Jinan Truck Co Lt-a (000951) Quantity: -500"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1156.4337,
+      "conid": 301403257,
+      "type": "Transfer",
+      "desc": "Sinotruk Jinan Truck Co Lt-a (000951) Quantity: 500"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 6.86,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -417.1223,
+      "conid": 512414724,
+      "type": "Buy",
+      "desc": "CHINA TELECOM CORP LTD-DM -A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -366.54,
+      "conid": 512414724,
+      "type": "Transfer",
+      "desc": "China Telecom Corp Ltd-dm -A (601728) Quantity: -500"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 366.54,
+      "conid": 512414724,
+      "type": "Transfer",
+      "desc": "China Telecom Corp Ltd-dm -A (601728) Quantity: 500"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 14.24,
+      "qty": 300,
+      "acctid": "U22612428",
+      "amt": -519.51792,
+      "conid": 257765457,
+      "type": "Buy",
+      "desc": "CHINA NUCLEAR ENGINEERING -A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Thu Nov 20 00:00:00 EST 2025",
+      "rawDate": "20251120",
+      "fxRate": 0.12187,
+      "acctid": "U22612428",
+      "amt": 0.36561,
+      "conid": 257765457,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "pr": 15.85,
+      "qty": 600,
+      "acctid": "U24238397",
+      "amt": -1161.9318,
+      "conid": 257765457,
+      "type": "Buy",
+      "desc": "CHINA NUCLEAR ENGINEERING -A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -567.77046,
+      "conid": 257765457,
+      "type": "Transfer",
+      "desc": "China Nuclear Engineering -A (601611) Quantity: -300"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 567.77046,
+      "conid": 257765457,
+      "type": "Transfer",
+      "desc": "China Nuclear Engineering -A (601611) Quantity: 300"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 8.07,
+      "qty": 700,
+      "acctid": "U22612428",
+      "amt": -686.97489,
+      "conid": 165302867,
+      "type": "Buy",
+      "desc": "CHINA RAILWAY CONSTRUCTION-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -621.77402,
+      "conid": 165302867,
+      "type": "Transfer",
+      "desc": "China Railway Construction-a (601186) Quantity: -700"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 621.77402,
+      "conid": 165302867,
+      "type": "Transfer",
+      "desc": "China Railway Construction-a (601186) Quantity: 700"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.11978,
+      "pr": 31.48,
+      "qty": 400,
+      "acctid": "U22612428",
+      "amt": -1508.26976,
+      "conid": 165301917,
+      "type": "Buy",
+      "desc": "YUTONG BUS CO LTD-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1510.1448,
+      "conid": 165301917,
+      "type": "Transfer",
+      "desc": "Yutong Bus Co Ltd-a (600066) Quantity: -400"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1510.1448,
+      "conid": 165301917,
+      "type": "Transfer",
+      "desc": "Yutong Bus Co Ltd-a (600066) Quantity: 400"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 114.3,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -1390.0022999999999,
+      "conid": 196967607,
+      "type": "Buy",
+      "desc": "DAWNING INFORMATION INDUST-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -1096.80986,
+      "conid": 196967607,
+      "type": "Transfer",
+      "desc": "Dawning Information Indust-a (603019) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 1096.80986,
+      "conid": 196967607,
+      "type": "Transfer",
+      "desc": "Dawning Information Indust-a (603019) Quantity: 100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Thu Feb 05 00:00:00 EST 2026",
+      "rawDate": "20260205",
+      "fxRate": 0.12232,
+      "acctid": "U24238397",
+      "amt": 0.85624,
+      "conid": 196967607,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 22.14,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -269.24454,
+      "conid": 165303323,
+      "type": "Buy",
+      "desc": "CHINA SHIPBUILDING INDUSTR-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Wed Nov 26 00:00:00 EST 2025",
+      "rawDate": "20251126",
+      "fxRate": 0.12199,
+      "acctid": "U22612428",
+      "amt": 0.9954384,
+      "conid": 165303323,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Tue Dec 30 00:00:00 EST 2025",
+      "rawDate": "20251230",
+      "fxRate": 0.12174,
+      "pr": 21.06,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -256.38444,
+      "conid": 165303323,
+      "type": "Buy",
+      "desc": "CHINA SHIPBUILDING INDUSTR-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -637.29088,
+      "conid": 165303323,
+      "type": "Transfer",
+      "desc": "China Shipbuilding Industr-a (600482) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 637.29088,
+      "conid": 165303323,
+      "type": "Transfer",
+      "desc": "China Shipbuilding Industr-a (600482) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 21.16,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -514.65352,
+      "conid": 257311639,
+      "type": "Buy",
+      "desc": "ZHEJIANG DAHUA TECHNOLOGY-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Wed Dec 10 00:00:00 EST 2025",
+      "rawDate": "20251210",
+      "fxRate": 0.1211,
+      "acctid": "U22612428",
+      "amt": 4.4807,
+      "conid": 257311639,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -463.30656,
+      "conid": 257311639,
+      "type": "Transfer",
+      "desc": "Zhejiang Dahua Technology-a (002236) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 463.30656,
+      "conid": 257311639,
+      "type": "Transfer",
+      "desc": "Zhejiang Dahua Technology-a (002236) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 34.56,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -420.28416,
+      "conid": 257310359,
+      "type": "Buy",
+      "desc": "JONHON OPTRONIC TECHNOLOGY"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -418.95522,
+      "conid": 257310359,
+      "type": "Transfer",
+      "desc": "Jonhon Optronic Technology (002179) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 418.95522,
+      "conid": 257310359,
+      "type": "Transfer",
+      "desc": "Jonhon Optronic Technology (002179) Quantity: 100"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 37.865,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -920.95253,
+      "conid": 426792496,
+      "type": "Buy",
+      "desc": "FUJIAN TORCH ELECTRON TECH-A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -957.8912,
+      "conid": 426792496,
+      "type": "Transfer",
+      "desc": "Fujian Torch Electron Tech-a (603678) Quantity: -200"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 957.8912,
+      "conid": 426792496,
+      "type": "Transfer",
+      "desc": "Fujian Torch Electron Tech-a (603678) Quantity: 200"
+    }
+  ],
+  [
+    {
+      "cur": "CNH",
+      "date": "Thu Oct 30 00:00:00 EDT 2025",
+      "rawDate": "20251030",
+      "fxRate": 0.12161,
+      "pr": 63.28,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -769.54808,
+      "conid": 320053075,
+      "type": "Buy",
+      "desc": "AVIC SHENYANG AIRCRAFT CO -A"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U22612428",
+      "amt": -671.74564,
+      "conid": 320053075,
+      "type": "Transfer",
+      "desc": "Avic Shenyang Aircraft Co -A (600760) Quantity: -100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.12218,
+      "acctid": "U24238397",
+      "amt": 671.74564,
+      "conid": 320053075,
+      "type": "Transfer",
+      "desc": "Avic Shenyang Aircraft Co -A (600760) Quantity: 100"
+    },
+    {
+      "cur": "CNH",
+      "date": "Wed Feb 11 00:00:00 EST 2026",
+      "rawDate": "20260211",
+      "fxRate": 0.12193,
+      "acctid": "U24238397",
+      "amt": 1.70702,
+      "conid": 320053075,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Mon Oct 27 00:00:00 EDT 2025",
+      "rawDate": "20251027",
+      "fxRate": 1,
+      "acctid": "U22627290",
+      "amt": 485.63,
+      "conid": 504513998,
+      "type": "Transfer",
+      "desc": "L&g China Cny Bond Ucits Etf (DRGE) Quantity: 50"
+    },
+    {
+      "cur": "EUR",
+      "date": "Fri Jan 23 00:00:00 EST 2026",
+      "rawDate": "20260123",
+      "fxRate": 1,
+      "acctid": "U22627290",
+      "amt": 3.98,
+      "conid": 504513998,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 12.289,
+      "qty": 80,
+      "acctid": "U22627290",
+      "amt": -983.12,
+      "conid": 580815110,
+      "type": "Buy",
+      "desc": "WT PRECS METALS-EUR DLY HDG"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 60.318,
+      "qty": 10,
+      "acctid": "U22627290",
+      "amt": -603.18,
+      "conid": 305692942,
+      "type": "Buy",
+      "desc": "AM CR MSCI EMS ETF EUR DIST"
+    },
+    {
+      "cur": "EUR",
+      "date": "Thu Dec 11 00:00:00 EST 2025",
+      "rawDate": "20251211",
+      "fxRate": 1,
+      "acctid": "U22627290",
+      "amt": 11.5,
+      "conid": 305692942,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Thu Jan 08 00:00:00 EST 2026",
+      "rawDate": "20260108",
+      "fxRate": 1,
+      "pr": 0.7360101,
+      "qty": 198,
+      "acctid": "U22627290",
+      "amt": -145.73,
+      "conid": 177290820,
+      "type": "Buy",
+      "desc": "ALPHAMIN RESOURCES CORP"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 54.07,
+      "qty": 15,
+      "acctid": "U22627290",
+      "amt": -811.05,
+      "conid": 422487866,
+      "type": "Buy",
+      "desc": "X IE PHYSICAL SILVER ETC EUR"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Tue Oct 28 00:00:00 EDT 2025",
+      "rawDate": "20251028",
+      "fxRate": 1,
+      "pr": 1.90440678,
+      "qty": 236,
+      "acctid": "U22627290",
+      "amt": -449.44,
+      "conid": 110116035,
+      "type": "Buy",
+      "desc": "WT WHEAT - EUR DAILY HEDGED"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 81.115,
+      "qty": 10,
+      "acctid": "U22627290",
+      "amt": -811.15,
+      "conid": 77918742,
+      "type": "Buy",
+      "desc": "X PH PLAT ETC EUR HDG"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 27.93,
+      "qty": 40,
+      "acctid": "U22627290",
+      "amt": -1117.2,
+      "conid": 392294736,
+      "type": "Buy",
+      "desc": "SS SPDR BBG EML BN UC-USD BA"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 55,
+      "qty": 15,
+      "acctid": "U22627290",
+      "amt": -825,
+      "conid": 424741055,
+      "type": "Buy",
+      "desc": "X IE PHYSICAL GOLD ETC"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 1,
+      "pr": 7.301,
+      "qty": 130,
+      "acctid": "U22627290",
+      "amt": -949.13,
+      "conid": 478600587,
+      "type": "Buy",
+      "desc": "UBS ETF CHINA TECH H.EUR ACC"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Tue Oct 21 00:00:00 EDT 2025",
+      "rawDate": "20251021",
+      "fxRate": 1,
+      "pr": 0.855,
+      "qty": 600,
+      "acctid": "U22627290",
+      "amt": -513,
+      "conid": 603528831,
+      "type": "Buy",
+      "desc": "ZOOMLION HEAVY INDUSTRY - H"
+    },
+    {
+      "cur": "HKD",
+      "date": "Fri Jan 09 00:00:00 EST 2026",
+      "rawDate": "20260109",
+      "fxRate": 0.11026,
+      "acctid": "U22627290",
+      "amt": 14.55432,
+      "conid": 603528831,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "EUR",
+      "date": "Tue Oct 21 00:00:00 EDT 2025",
+      "rawDate": "20251021",
+      "fxRate": 1,
+      "pr": 30.64634483,
+      "qty": 29,
+      "acctid": "U22627290",
+      "amt": -888.744,
+      "conid": 424898704,
+      "type": "Buy",
+      "desc": "X IE PHYSICAL PLAT EUR ETC"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Wed Jan 07 00:00:00 EST 2026",
+      "rawDate": "20260107",
+      "fxRate": 0.10999,
+      "pr": 9.94,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -2186.6012,
+      "conid": 67426875,
+      "type": "Buy",
+      "desc": "CIMC ENRIC HOLDINGS LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 2.61,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -555.8256,
+      "conid": 547576729,
+      "type": "Buy",
+      "desc": "JINMAO PROPERTY SERVICES CO"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Feb 03 00:00:00 EST 2026",
+      "rawDate": "20260203",
+      "fxRate": 0.1083,
+      "pr": 6.68,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -723.444,
+      "conid": 46636720,
+      "type": "Buy",
+      "desc": "BANK OF COMMUNICATIONS CO-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Feb 03 00:00:00 EST 2026",
+      "rawDate": "20260203",
+      "fxRate": 0.1083,
+      "pr": 62,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -671.46,
+      "conid": 98700948,
+      "type": "Buy",
+      "desc": "NEW CHINA LIFE INSURANCE C-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Wed Jan 07 00:00:00 EST 2026",
+      "rawDate": "20260107",
+      "fxRate": 0.10999,
+      "pr": 85.55,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -1881.9289,
+      "conid": 80423421,
+      "type": "Buy",
+      "desc": "AIA GROUP LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 0.66,
+      "qty": 8000,
+      "acctid": "U22612428",
+      "amt": -562.2144,
+      "conid": 42451314,
+      "type": "Buy",
+      "desc": "SINGAMAS CONTAINER HLDGS"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Feb 03 00:00:00 EST 2026",
+      "rawDate": "20260203",
+      "fxRate": 0.1083,
+      "pr": 12.4,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -1342.9199999999998,
+      "conid": 1616427,
+      "type": "Buy",
+      "desc": "CITIC LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Mon Feb 02 00:00:00 EST 2026",
+      "rawDate": "20260202",
+      "fxRate": 0.10859,
+      "pr": 2.62,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -569.0116,
+      "conid": 61609116,
+      "type": "Buy",
+      "desc": "XINJIANG XINXIN MINING IND-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Mon Nov 03 00:00:00 EST 2025",
+      "rawDate": "20251103",
+      "fxRate": 0.11169,
+      "pr": 6.25,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -1396.125,
+      "conid": 42446568,
+      "type": "Buy",
+      "desc": "FIRST PACIFIC CO"
+    },
+    {
+      "cur": "HKD",
+      "date": "Thu Feb 05 00:00:00 EST 2026",
+      "rawDate": "20260205",
+      "fxRate": 0.10865,
+      "acctid": "U22612428",
+      "amt": 2.501123,
+      "conid": 42446568,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Wed Jan 07 00:00:00 EST 2026",
+      "rawDate": "20260107",
+      "fxRate": 0.10999,
+      "pr": 1.63,
+      "qty": 4000,
+      "acctid": "U22612428",
+      "amt": -717.1348,
+      "conid": 81351030,
+      "type": "Buy",
+      "desc": "CHINA MODERN DAIRY HOLDINGS"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 3.77,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -802.8592,
+      "conid": 42445998,
+      "type": "Buy",
+      "desc": "TAI CHEUNG HOLDINGS"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 3.89,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -828.4144,
+      "conid": 280737564,
+      "type": "Buy",
+      "desc": "XIN POINT HOLDINGS LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Feb 03 00:00:00 EST 2026",
+      "rawDate": "20260203",
+      "fxRate": 0.1083,
+      "pr": 6.9,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -747.27,
+      "conid": 70870559,
+      "type": "Buy",
+      "desc": "CHINA LONGYUAN POWER GROUP-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Thu Jan 29 00:00:00 EST 2026",
+      "rawDate": "20260129",
+      "fxRate": 0.10702,
+      "pr": 2.01,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -430.2204,
+      "conid": 349466674,
+      "type": "Buy",
+      "desc": "BEST MART 360 HOLDINGS LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 5.94,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -1264.9824,
+      "conid": 42451353,
+      "type": "Buy",
+      "desc": "LEE & MAN CHEMICAL COMPANY L"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 4.96,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -1056.2816,
+      "conid": 81931708,
+      "type": "Buy",
+      "desc": "PAX GLOBAL TECHNOLOGY LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Thu Jan 29 00:00:00 EST 2026",
+      "rawDate": "20260129",
+      "fxRate": 0.10702,
+      "pr": 2.73,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -584.3292,
+      "conid": 467927800,
+      "type": "Buy",
+      "desc": "JBM HEALTHCARE LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Mon Dec 29 00:00:00 EST 2025",
+      "rawDate": "20251229",
+      "fxRate": 0.10926,
+      "pr": 71.7,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -3916.971,
+      "conid": 259933925,
+      "type": "Buy",
+      "desc": "SEMICONDUCTOR MANUFACTURI-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 8.34,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -888.0432,
+      "conid": 82555312,
+      "type": "Buy",
+      "desc": "FUFENG GROUP LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Mon Nov 03 00:00:00 EST 2025",
+      "rawDate": "20251103",
+      "fxRate": 0.11169,
+      "pr": 45.02,
+      "qty": 100,
+      "acctid": "U22612428",
+      "amt": -502.82838,
+      "conid": 530222092,
+      "type": "Buy",
+      "desc": "SHANGHAI CONANT OPTICAL CO-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Thu Jan 29 00:00:00 EST 2026",
+      "rawDate": "20260129",
+      "fxRate": 0.10702,
+      "pr": 18,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -1926.3600000000001,
+      "conid": 140148044,
+      "type": "Buy",
+      "desc": "CONSUN PHARMACEUTICAL GROUP"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Wed Oct 22 00:00:00 EDT 2025",
+      "rawDate": "20251022",
+      "fxRate": 0.11082,
+      "pr": 7.6,
+      "qty": 600,
+      "acctid": "U22612428",
+      "amt": -505.3392,
+      "conid": 82363899,
+      "type": "Buy",
+      "desc": "ZOOMLION HEAVY INDUSTRY - H"
+    },
+    {
+      "cur": "HKD",
+      "date": "Tue Dec 30 00:00:00 EST 2025",
+      "rawDate": "20251230",
+      "fxRate": 0.1094,
+      "pr": 7.43,
+      "qty": 200,
+      "acctid": "U22612428",
+      "amt": -162.5684,
+      "conid": 82363899,
+      "type": "Buy",
+      "desc": "ZOOMLION HEAVY INDUSTRY - H"
+    },
+    {
+      "cur": "HKD",
+      "date": "Fri Jan 09 00:00:00 EST 2026",
+      "rawDate": "20260109",
+      "fxRate": 0.11026,
+      "acctid": "U22612428",
+      "amt": 14.55432,
+      "conid": 82363899,
+      "type": "Dividend Payment",
+      "desc": "Dividend Payment"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 0.91,
+      "qty": 10000,
+      "acctid": "U22612428",
+      "amt": -968.968,
+      "conid": 42451415,
+      "type": "Buy",
+      "desc": "EVA PRECISION INDUSTRIAL HLD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Wed Jan 07 00:00:00 EST 2026",
+      "rawDate": "20260107",
+      "fxRate": 0.10999,
+      "pr": 35.9,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -1974.3205,
+      "conid": 86093873,
+      "type": "Buy",
+      "desc": "CHINA HONGQIAO GROUP LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Mon Nov 03 00:00:00 EST 2025",
+      "rawDate": "20251103",
+      "fxRate": 0.11169,
+      "pr": 5.86,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -1309.0067999999999,
+      "conid": 172096078,
+      "type": "Buy",
+      "desc": "ALIBABA HEALTH INFORMATION T"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Feb 03 00:00:00 EST 2026",
+      "rawDate": "20260203",
+      "fxRate": 0.1083,
+      "pr": 5.03,
+      "qty": 1200,
+      "acctid": "U22612428",
+      "amt": -653.6988,
+      "conid": 46639496,
+      "type": "Buy",
+      "desc": "SHANDONG WEIGAO GP MEDICAL-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 1.04,
+      "qty": 8000,
+      "acctid": "U22612428",
+      "amt": -885.9136,
+      "conid": 228874921,
+      "type": "Buy",
+      "desc": "NAMESON HOLDINGS LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 2.9,
+      "qty": 4000,
+      "acctid": "U22612428",
+      "amt": -1235.1680000000001,
+      "conid": 251144754,
+      "type": "Buy",
+      "desc": "SMART-CORE HOLDINGS LTD"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Thu Jan 29 00:00:00 EST 2026",
+      "rawDate": "20260129",
+      "fxRate": 0.10702,
+      "pr": 8.8,
+      "qty": 500,
+      "acctid": "U22612428",
+      "amt": -470.888,
+      "conid": 46639490,
+      "type": "Buy",
+      "desc": "LAUNCH TECH COMPANY LTD-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 7.95,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -846.516,
+      "conid": 49964222,
+      "type": "Buy",
+      "desc": "XINGFA ALUMINIUM HOLDINGS"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 5.58,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -594.1584,
+      "conid": 131162709,
+      "type": "Buy",
+      "desc": "CHINA LESSO GROUP HOLDINGS L"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Feb 03 00:00:00 EST 2026",
+      "rawDate": "20260203",
+      "fxRate": 0.1083,
+      "pr": 5.46,
+      "qty": 1000,
+      "acctid": "U22612428",
+      "amt": -591.318,
+      "conid": 76788432,
+      "type": "Buy",
+      "desc": "AGRICULTURAL BANK OF CHINA-H"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 6.38,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -1358.6848,
+      "conid": 3884601,
+      "type": "Buy",
+      "desc": "COSCO SHIPPING INTERNATIONAL"
+    }
+  ],
+  [
+    {
+      "cur": "HKD",
+      "date": "Tue Jan 27 00:00:00 EST 2026",
+      "rawDate": "20260127",
+      "fxRate": 0.10648,
+      "pr": 1.92,
+      "qty": 2000,
+      "acctid": "U22612428",
+      "amt": -408.8832,
+      "conid": 490791425,
+      "type": "Buy",
+      "desc": "NEW HOPE SERVICE HOLDINGS LT"
+    }
+  ]
+]
