@@ -1,6 +1,6 @@
-import { saxo as conf } from "../../../../conf.json";
-import { RateLimiter } from "../common/RateLimiter.ts";
-import type { Saxo } from ".";
+import { saxo as conf } from "conf";
+import { RateLimiter, type Saxo } from "backend";
+import { Oauth } from "backend/saxo";
 
 const limit_rate = 250;
 
@@ -21,7 +21,7 @@ export class Fetch {
   private default_params(this: Saxo): RequestInit {
     return {
       headers: {
-        Authorization: `Bearer ${this.oauth.token.access_token}`,
+        Authorization: `Bearer ${Oauth.token.access_token}`,
       },
     };
   }

@@ -1,11 +1,11 @@
-import type { Ibkr } from "..";
-import type { ibkr_t } from "../../../types";
+import type { Ibkr } from "backend";
+import type { ibkr_t } from "types";
 
 const keep_alive_time = 60000;
 
 export class Authorise {
   constructor(private ibkr: Ibkr) {}
-  public is_authenticated = () =>
+  public is_authorised = () =>
     this.ibkr
       .fetch(this.endpoints.tickle)
       .then((res) => res.json())
@@ -13,17 +13,22 @@ export class Authorise {
       .then((status) => status.authenticated)
       .catch((_err) => false);
 
-  public poll_authenticated = (): Promise<boolean> =>
-    this.is_authenticated().then((success) => {
-      if (!success) return this.poll_authenticated();
-      if (!this.staying_alive) this.keep_alive();
-      return Promise.resolve(true);
+  public wait_for_authorised = () => {
+    return new Promise((resolve) => {
+      if (Authorise.is_authorised) return resolve(true);
+      const interval = setInterval(() => {
+        if (Authorise.is_authorised) {
+          clearInterval(interval);
+          resolve(true);
+        }
+      }, 10);
     });
+  };
 
-  private keep_alive = () => {
-    this.staying_alive = true;
-    this.is_authenticated().then((success) => {
-      if (!success) return (this.staying_alive = false);
+  public keep_alive = () => {
+    Authorise.is_authorised = true;
+    this.is_authorised().then((success) => {
+      if (!success) return (Authorise.is_authorised = false);
       setTimeout(() => {
         this.keep_alive();
       }, keep_alive_time);
@@ -34,7 +39,8 @@ export class Authorise {
     status: "iserver/auth/status",
     tickle: "tickle",
   };
-  private staying_alive = false;
+
+  private static is_authorised = false;
 }
 
 //function get_authenticated(this: Ibkr) {

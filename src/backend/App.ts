@@ -1,7 +1,4 @@
-import { Api } from "./Api";
-import { ServerHttp, ServerWs } from "./servers";
-import { Brokers } from "./brokers";
-import { Cache } from "./Cache";
+import { ServerHttp, ServerWs, Api, Brokers, Cache } from "backend";
 
 const browser_script = "./src/scripts/browser.sh";
 

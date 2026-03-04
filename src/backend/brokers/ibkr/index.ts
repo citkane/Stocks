@@ -4,9 +4,7 @@ import { Accounts } from "./Accounts";
 import type { Ibkr } from "..";
 
 export { Fetch } from "./Fetch";
-
 export type factory_t = ReturnType<typeof factory>;
-
 export function factory(broker: Ibkr) {
   return {
     authorise: new Authorise(broker),

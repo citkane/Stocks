@@ -1,4 +1,4 @@
-import { AppElement } from "../AppElement";
+import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class AppRoot extends AppElement {
   static observedAttributes = ["ready"];

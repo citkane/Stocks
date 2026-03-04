@@ -1,7 +1,5 @@
-import type { saxo_t } from "../../../../types";
-import { Brokers } from "../../Brokers";
-
-import type { Saxo } from "..";
+import type { saxo_t } from "types";
+import { Brokers, type Saxo } from "frontend";
 
 export class Login {
   constructor(private saxo: Saxo) {

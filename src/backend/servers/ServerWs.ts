@@ -1,6 +1,5 @@
-import * as conf from "../../../conf.json";
-import { Messenger } from "../../Messenger";
-import { Ws } from "../../Ws";
+import * as conf from "conf";
+import { Messenger, Ws } from "common";
 
 import type { Api, App } from "..";
 import type { topic_set_t, data_t } from "../../types";

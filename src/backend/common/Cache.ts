@@ -1,5 +1,5 @@
-import type { ibkr_t, saxo_t } from "../types";
-import { Account, Position, Transactions } from "./brokers/common/index.ts";
+import type { ibkr_t, saxo_t } from "types";
+import { Account, Position, Transactions } from "backend";
 
 type native_position_t = saxo_t.position_t | ibkr_t.position_t;
 type native_account_t = saxo_t.account_t | ibkr_t.account_t;

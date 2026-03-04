@@ -1,5 +1,5 @@
-import type { Saxo } from "..";
-import type { saxo_t } from "../../../types";
+import type { Saxo } from "backend";
+import type { saxo_t } from "types";
 
 export class Accounts {
   constructor(private saxo: Saxo) {}

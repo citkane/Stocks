@@ -1,6 +1,5 @@
-import { factory, type factory_t } from "./saxo/index.ts";
-import { Init } from "../Init.ts";
-import { Login } from "./saxo/Login";
+import { Login, factory, type factory_t } from "frontend/saxo";
+import { Init } from "@frontend/app/Init";
 
 export class Saxo extends Init {
   constructor() {

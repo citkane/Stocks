@@ -1,6 +1,6 @@
-import { AppElement } from "../AppElement";
-import { Brokers } from "../../app/index.ts";
-import { util } from "../../../Util";
+import { AppElement } from "@frontend/components/AppElement.ts";
+import { Brokers } from "frontend";
+import { util } from "common";
 
 export class StocksRoot extends AppElement {
   static observedAttributes = ["ready"];

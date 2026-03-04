@@ -1,8 +1,7 @@
-import { ibkr as conf } from "../../../../conf.json";
-import { util } from "../../../Util";
-
-import type { Ibkr } from "..";
-import type { ibkr_t } from "../../../types";
+import { ibkr as conf } from "conf";
+import { util } from "common";
+import type { Ibkr } from "backend";
+import type { ibkr_t } from "types";
 
 type post_t = { endpoint: string; params: RequestInit };
 type position_partial_t = Partial<ibkr_t.position_t> | ibkr_t.position_t;

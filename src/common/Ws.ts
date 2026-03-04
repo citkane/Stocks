@@ -1,7 +1,7 @@
-import type { Api as backend_api_t } from "./backend";
-import type { Api as frontend_api_t } from "./frontend";
-import type { Messenger } from ".";
-import type { message_t } from "./types";
+import type { Api as backend_api_t } from "backend";
+import type { Api as frontend_api_t } from "frontend";
+import type { Messenger } from "common";
+import type { message_t } from "types";
 
 type api_t = frontend_api_t | backend_api_t;
 type requests_t = Messenger["requests"];

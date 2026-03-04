@@ -1,6 +1,7 @@
-import { util } from "../../../../Util";
-import type { Saxo } from "..";
-import { Login } from "./Login";
+import { util } from "common";
+import { Login } from "frontend/saxo";
+
+import type { Saxo } from "frontend";
 
 export class Authorise {
   constructor(private saxo: Saxo) {}

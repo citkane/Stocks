@@ -21,7 +21,27 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "conf": ["./conf.json"],
+
+      "@types/*": ["./src/types/*"],
+      "types": ["./src/types/index.ts"],
+
+      "@common/*": ["./src/common/*"],
+      "common": ["./src/common/index.ts"],
+
+      "@frontend/*": ["./src/frontend/*"],
+      "frontend/components": ["./src/frontend/components/index"],
+      "frontend/ibkr": ["./src/frontend/app/brokers/ibkr/index"],
+      "frontend/saxo": ["./src/frontend/app/brokers/saxo/index"],
+      "frontend": ["./src/frontend/index.ts"],
+
+      "@backend/*": ["./src/backend/*"],
+      "backend/saxo": ["./src/backend/brokers/saxo/index.ts"],
+      "backend/ibkr": ["./src/backend/brokers/ibkr/index.ts"],
+      "backend": ["./src/backend/index.ts"]
+    }
   },
   "include": ["src/**/*.ts", "src/types/*.d.ts"]
 }

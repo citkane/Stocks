@@ -1,7 +1,5 @@
-import { AppElement } from "../AppElement";
-
-import { type Cache, Brokers } from "../../app";
-import type { App } from "../../App";
+import { AppElement } from "@frontend/components/AppElement.ts";
+import { type App, type Cache, Brokers } from "frontend";
 
 export class PositionRow extends AppElement {
   constructor() {

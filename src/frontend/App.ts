@@ -1,10 +1,14 @@
-import { Api } from "./app";
-import { ClientWs } from "./app/servers";
-
-import "../types/frontend";
-import type { Messenger } from "..";
-import type { Brokers, Events, Cache } from "./app";
-import type { Saxo, Ibkr } from "./app/broker";
+import "@types/frontend.ts";
+import type { Messenger } from "types";
+import type {
+  ClientWs,
+  Api,
+  Brokers,
+  Events,
+  Cache,
+  Saxo,
+  Ibkr,
+} from "frontend";
 
 export class App {
   constructor(

@@ -1,6 +1,5 @@
-import type { App, Cache } from ".";
-import type { saxo_t } from "../types";
-import type { Brokers } from "./brokers";
+import type { App, Cache, Brokers } from "backend";
+import type { saxo_t } from "types";
 
 type auth_code_t = saxo_t.auth_code_t;
 

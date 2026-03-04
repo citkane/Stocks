@@ -1,6 +1,5 @@
-import { AppElement } from "../AppElement";
-import { Cache, Brokers } from "../../app/index.ts";
-import type { App } from "../../App";
+import { AppElement } from "@frontend/components/AppElement.ts";
+import { Brokers, type Cache, type App } from "frontend";
 
 export class AccountRow extends AppElement {
   constructor() {

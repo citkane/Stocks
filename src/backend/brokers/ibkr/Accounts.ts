@@ -1,5 +1,5 @@
-import type { Ibkr } from "..";
-import type { ibkr_t } from "../../../types";
+import type { Ibkr } from "backend";
+import type { ibkr_t } from "types";
 
 export class Accounts {
   constructor(private ibkr: Ibkr) {}

@@ -1,7 +1,5 @@
-import * as conf from "../../../../conf.json";
-import { Messenger } from "../../../Messenger";
-import { Ws } from "../../../Ws";
-import { util } from "../../../Util";
+import * as conf from "conf";
+import { Messenger, Ws, util } from "common";
 
 import type { Api } from "../../app";
 import type { App } from "../../App";

@@ -1,11 +1,11 @@
 import type {
   topic_req_t as topic_req_b_t,
   topic_set_t as topic_set_b_t,
-} from "./backend/Api.ts";
+} from "backend";
 import type {
   topic_req_t as topic_req_f_t,
   topic_set_t as topic_set_f_t,
-} from "./frontend/app/Api.ts";
+} from "frontend";
 
 type context_t = void | "backend" | "frontend";
 type topic_t<T = void> = topic_req_t<T> | topic_set_t<T>;

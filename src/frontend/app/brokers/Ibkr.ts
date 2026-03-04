@@ -1,6 +1,5 @@
-import { factory, type factory_t } from "./ibkr/index.ts";
-import { Init } from "../Init.ts";
-import { Login } from "./ibkr/Login";
+import { Login, factory, type factory_t } from "frontend/ibkr";
+import { Init } from "@frontend/app/Init";
 
 export class Ibkr extends Init {
   constructor() {

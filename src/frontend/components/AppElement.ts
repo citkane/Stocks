@@ -1,6 +1,4 @@
-import type { Events, Cache } from "../app";
-import type { App } from "../App";
-import type { component_key_t } from "../app/Events";
+import type { App, Events, Cache, component_key_t } from "frontend";
 
 type watch_fnc_t = (old_value: string, new_value: string) => void;
 

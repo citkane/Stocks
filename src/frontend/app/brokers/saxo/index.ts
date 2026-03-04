@@ -1,8 +1,8 @@
 import { Authorise } from "./Authorise.ts";
 import { Login } from "./Login.ts";
+export { Authorise, Login };
 
-import type { Saxo } from "../index.ts";
-
+import type { Saxo } from "frontend";
 export type factory_t = ReturnType<typeof factory>;
 
 export function factory(broker: Saxo) {

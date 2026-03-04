@@ -1,4 +1,4 @@
-import { Init } from "./Init.ts";
+import { Init } from "@frontend/app/Init";
 
 const account_headers = ["broker", "alias", "currency", "id"];
 const stock_headers = ["description", "ticker", "positions"];

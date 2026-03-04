@@ -1,5 +1,5 @@
-import * as conf from "../../../conf.json";
-import index_html from "../../frontend/index.html";
+import * as conf from "conf";
+import index_html from "@frontend/index.html";
 
 export class ServerHttp {
   constructor() {

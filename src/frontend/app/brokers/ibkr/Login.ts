@@ -1,6 +1,5 @@
-import { ibkr as conf } from "../../../../../conf.json";
-import type { Ibkr } from "..";
-import { Brokers } from "../../Brokers";
+import { ibkr as conf } from "conf";
+import { Brokers, type Ibkr } from "frontend";
 
 export class Login {
   constructor(private ibkr: Ibkr) {

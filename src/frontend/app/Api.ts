@@ -1,4 +1,4 @@
-import { Init } from "./Init.ts";
+import { Init } from "@frontend/app/Init";
 
 export type topic_set_t = keyof InstanceType<typeof Api>["set"];
 export type topic_req_t = keyof InstanceType<typeof Api>["request"];

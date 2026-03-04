@@ -1,4 +1,4 @@
-import type { App } from "../frontend";
+import type { App } from "@frontend/App";
 
 declare global {
   interface Window {

@@ -1,5 +1,5 @@
-import { RateLimiter } from "../common/RateLimiter.ts";
-import { ibkr as conf } from "../../../../conf.json";
+import { RateLimiter } from "backend";
+import { ibkr as conf } from "conf";
 
 import type { Ibkr } from "..";
 

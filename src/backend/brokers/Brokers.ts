@@ -1,6 +1,4 @@
-import { Saxo, Ibkr } from "./index.ts";
-
-import type { App } from "..";
+import { Saxo, Ibkr, type App } from "backend";
 
 export class Brokers {
   constructor(private app: App) {
@@ -20,7 +18,7 @@ export class Brokers {
   get_saxo_token = (code: string) => this.saxo.set_token(code);
 
   private init_data = () =>
-    this.are_brokers_authorised()
+    this.wait_for_brokers_authorised()
       .then(this.get_accounts)
       .then(this.get_positions)
       .then(() => {
@@ -28,10 +26,10 @@ export class Brokers {
         return true;
       });
 
-  private are_brokers_authorised() {
+  private wait_for_brokers_authorised() {
     return Promise.all([
-      this.is_broker_authorised("ibkr"),
-      this.is_broker_authorised("saxo"),
+      this.saxo.wait_for_authorised(),
+      this.ibkr.wait_for_authorised(),
     ]);
   }
 

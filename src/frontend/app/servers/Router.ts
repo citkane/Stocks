@@ -1,6 +1,5 @@
-import type { App } from "../../App";
-import type { Brokers } from "../broker";
-import * as conf from "../../../../conf.json";
+import * as conf from "conf";
+import type { App, Brokers } from "frontend";
 
 export class Router {
   constructor(private app: App) {

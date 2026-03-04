@@ -1,8 +1,14 @@
-import type { Api, Events, Cache, Brokers } from ".";
-import type { Messenger } from "../..";
-import type { App } from "../App";
-import type { Ibkr, Saxo } from "./broker";
-import type { ClientWs } from "./servers";
+import type { Messenger } from "common";
+import type {
+  Api,
+  Events,
+  Cache,
+  App,
+  Brokers,
+  ClientWs,
+  Saxo,
+  Ibkr,
+} from "frontend";
 
 export class Init {
   public init = (app: App) => {

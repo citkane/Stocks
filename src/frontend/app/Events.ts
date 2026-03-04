@@ -1,4 +1,4 @@
-import * as components from "../components";
+import type * as components from "@frontend/components";
 
 type component_t = InstanceType<typeof HTMLElement>;
 type callback_t = (data: any) => any;

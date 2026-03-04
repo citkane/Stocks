@@ -1,8 +1,6 @@
-import { Fetch, factory, type factory_t } from "./ibkr/index.ts";
-
-import type { App, Cache } from "..";
-import type { ServerWs } from "../servers";
-import type { ibkr_t } from "../../types/index.ts";
+import { Fetch, factory, type factory_t } from "backend/ibkr";
+import type { App, Cache, ServerWs } from "backend";
+import type { ibkr_t } from "types";
 
 const base_currency: currency_t = "EUR";
 
@@ -18,20 +16,23 @@ export class Ibkr extends Fetch {
     this.cache = this.app.cache;
     this.ws = this.app.ws;
 
-    this.authorise
-      .poll_authenticated()
-      .then(() => this.ws.publish("authorised", true, ["ibkr"]));
+    this.authorise.wait_for_authorised().then(() => {
+      this.authorise.keep_alive();
+      this.ws.publish("authorised", true, ["ibkr"]);
+    });
   }
 
-  is_authorised = () => this.authorise.is_authenticated();
-  get_accounts = async () => {
+  public is_authorised = () => this.authorise.is_authorised();
+  public wait_for_authorised = () => this.authorise.wait_for_authorised();
+
+  public get_accounts = async () => {
     return this.accounts.get_accounts().then((accounts) => {
       this.cache.add.accounts(accounts, "ibkr");
       console.json("IBKR accounts", accounts);
       return true;
     });
   };
-  get_positions = async () => {
+  public get_positions = async () => {
     if (this.cache.positions.length > 0) return Promise.resolve(true);
     if (!this.cache.ibkr_accounts) await this.get_accounts();
 
