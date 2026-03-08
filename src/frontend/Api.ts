@@ -11,11 +11,9 @@ export class Api extends Init implements Api_t {
     topics: (p: req_t) => p.messenger.response(p.req_uid, this.topics),
   };
   set = {
-    backend_ready: () => this.brokers!.is_data_ready(),
-    authorised: (success: boolean, broker: broker_t) =>
-      this.brokers.set_broker_authorised(success, broker),
-    position: (position: position_t) => this.brokers.position(position),
-    account: (account: account_t) => this.brokers.account(account),
+    backend_ready: () => this.brokers!.wait_for_cache(),
+    position: (position: position_t) => this.brokers.cache_position(position),
+    account: (account: account_t) => this.brokers.cache_account(account),
     shutdown: () => window.close(),
   };
 

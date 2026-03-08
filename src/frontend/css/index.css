@@ -1,17 +1,30 @@
+@import "./reset.css";
+@import "./grid.css";
+@import "./widgets.css";
+@import "./accounts/accounts-root.css";
+@import "./stocks/stocks-root.css";
+@import "./positions/positions-root.css";
+
 * {
   box-sizing: border-box;
 }
 
-html {
+html,
+body {
   width: 100vw;
+  height: 100vh;
+  overflow-y: scroll;
   position: relative;
   font-family: sans-serif;
+  h1 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
 }
 
 body {
-  position: relative;
-  width: 100%;
-  display: block;
   padding: 2em;
 
   .root-container {
@@ -19,15 +32,9 @@ body {
     position: relative;
     width: 100%;
   }
-
-  h1 {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin-top: 2em;
-    margin-bottom: 2em;
-  }
 }
 
+/*
 table,
 thead,
 tbody,
@@ -47,28 +54,9 @@ table {
     font-weight: bold;
   }
 }
+*/
 
-positions-root {
-  display: block;
-  position: relative;
-  overflow-y: hidden;
-
-  transition: height 0.75s;
-
-  > table {
-    margin: 2em;
-  }
-
-  > table > thead {
-    position: relative;
-    z-index: 0;
-  }
-
-  &[state="closed"] {
-    height: 0 !important;
-  }
-}
-
+/*
 stocks-root {
   > table {
     > tbody {
@@ -111,3 +99,4 @@ stocks-root {
     }
   }
 }
+  */

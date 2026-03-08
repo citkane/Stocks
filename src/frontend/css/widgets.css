@@ -1,0 +1,10 @@
+money-string {
+  display: inline-block;
+  text-align: right;
+  &.pl {
+    color: green;
+  }
+  &.pl.loss {
+    color: red;
+  }
+}

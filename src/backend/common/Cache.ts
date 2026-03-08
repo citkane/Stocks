@@ -1,77 +1,63 @@
-import type { ibkr_t, saxo_t } from "types";
-import { Account, Position, Transactions } from "backend";
-
-type native_position_t = saxo_t.position_t | ibkr_t.position_t;
-type native_account_t = saxo_t.account_t | ibkr_t.account_t;
+//type native_position_t = saxo_t.position_t | ibkr_t.position_t;
+//type native_account_t = saxo_t.account_t | ibkr_t.account_t;
 
 export class Cache {
   get ibkr_accounts() {
-    return this._ibkr_accounts.size
-      ? [...this._ibkr_accounts.values()]
-      : undefined;
-  }
-  get ibkr_account_ids() {
-    if (!this._ibkr_accounts.size) {
-      throw Error("cant fetch IBKR accounts from cache before setting");
-    }
-    return [...this._ibkr_accounts.keys()];
+    return this._ibkr_accounts.size ? [...this._ibkr_accounts.values()] : [];
   }
   get ibkr_positions() {
-    return this._ibkr_positions.size
-      ? [...this._ibkr_positions.values()]
-      : undefined;
+    return this._ibkr_positions.size ? [...this._ibkr_positions.values()] : [];
   }
-  get ibkr_transactions() {
-    return this._ibkr_transactions.size
-      ? [...this._ibkr_transactions.values()]
-      : undefined;
+  get ibkr_account_ids() {
+    return [...this._ibkr_accounts.keys()];
   }
+
+  get saxo_accounts() {
+    return this._saxo_accounts.size ? [...this._saxo_accounts.values()] : [];
+  }
+  get saxo_positions() {
+    return this._saxo_positions.size ? [...this._saxo_positions.values()] : [];
+  }
+
   get accounts() {
-    const size = this._ibkr_accounts.size + this._saxo_accounts.size;
-    return size
-      ? [...this._ibkr_accounts.values(), ...this._saxo_accounts.values()]
-      : [];
+    return [...this.saxo_accounts, ...this.ibkr_accounts];
   }
+  set accounts(a: account_t[]) {
+    a.forEach(this.add.account);
+  }
+
   get positions() {
-    const size = this._ibkr_positions.size + this._saxo_positions.size;
-    return size
-      ? [...this._ibkr_positions.values(), ...this._saxo_positions.values()]
-      : [];
+    return [...this.saxo_positions, ...this.ibkr_positions];
   }
+  set positions(p: position_t[]) {
+    p.forEach(this.add.position);
+  }
+
+  static get fx_pairs() {
+    return this._fx_pairs;
+  }
+  static get has_fx_pairs() {
+    return Object.keys(this._fx_pairs).length > 0;
+  }
+  static set fx_pairs(pairs: fx_pairs_t) {
+    this._fx_pairs = pairs;
+  }
+
   add = {
-    account: (native_account: native_account_t, broker: broker_t) => {
-      const account = new Account(native_account, broker).map();
-      const { original_id } = account;
-      if (account.broker === "saxo")
-        this._saxo_accounts.set(original_id, account);
-      if (account.broker === "ibkr")
-        this._ibkr_accounts.set(original_id, account);
+    account: (a: account_t) => {
+      const { original_id } = a;
+      if (a.broker === "saxo") this._saxo_accounts.set(original_id, a);
+      if (a.broker === "ibkr") this._ibkr_accounts.set(original_id, a);
     },
-    position: (native_position: native_position_t, broker: broker_t) => {
-      const position = new Position(native_position, broker).map();
-      const { original_id } = position;
-      if (position.broker === "saxo")
-        this._saxo_positions.set(original_id, position);
-      if (position.broker === "ibkr")
-        this._ibkr_positions.set(original_id, position);
-    },
-    accounts: (native_accounts: native_account_t[], broker: broker_t) => {
-      native_accounts.forEach((account) => this.add.account(account, broker));
-    },
-    positions: (native_positions: native_position_t[], broker: broker_t) => {
-      native_positions.forEach((native_position) =>
-        this.add.position(native_position, broker),
-      );
-    },
-    transactions: (transactions: ibkr_t.transaction_t[]) => {
-      const { conid } = transactions[0]!;
-      const transaction = new Transactions(transactions).map();
-      this._ibkr_transactions.set(conid.toString(), transaction);
+    position: (p: position_t) => {
+      const { original_id } = p;
+      if (p.broker === "saxo") this._saxo_positions.set(original_id, p);
+      if (p.broker === "ibkr") this._ibkr_positions.set(original_id, p);
     },
   };
   private _saxo_accounts = new Map<string, account_t>();
   private _saxo_positions = new Map<string, position_t>();
   private _ibkr_accounts = new Map<string, account_t>();
   private _ibkr_positions = new Map<string, position_t>();
-  private _ibkr_transactions = new Map<string, transaction_t>();
+  private static _fx_pairs: fx_pairs_t = {};
 }

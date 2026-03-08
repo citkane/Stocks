@@ -1,46 +1,37 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Brokers } from "frontend";
-import { util } from "common";
+import { StocksRoot } from "../stocks";
 
 export class PositionsRoot extends AppElement {
-  static observedAttributes = ["ready", "state"];
+  static observedAttributes = ["ticker", "state", "span"];
 
   constructor() {
     super();
     this.set_topic(this);
+    this.template_to_self("position-root");
 
-    this.app = window.app;
-    this.cache = this.app.cache;
-    this.ticker = this.getAttribute("ticker")!;
+    this.classList.add("grid");
+    this.set_grid_columns();
+
+    this.watch("state", this.open_close);
+    this.watch("ticker", this.render);
+    this.watch("span", this.span);
+  }
+
+  private render = () => {
+    this.cache.positions
+      .filter((p) => p.ticker === this.ticker)
+      .forEach(this.append_position_row);
 
     this.set_html_height();
     this.setAttribute("state", "closed");
-    this.watch("state", this.open_close);
-  }
-  connectedCallback() {
-    this.render();
-  }
+    const values = StocksRoot.sum_values([...this.children]);
+    this.set_values_to_props(values);
+  };
+  private append_position_row = (p: position_t) => {
+    const row = this.make_element("position-row", "", `id=${p.id}`);
+    this.appendChild(row);
+  };
 
-  private render() {
-    this.thead.appendChild(this.make_element("tr", this.headers_html));
-    this.body_children.forEach((child) => this.tbody.appendChild(child));
-    this.appendChild(this.table);
-  }
-  private get headers_html() {
-    return Brokers.positions_headers
-      .map((name) => {
-        return `<th name=${name}>${util.Title_Case(name)}</th>`;
-      }, [])
-      .join("");
-  }
-  private get body_children() {
-    const positions = this.cache!.positions.filter(
-      (p) => p.ticker === this.ticker,
-    );
-    return positions?.map((position) => {
-      return this.make_element("position-row", "", `id=${position.id}`);
-    });
-  }
   private open_close = (old_value: string, new_value: string) => {
     if (old_value === new_value) return;
     this.set_html_height();
@@ -48,7 +39,18 @@ export class PositionsRoot extends AppElement {
   };
 
   private set_html_height() {
-    this.setAttribute("style", `height:${this.scrollHeight}px`);
+    this.style.height = `${this.scrollHeight}px`;
   }
-  private ticker: string;
+  private get ticker() {
+    return this.getAttribute("ticker")!;
+  }
+  private span = () => {
+    const span = this.getAttribute("span");
+    this.style.gridColumn = `1/${span}`;
+  };
+  private set_values_to_props(values: { [key: string]: number }) {
+    Object.keys(values).forEach((key) =>
+      this.setAttribute(key, values[key]!.toString()),
+    );
+  }
 }

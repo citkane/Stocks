@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-app_pid_file="$(pwd)/$temp_dir/app.pid"
+app_pid_file="$temp_dir/app.pid"
 app_index="$(pwd)/src/backend/index.ts"
 
 function app_start {
@@ -11,7 +11,6 @@ function app_start {
 		echo "$pid" > "$app_pid_file"
 	)
 	sleep 1
-	echo "App started"
 }
 
 function app_stop {

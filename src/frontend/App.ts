@@ -30,10 +30,10 @@ export class App {
   public run = async () => {
     try {
       console.info("App awaiting authorisation");
-      await this.brokers.authorise_brokers();
+      await this.brokers.wait_for_auth();
 
       console.info("App awaiting warm cache");
-      await this.brokers.is_data_ready();
+      await this.brokers.wait_for_cache();
       await this.warm_the_cache();
 
       console.info("App ready");
@@ -59,7 +59,7 @@ export class App {
     app_element?.setAttribute("ready", "true");
   };
   private warm_the_cache = async () => {
-    const [accounts, positions] = await this.brokers.request_data();
+    const [accounts, positions] = await this.brokers.request_cache();
     accounts.forEach(this.cache.add.account);
     positions.forEach(this.cache.add.position);
   };

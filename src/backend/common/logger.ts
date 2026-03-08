@@ -1,4 +1,4 @@
-const log_dir = "logs";
+const log_dir = ".logs";
 const error_file = Bun.file(`${log_dir}/error.log`);
 const log_file = Bun.file(`${log_dir}/info.log`);
 const log_writer = log_file.writer();
@@ -32,7 +32,7 @@ console.error = (err: Error, cause?: string) => {
 
 console.json = async (name: string, object: object) => {
   const json = JSON.stringify(object, null, 4);
-  name = name.replace(" ", "_");
+  name = name.replaceAll(" ", "_");
   const json_file = Bun.file(`${log_dir}/${name}.json`);
   await json_file.write(json);
 };

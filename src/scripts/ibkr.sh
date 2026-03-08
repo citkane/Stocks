@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ibkr_pid_file="$(pwd)/$temp_dir/ibkr.pid"
+ibkr_pid_file="$temp_dir/ibkr.pid"
 ibkr_portal="clientportal.beta.gw"
 ibkr_download=https://download2.interactivebrokers.com/portal/${ibkr_portal}.zip
 
@@ -12,13 +12,12 @@ function ibkr_install {
 }
 
 function ibkr_start {
-	process_running "$ibkr_pid_file" && 
+	ibkr_running && 
 	echo "IBKR portal already running" && 
 	return 1
 	(
-		root_dir=$(pwd)
 		cd $ibkr_portal || exit
-		sh bin/run.sh root/conf.yaml > "$root_dir/logs/ibkr.log" & child_pid=$!
+		sh bin/run.sh root/conf.yaml > "$log_dir/ibkr.log" & child_pid=$!
 		sleep 1
 		java_pid=$(pgrep -P $child_pid java)
 		echo "$java_pid" > "$ibkr_pid_file"

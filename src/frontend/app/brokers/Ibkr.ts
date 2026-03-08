@@ -11,7 +11,7 @@ export class Ibkr extends Init {
   }
 
   await_login = () => this.login.await_login();
-  authorised = (_success: boolean) => Login.got_login();
+  //authorised = (_success: boolean) => Login.got_login();
 
   protected login: factory_t["login"];
 }

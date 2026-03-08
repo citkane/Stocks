@@ -12,7 +12,7 @@ export class App {
 
     this.api.init(this);
     this.open_browser();
-    this.brokers.init();
+    this.brokers.init_brokers().catch((err) => console.error(err));
 
     this.add_shutdown_fnc(this.close_clients);
     process.on("SIGINT", this.shutdown);

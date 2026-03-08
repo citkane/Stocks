@@ -20,8 +20,8 @@ export class Transactions {
     const account_id = transfers[transfers.length - 1]?.acctid || buy.acctid!;
     const description = util.Title_Case(buy.desc!);
     const fx_buy = buy.fxRate;
-    const purchase_price = buy?.pr!;
-    const date = util.date(buy?.date);
+    const price_buy = buy?.pr!;
+    const date = util.date_time(buy?.date);
 
     return {
       position,
@@ -29,7 +29,7 @@ export class Transactions {
       account_id,
       description,
       fx_buy,
-      purchase_price,
+      price_buy,
       date,
       external_transfer,
     };

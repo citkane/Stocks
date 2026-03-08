@@ -1,6 +1,4 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Brokers } from "frontend";
-import { util } from "common";
 
 export class AccountsRoot extends AppElement {
   static observedAttributes = ["ready"];
@@ -8,26 +6,21 @@ export class AccountsRoot extends AppElement {
   constructor() {
     super();
     this.set_topic(this);
-    this.ready().then(this.render);
+    this.template_to_self("accounts-root");
+    this.set_grid_columns();
+
+    this.watch("ready", this.ready);
   }
 
   private render = () => {
-    this.thead.appendChild(this.make_element("tr", this.headers_html));
-    this.body_children?.forEach((child) => this.tbody.appendChild(child));
-
-    this.appendChild(this.table);
+    this.cache.accounts.forEach((a) => {
+      const account_row = this.make_element("account-row", "", `id="${a.id}"`);
+      this.appendChild(account_row);
+    });
   };
 
-  private get headers_html() {
-    return Brokers.account_headers
-      .map((name) => {
-        return `<th name="${name}">${util.Title_Case(name)}</th>`;
-      }, [])
-      .join("");
-  }
-  private get body_children() {
-    return this.cache?.accounts.map((account) => {
-      return this.make_element("account-row", "", `id="${account.id}"`);
-    });
-  }
+  private ready = (old_value: any, new_value: any) => {
+    if (old_value === new_value) return;
+    this.render();
+  };
 }

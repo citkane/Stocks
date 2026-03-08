@@ -1,54 +1,60 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { type App, type Cache, Brokers } from "frontend";
+import { StocksRoot } from "./StocksRoot";
 
 export class StockRow extends AppElement {
+  static observedAttributes = StocksRoot.value_keys;
+
   constructor() {
     super();
     this.set_topic(this);
+    this.template_to_self("stock-row");
+    this.classList.add("row");
 
-    this.app = window.app;
-    this.cache = this.app.cache;
-    this.ticker = this.getAttribute("id")!;
+    StocksRoot.value_keys.forEach((key) =>
+      this.watch(key, (old_value: string, new_value: string) =>
+        this.set_value(old_value, new_value, key),
+      ),
+    );
   }
 
   connectedCallback() {
+    this.positions.setAttribute("ticker", this.ticker);
+    this.positions.setAttribute("span", this.children.length.toString());
     this.render();
   }
 
   private render() {
-    this.row_children.forEach((child) => this.appendChild(child));
+    const stock = this.cache.get.stock(this.ticker)!;
+    const pos_count = stock.positions.size.toString();
 
-    const newContainer = this.change_this_container("tr");
-    this.add_positions_toggle(newContainer as StockRow);
-  }
-  private add_positions_toggle(row: StockRow) {
-    const tbody = row.parentElement;
-    const positions = tbody?.querySelector(
-      `positions-root[ticker="${this.ticker}"]`,
+    this.query_by_name("description").innerHTML = stock.description;
+    this.query_by_name("ticker").innerHTML = stock.ticker;
+    this.query_by_name("positions").appendChild(this.toggle_button(pos_count));
+
+    StocksRoot.value_keys.forEach((key) =>
+      this.setAttribute(key, this.positions.getAttribute(key)!),
     );
-    const button = row.querySelector(`td[name="positions"] button`)!;
+  }
+  private set_value = (old_value: string, new_value: string, key: string) => {
+    if (old_value === new_value) return;
+    this.query_by_name(key).setAttribute("value", new_value);
+  };
+  private toggle_button = (count: string) => {
+    const button = this.make_element("button", count);
+    button.addEventListener("click", this.toggle);
+    return button;
+  };
 
-    button.addEventListener("click", (_e) => {
-      const state =
-        positions?.getAttribute("state") === "open" ? "closed" : "open";
-      positions?.setAttribute("state", state);
-    });
-  }
-  private get stock() {
-    return this.cache.get.stock(this.ticker)!;
-  }
-  private get row_children() {
-    return Brokers.stock_headers.map((key) => {
-      let value = this.stock[key as keyof stock_t];
-      if (key === "positions") {
-        value = (value as Set<position_t>).size.toString();
-        value = `<button>${value}</button>`;
-      }
-      return this.make_element("td", value as string, `name="${key}"`);
-    });
+  private toggle = () => {
+    const state = this.positions.getAttribute("state");
+    this.positions.setAttribute("state", state === "open" ? "closed" : "open");
+  };
+
+  private get ticker() {
+    return this.getAttribute("ticker")!;
   }
 
-  protected override app: App;
-  protected override cache: Cache;
-  ticker: string;
+  private get positions() {
+    return this.querySelector("positions-root")!;
+  }
 }

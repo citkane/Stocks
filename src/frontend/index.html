@@ -1,25 +1,96 @@
 <!doctype html>
 
 <head>
-  <link rel="stylesheet" href="./css/reset.css" />
   <link rel="stylesheet" href="./css/index.css" />
-
   <script src="."></script>
 </head>
 
 <body>
   <app-root>
-    <accounts-root class="root-container">
-      <h1>Accounts</h1>
-    </accounts-root>
-    <stocks-root class="root-container">
-      <h1>Stocks</h1>
-    </stocks-root>
+    <h1>Accounts</h1>
+    <accounts-root class="grid"> </accounts-root>
+    <h1>Stocks</h1>
+    <stocks-root class="grid"> </stocks-root>
   </app-root>
-  <template id="table">
-    <table>
-      <thead></thead>
-      <tbody></tbody>
-    </table>
+
+  <template id="accounts-root">
+    <div class="row header">
+      <div>broker</div>
+      <div>alias</div>
+      <div>currency</div>
+      <div>id</div>
+    </div>
+  </template>
+  <template id="account-row">
+    <div name="broker"></div>
+    <div name="alias"></div>
+    <div name="currency"></div>
+    <div name="id"></div>
+  </template>
+
+  <template id="stocks-root">
+    <div class="row header">
+      <div>description</div>
+      <div>ticker</div>
+      <div info="Total cost at purchase in base currency">
+        <span>buy value:</span>
+        <money-string name="buy_value" currency="€"></money-string>
+      </div>
+      <div info="Current market value in base currency">
+        <span>market value:</span>
+        <money-string name="market_value" currency="€"></money-string>
+      </div>
+      <div
+        info="Unrealised total profit/loss over position lifetime in base currency"
+      >
+        <span>pl:</span>
+        <money-string name="pl" currency="€" pl></money-string>
+      </div>
+      <div info="Profit/Loss as result of fx fluctuation in base currency">
+        <span>fx p/l:</span>
+        <money-string name="fx_pl" currency="€" pl></money-string>
+      </div>
+      <div>positions</div>
+    </div>
+  </template>
+  <template id="stock-row">
+    <div name="description"></div>
+    <div name="ticker"></div>
+    <money-string name="buy_value" currency="€"></money-string>
+    <money-string name="market_value" currency="€"></money-string>
+    <money-string name="pl" currency="€" pl></money-string>
+    <money-string name="fx_pl" currency="€" pl></money-string>
+    <div name="positions" class="center"></div>
+    <positions-root></positions-root>
+  </template>
+
+  <template id="position-root">
+    <div class="header row">
+      <div info="Purchase date">date</div>
+      <div info="Amount of stocks">position</div>
+      <div info="Total cost at purchase in base currency">buy</div>
+      <div info="Current market value in base currency">market</div>
+      <div
+        info="Unrealised total profit/loss over position lifetime in base currency"
+      >
+        p/l
+      </div>
+      <div info="Profit/Loss as result of fx fluctuation in base currency">
+        fx p/l
+      </div>
+      <div info="Broker where position resides">broker</div>
+      <div info="Exchange where dive position was purchased">exchange</div>
+    </div>
+  </template>
+
+  <template id="position-row" class="row">
+    <date-string name="date"></date-string>
+    <div name="position" class="center"></div>
+    <money-string name="buy" currency="€"></money-string>
+    <money-string name="market" currency="€"></money-string>
+    <money-string name="pl" currency="€" pl></money-string>
+    <money-string name="fx_pl" currency="€" pl></money-string>
+    <div name="broker" class="center"></div>
+    <div name="exchange" class="center"></div>
   </template>
 </body>

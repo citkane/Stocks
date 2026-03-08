@@ -1,18 +1,19 @@
-import "./components";
-import { App } from "@frontend/App.ts";
+import "@frontend/components/index";
+import { App } from "@frontend/App";
+import { Api } from "@frontend/Api";
 import {
   Router,
   ClientWs,
   Ibkr,
   Saxo,
   Brokers,
-  Api,
   Events,
   Cache,
 } from "@frontend/app/index.ts";
 
-export * from "./app/index.ts";
-export { App };
+export * from "@frontend/Api.ts";
+export * from "@frontend/app/index.ts";
+export { App, Api };
 
 const brokers = new Brokers();
 const api = new Api();

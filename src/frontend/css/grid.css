@@ -1,0 +1,17 @@
+.grid {
+  display: grid;
+  width: 100%;
+  > .row {
+    display: contents;
+    &.header {
+      text-align: center;
+    }
+    > *:not(.grid) {
+      &.center {
+        text-align: center;
+      }
+      padding: 5px;
+      grid-column: auto;
+    }
+  }
+}

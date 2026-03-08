@@ -43,13 +43,69 @@ export type account_t = {
 };
 
 export type position_t = {
-  PositionId: string;
   DisplayAndFormat: {
     Currency: currency_t;
     Decimals: number;
     Description: string;
     Format: string;
     Symbol: string;
+  };
+  Exchange: {
+    Description: string;
+    ExchangeId: string;
+    IsOpen: boolean;
+    TimeZoneId: string;
+  };
+  NetPositionId: string;
+  PositionBase: {
+    AccountId: string;
+    AccountKey: string;
+    Amount: number;
+    AssetType: string;
+    CanBeClosed: boolean;
+    ClientId: string;
+    CloseConversionRateSettled: boolean;
+    CorrelationKey: string;
+    ExecutionTimeOpen: string;
+    IsForceOpen: boolean;
+    IsMarketOpen: boolean;
+    LockedByBackOffice: boolean;
+    OpenBondPoolFactor: 1;
+    OpenPrice: number;
+    OpenPriceIncludingCosts: number;
+    RelatedOpenOrders: [];
+    SourceOrderId: string;
+    Status: string;
+    Uic: number;
+    ValueDate: string;
+  };
+  PositionId: string;
+  PositionView: {
+    Ask: number;
+    Bid: number;
+    CalculationReliability: string;
+    ConversionRateCurrent: number;
+    ConversionRateOpen: number;
+    CurrentBondPoolFactor: number;
+    CurrentPrice: number;
+    CurrentPriceDelayMinutes: number;
+    CurrentPriceLastTraded: string;
+    CurrentPriceType: string;
+    Exposure: number;
+    ExposureCurrency: currency_t;
+    ExposureInBaseCurrency: number;
+    InstrumentPriceDayPercentChange: number;
+    MarketState: string;
+    MarketValue: number;
+    MarketValueInBaseCurrency: number;
+    MarketValueOpen: number;
+    MarketValueOpenInBaseCurrency: number;
+    ProfitLossOnTrade: number;
+    ProfitLossOnTradeInBaseCurrency: number;
+    ProfitLossOnTradeIntraday: number;
+    ProfitLossOnTradeIntradayInBaseCurrency: number;
+    TradeCostsTotal: number;
+    TradeCostsTotalInBaseCurrency: number;
   };
 };
 export type accounts_t = {

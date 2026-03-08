@@ -1,0 +1,8 @@
+positions-root {
+  overflow-y: hidden;
+  transition: height 0.75s;
+
+  &[state="closed"] {
+    height: 0 !important;
+  }
+}

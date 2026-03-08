@@ -13,13 +13,14 @@ export class util {
       : "";
   }
   static aging_days(start_date: string) {
-    const date = util.date(start_date);
-    const now = util.date();
+    const date = util.date_time(start_date);
+    const now = util.date_time();
     return Math.floor((now - date) / (24 * 60 * 60 * 1000));
   }
-  static date(date?: string) {
+  static date_time(date?: string) {
     return date ? new Date(date).getTime() : new Date().getTime();
   }
+
   static blank_resolver(): resolver_t {
     return { resolve: () => {}, reject: () => {} };
   }

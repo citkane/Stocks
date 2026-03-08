@@ -2,11 +2,11 @@
 # shellcheck disable=SC2329
 # shellcheck disable=SC1091
 
-temp_dir=".temp"
-log_dir="logs"
+temp_dir="$(pwd)/.temp"
+log_dir="$(pwd)/.logs"
 
-[ ! -d $temp_dir ] && mkdir $temp_dir
-[ ! -d $log_dir ] && mkdir $log_dir
+[ ! -d "$temp_dir" ] && mkdir "$temp_dir"
+[ ! -d "$log_dir" ] && mkdir "$log_dir"
 
 function process_running {
 	pid_file=$1
@@ -18,8 +18,9 @@ function process_running {
 function process_stop {
 	pid_file=$1
 	[ ! -f "$pid_file" ] && return 1
-	! process_running "$pid_file" && rm "$pid_file" && return 0
+	! process_running "$pid_file" && return 0
 	pid=$(cat "$pid_file")
+	rm "$pid_file"
 	kill "$pid"
 }
 

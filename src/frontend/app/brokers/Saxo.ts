@@ -11,8 +11,8 @@ export class Saxo extends Init {
     this.add_shutdown_task(Login.popup_close);
   }
 
-  req_authorise = () => this.auth.req_authorise();
-  authorised = (success: boolean) => this.auth.authorised.bind(this)(success);
+  await_login = () => this.auth.await_login();
+  //authorised = (success: boolean) => this.auth.authorised(success);
   login_backend = () => this.login.login_backend();
 
   private auth: factory_t["authorise"];

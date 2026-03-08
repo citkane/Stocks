@@ -15,24 +15,31 @@ type req_t = {
   req_uid: string;
 };
 
-type currency_t = "EUR" | "HKD" | "CNH";
+type currency_t = "EUR" | "HKD" | "CNH" | "ZAR" | "CHF";
 type broker_t = "saxo" | "ibkr";
 type position_t = {
   id: string;
   original_id: string;
   broker: broker_t;
+  account_id: string;
+  description: string;
   ticker: string;
   currency: currency_t;
   exchange: string;
-  market_price: number;
-} & transaction_t;
+  position: number;
+  fx_market: number;
+  fx_buy: number;
+  date: string | number;
+  price_market: number;
+  price_buy: number;
+};
 type transaction_t = {
   position: number;
   account_id: string;
   description: string;
   fx_buy: number;
-  date: number;
-  purchase_price: number;
+  date: number | string;
+  price_buy: number;
   open: boolean;
   external_transfer: boolean;
 };
@@ -47,6 +54,9 @@ type stock_t = {
   ticker: string;
   description: string;
   positions: Set<position_t>;
+};
+type fx_pairs_t = {
+  [key: string]: number;
 };
 
 interface Api_t {

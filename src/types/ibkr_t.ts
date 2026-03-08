@@ -86,7 +86,10 @@ export type position_t = {
   isUS: boolean;
   isEventContract: boolean;
   pageSize: number;
+  transactions: transaction_t[];
 };
+
+export type fx_rate_t = { rate: number };
 
 export type transaction_type_t =
   | "Buy"

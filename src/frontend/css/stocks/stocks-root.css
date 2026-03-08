@@ -1,0 +1,5 @@
+stocks-root {
+  > stock-row > *:not(.grid) {
+    background-color: lightgrey;
+  }
+}

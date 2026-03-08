@@ -5,13 +5,8 @@ export class Accounts {
   constructor(private saxo: Saxo) {}
   public get_accounts = () =>
     this.saxo
-      .fetch(this.endpoints.accounts())
-      .then((res) => res.json())
-      .then((data: saxo_t.accounts_t) => data.Data)
-      .catch((err) => {
-        console.error(err);
-        throw err;
-      });
+      .fetch<saxo_t.accounts_t>(this.endpoints.accounts())
+      .then((data) => data.Data);
 
   private endpoints = {
     accounts: () => "accounts",

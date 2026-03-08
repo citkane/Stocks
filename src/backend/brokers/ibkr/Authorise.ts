@@ -1,51 +1,31 @@
-import type { Ibkr } from "backend";
+import { Ibkr } from "backend";
 import type { ibkr_t } from "types";
+import { poll_for_auth, wait_for_auth } from "backend";
 
-const keep_alive_time = 60000;
+const keepalive_interval = 60000;
 
 export class Authorise {
-  constructor(private ibkr: Ibkr) {}
+  constructor(private ibkr: Ibkr) {
+    this.poll_for_auth();
+  }
+  public wait_for_auth = () => wait_for_auth.bind(this, Authorise)();
   public is_authorised = () =>
-    this.ibkr
-      .fetch(this.endpoints.tickle)
-      .then((res) => res.json())
-      .then((tickle: ibkr_t.tickle_t) => tickle.iserver.authStatus)
-      .then((status) => status.authenticated)
+    this.renew_auth()
+      .then((status) => (Authorise.is_authorised = status.authenticated))
       .catch((_err) => false);
 
-  public wait_for_authorised = () => {
-    return new Promise((resolve) => {
-      if (Authorise.is_authorised) return resolve(true);
-      const interval = setInterval(() => {
-        if (Authorise.is_authorised) {
-          clearInterval(interval);
-          resolve(true);
-        }
-      }, 10);
-    });
-  };
+  private renew_auth = () =>
+    this.ibkr
+      .fetch<ibkr_t.tickle_t>(this.endpoints.tickle)
+      .then((tickle) => tickle.iserver.authStatus);
 
-  public keep_alive = () => {
-    Authorise.is_authorised = true;
-    this.is_authorised().then((success) => {
-      if (!success) return (Authorise.is_authorised = false);
-      setTimeout(() => {
-        this.keep_alive();
-      }, keep_alive_time);
-    });
-  };
+  private poll_for_auth = () => poll_for_auth.bind(this, Authorise)();
 
   private endpoints = {
     status: "iserver/auth/status",
     tickle: "tickle",
   };
 
-  private static is_authorised = false;
+  public static is_authorised = false;
+  public static keepalive_interval = keepalive_interval;
 }
-
-//function get_authenticated(this: Ibkr) {
-//	return this.fetch(endpoints.status)
-//		.then(res => res.json())
-//		.then((status: ibkr_t.status_t) => status.authenticated)
-//		.catch(_err => false)
-//}

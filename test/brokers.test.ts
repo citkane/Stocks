@@ -12,7 +12,7 @@ describe("Brokers", () => {
         const transaction = new Transactions(t).map();
         type key_t = keyof typeof transaction;
         Object.keys(transaction).forEach((k) => {
-          if (transaction.external_transfer && k === "purchase_price") return;
+          if (transaction.external_transfer && k === "price_buy") return;
           expect(transaction[k as key_t]).not.toBeUndefined();
         });
       });

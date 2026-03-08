@@ -1,50 +1,60 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Brokers } from "frontend";
-import { util } from "common";
 
 export class StocksRoot extends AppElement {
+  static value_keys = ["market_value", "buy_value", "pl", "fx_pl"];
   static observedAttributes = ["ready"];
 
   constructor() {
     super();
     this.set_topic(this);
-    this.ready().then(this.render);
+    this.template_to_self("stocks-root");
+    this.set_grid_columns();
+
+    this.watch("ready", this.ready);
   }
-
   private render = () => {
-    const header_row = this.make_element("tr", this.headers_html);
-    this.thead.appendChild(header_row);
+    this.cache.stocks
+      .sort((a, b) => a.description.localeCompare(b.description))
+      .forEach((s) => {
+        this.appendChild(this.make_stock_row(s));
+      });
+    const values = StocksRoot.sum_values([
+      ...this.querySelectorAll("stock-row"),
+    ]);
 
-    this.body_children.forEach((children) => {
-      this.tbody.appendChild(children.stock_row);
-      this.tbody.appendChild(children.positions);
-    });
-
-    this.appendChild(this.table);
+    this.set_values_to_props(values);
   };
 
-  private get headers_html() {
-    return Brokers.stock_headers
-      .map((name) => {
-        return `<th name="${name}">${util.Title_Case(name)}</th>`;
-      }, [])
-      .join("");
-  }
-  private get body_children() {
-    const stocks = this.cache!.stocks;
-    stocks.sort((a, b) => a.description.localeCompare(b.description));
-    return stocks.map((stock) => {
-      const stock_row = this.make_element(
-        "stock-row",
-        "",
-        `id="${stock.ticker}"`,
+  private make_stock_row = (s: stock_t) =>
+    this.make_element("stock-row", "", `ticker="${s.ticker}"`);
+
+  private ready = (old_value: any, new_value: any) => {
+    if (old_value === new_value) return;
+    this.render();
+  };
+
+  private set_values_to_props(values: { [key: string]: number }) {
+    const el = this.querySelector(".header.row")!;
+    Object.keys(values).forEach((key) => {
+      el.querySelector(`[name=${key}]`)?.setAttribute(
+        "value",
+        values[key]!.toString(),
       );
-      const positions = this.make_element(
-        "positions-root",
-        "",
-        `ticker="${stock.ticker}" class="root-container"`,
-      );
-      return { stock_row, positions };
     });
   }
+  public static sum_values = (children: Element[]) =>
+    children.reduce(
+      (a, child) => {
+        StocksRoot.value_keys.forEach((key) => {
+          a[key]! += Number(child.getAttribute(key));
+        });
+        return a;
+      },
+      StocksRoot.value_keys.reduce(
+        (c, val) => {
+          return (c = { ...c, [val]: 0 });
+        },
+        {} as { [key: string]: number },
+      ),
+    );
 }

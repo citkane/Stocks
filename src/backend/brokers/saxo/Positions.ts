@@ -13,9 +13,8 @@ export class Positions {
     positions: pos_t[] = [],
   ): Promise<pos_t[]> =>
     this.saxo
-      .fetch(this.endpoints.positions(skip))
-      .then((res) => res.json())
-      .then((data: saxo_t.positions_t) =>
+      .fetch<saxo_t.positions_t>(this.endpoints.positions(skip))
+      .then((data) =>
         !!data.__next
           ? this.get_positions(skip + paging_top, [...positions, ...data.Data])
           : [...positions, ...data.Data],

@@ -4,7 +4,6 @@ import type { saxo_t } from "types";
 
 const endpoint = "token";
 const token_file = `.temp/saxo.token.json`;
-const keepalive_interval = 1190000;
 let redirect: string;
 
 export class Oauth {
@@ -23,39 +22,31 @@ export class Oauth {
     const url = conf.saxo.url.auth;
     const params = Oauth.make_token_params(code, "authorization_code");
     return this.saxo
-      .fetch(endpoint, url, params)
-      .then((res) => res.json())
-      .then((token: saxo_t.auth_token_t) => this.save_token(token))
+      .fetch<saxo_t.auth_token_t>(endpoint, url, params)
+      .then(this.save_token)
       .catch(() => false);
   };
   public refresh_token = (refresh_token: string) => {
     const url = conf.saxo.url.auth;
     const params = Oauth.make_token_params(refresh_token, "refresh_token");
     return this.saxo
-      .fetch(endpoint, url, params)
-      .then((res) => res.json())
-      .then(async (token: saxo_t.auth_token_t) => this.save_token(token))
-      .catch(() => this.remove_token());
+      .fetch<saxo_t.auth_token_t>(endpoint, url, params)
+      .then((token) => {
+        Oauth.token = token;
+        this.save_token(token);
+        return true;
+      })
+      .catch(() => this.remove_token().then(() => false));
   };
 
   private save_token = (token: saxo_t.auth_token_t) => {
-    Oauth.token = token;
-    this.keep_token_alive();
     return Bun.write(token_file, JSON.stringify(token)).then(() => true);
-  };
-
-  private keep_token_alive = () => {
-    if (!!Oauth.keepalive) return;
-    Oauth.keepalive = setInterval(() => {
-      this.refresh_token(Oauth.token.refresh_token);
-    }, keepalive_interval);
   };
 
   private remove_token = () => {
     const file = Bun.file(token_file);
     return file.exists().then(async (exists) => {
       if (exists) await file.delete();
-      return false;
     });
   };
 
@@ -80,7 +71,6 @@ export class Oauth {
     };
   };
 
-  public static keepalive?: ReturnType<typeof setInterval>;
   public static token = {
     access_token: "",
     refresh_token: "",

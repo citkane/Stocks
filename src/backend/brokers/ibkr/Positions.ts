@@ -1,6 +1,6 @@
 import { ibkr as conf } from "conf";
 import { util } from "common";
-import type { Ibkr } from "backend";
+import { Ibkr } from "backend";
 import type { ibkr_t } from "types";
 
 type post_t = { endpoint: string; params: RequestInit };
@@ -17,9 +17,10 @@ export class Positions {
     positions: position_partial_t[] = [],
   ): Promise<position_partial_t[]> =>
     this.ibkr
-      .fetch(this.endpoints.get.positions(account_id, page))
-      .then((res) => res.json())
-      .then((_positions: position_partial_t[]) =>
+      .fetch<
+        position_partial_t[]
+      >(this.endpoints.get.positions(account_id, page))
+      .then((_positions) =>
         this.page_positions(
           account_id,
           page,
@@ -27,14 +28,40 @@ export class Positions {
           _positions.length,
         ),
       );
+  public audit_positions = (positions: ibkr_t.position_t[]) =>
+    Promise.all(
+      positions.map((p) =>
+        !!p.name ? p : this.get_position(p.acctId!, p.conid),
+      ),
+    ).then((p) => p.flat());
 
-  public get_position = (account_id: string, con_id: number) =>
-    this.ibkr
-      .fetch(this.endpoints.get.position(account_id, con_id))
-      .then((res) => res.json())
-      .then((position: ibkr_t.position_t) => position);
+  public merge_position_transactions = (positions: ibkr_t.position_t[]) =>
+    Promise.all(
+      positions.map((p) =>
+        this.transactions_history(
+          this.ibkr.cache.ibkr_account_ids,
+          p.conid!,
+          Ibkr.base_currency,
+        ).then((t) => {
+          p.transactions = t;
+          return p;
+        }),
+      ),
+    ).then((p) => p.flat());
 
-  public transactions_history = (
+  //public are_positions_cached = async () => {
+  //  if (this.ibkr.cache.ibkr_positions.length > 0) return Promise.resolve(true);
+  //  if (!this.ibkr.cache.ibkr_accounts)
+  //    return this.ibkr.get_accounts().then(() => false);
+  //  return Promise.resolve(false);
+  //};
+
+  private get_position = (account_id: string, con_id: number) =>
+    this.ibkr.fetch<ibkr_t.position_t>(
+      this.endpoints.get.position(account_id, con_id),
+    );
+
+  private transactions_history = (
     account_ids: string[],
     con_id: number,
     currency: currency_t,
@@ -46,10 +73,10 @@ export class Positions {
       util.aging_days(conf.start_date),
     );
     return this.ibkr
-      .fetch(endpoint, params)
-      .then((res) => res.json())
-      .then((transactions: ibkr_t.transactions_t) => transactions.transactions);
+      .fetch<ibkr_t.transactions_t>(endpoint, params)
+      .then((transactions) => transactions.transactions);
   };
+
   private page_positions = (
     account_id: string,
     page = 0,
