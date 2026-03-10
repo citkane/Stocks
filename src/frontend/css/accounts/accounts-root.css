@@ -1,2 +1,7 @@
 accounts-root {
+  display: block;
+  position: relative;
+  .grid {
+    grid-template-columns: repeat(4, minmax(10px, 1fr));
+  }
 }

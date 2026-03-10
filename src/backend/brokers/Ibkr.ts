@@ -15,7 +15,7 @@ export class Ibkr extends Fetch {
     this.accounts = _factory.accounts;
     this.positions = _factory.positions;
 
-    this.cache_saved();
+    //this.cache_saved();
   }
 
   private cache_saved() {

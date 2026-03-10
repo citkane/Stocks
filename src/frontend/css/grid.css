@@ -1,17 +1,18 @@
 .grid {
   display: grid;
+  justify-items: stretch;
+  align-items: stretch;
+
   width: 100%;
   > .row {
     display: contents;
-    &.header {
-      text-align: center;
+
+    > * {
+      padding: var(--padding-cell);
     }
-    > *:not(.grid) {
-      &.center {
-        text-align: center;
-      }
-      padding: 5px;
-      grid-column: auto;
-    }
+  }
+  > .header {
+    text-align: center;
+    font-size: var(--font-size-small);
   }
 }

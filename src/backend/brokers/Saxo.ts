@@ -16,7 +16,7 @@ export class Saxo extends Fetch {
     this.positions = _factory.positions;
     this.accounts = _factory.accounts;
 
-    this.cache_saved();
+    //this.cache_saved();
   }
 
   private cache_saved() {

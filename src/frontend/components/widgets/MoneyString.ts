@@ -6,16 +6,17 @@ export class MoneyString extends AppElement {
 
   constructor() {
     super();
-    this.watch("value", this.render);
+    this.props.watch("value", this.handlers.render);
   }
-
-  render = (old_value: string, new_value: string) => {
-    if (old_value === new_value) return;
-    this.innerHTML = `${this.currency}${Brokers.to_money_string(this.value)}`;
-    if (this.is_pl) this.classList.add("pl");
-    this.is_loss ? this.classList.add("loss") : this.classList.remove("loss");
+  private handlers = {
+    render: (old_value: string, new_value: string) => {
+      if (old_value === new_value) return;
+      this.innerHTML = `${this.currency}${Brokers.to_money_string(this.value)}`;
+      if (this.is_pl) this.classList.add("pl");
+      this.is_loss ? this.classList.add("loss") : this.classList.remove("loss");
+    },
   };
-
+  private props = this.api.props({});
   private get value() {
     return Number(this.getAttribute("value")!);
   }

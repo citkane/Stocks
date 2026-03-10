@@ -1,9 +1,24 @@
 @import "./reset.css";
 @import "./grid.css";
 @import "./widgets.css";
+@import "./app/app-root.css";
 @import "./accounts/accounts-root.css";
 @import "./stocks/stocks-root.css";
 @import "./positions/positions-root.css";
+
+:root {
+  --padding-app: 2em;
+  --padding-cell: 5px;
+  --col-pos: green;
+  --col-neg: red;
+  --col-background-light: white;
+  --col-grid-background: rgb(232, 235, 235);
+  --col-border-light: gray;
+  --font-size-small: 0.85em;
+  --border-light: 1px solid var(--col-border-light);
+
+  --grid-columns: repeat(8, 1fr) 80px repeat(16, 1fr) 80px;
+}
 
 * {
   box-sizing: border-box;
@@ -25,13 +40,8 @@ body {
 }
 
 body {
-  padding: 2em;
-
-  .root-container {
-    display: block;
-    position: relative;
-    width: 100%;
-  }
+  padding: var(--padding-app);
+  position: relative;
 }
 
 /*

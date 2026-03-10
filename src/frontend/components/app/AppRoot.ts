@@ -6,30 +6,31 @@ export class AppRoot extends AppElement {
   constructor() {
     super();
     this.set_topic(this);
-    this.watch("ready", this.wait_for_app_ready);
+    this.props.watch("ready", this.handlers.wait_for_app_ready);
   }
 
   connectedCallback() {
-    this.ready().then(this.render);
+    this.handlers.ready().then(this.handlers.render);
   }
+  private handlers = {
+    render: () => {
+      const accounts = document.querySelector("accounts-root")!;
+      const stocks = document.querySelector("stocks-root")!;
 
-  private render = () => {
-    const accounts = document.querySelector("accounts-root")!;
-    const stocks = document.querySelector("stocks-root")!;
-
-    accounts.setAttribute("ready", "true");
-    stocks.setAttribute("ready", "true");
+      accounts.setAttribute("ready", "true");
+      stocks.setAttribute("ready", "true");
+    },
+    wait_for_app_ready: (old_value: string) => {
+      if (!!old_value) return this.ready_resolver?.reject(true);
+      this.ready_resolver?.resolve(true);
+    },
+    ready: () => {
+      return new Promise((resolve, reject) => {
+        this.ready_resolver = { resolve, reject };
+      });
+    },
   };
 
-  private wait_for_app_ready = (old_value: string) => {
-    if (!!old_value) return this.ready_resolver?.reject(true);
-    this.ready_resolver?.resolve(true);
-  };
-
-  private ready() {
-    return new Promise((resolve, reject) => {
-      this.ready_resolver = { resolve, reject };
-    });
-  }
+  private props = this.api.props({});
   private ready_resolver?: resolver_t;
 }

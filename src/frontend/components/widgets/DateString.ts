@@ -5,13 +5,16 @@ export class DateString extends AppElement {
 
   constructor() {
     super();
-    this.watch("value", this.render);
+    this.props.watch("value", this.handlers.render);
   }
 
-  render = (old_value: string, new_value: string) => {
-    if (old_value === new_value) return;
-    this.innerHTML = this.date_string(this.value);
+  private handlers = {
+    render: (old_value: string, new_value: string) => {
+      if (old_value === new_value) return;
+      this.innerHTML = this.date_string(this.value);
+    },
   };
+  private props = this.api.props({});
 
   private get value() {
     return Number(this.getAttribute("value")!);

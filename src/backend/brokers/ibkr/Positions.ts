@@ -1,6 +1,6 @@
 import { ibkr as conf } from "conf";
 import { util } from "common";
-import { Ibkr } from "backend";
+import { Brokers, Ibkr } from "backend";
 import type { ibkr_t } from "types";
 
 type post_t = { endpoint: string; params: RequestInit };
@@ -41,20 +41,13 @@ export class Positions {
         this.transactions_history(
           this.ibkr.cache.ibkr_account_ids,
           p.conid!,
-          Ibkr.base_currency,
+          Brokers.base_currency,
         ).then((t) => {
           p.transactions = t;
           return p;
         }),
       ),
     ).then((p) => p.flat());
-
-  //public are_positions_cached = async () => {
-  //  if (this.ibkr.cache.ibkr_positions.length > 0) return Promise.resolve(true);
-  //  if (!this.ibkr.cache.ibkr_accounts)
-  //    return this.ibkr.get_accounts().then(() => false);
-  //  return Promise.resolve(false);
-  //};
 
   private get_position = (account_id: string, con_id: number) =>
     this.ibkr.fetch<ibkr_t.position_t>(

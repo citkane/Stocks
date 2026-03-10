@@ -8,17 +8,20 @@
 <body>
   <app-root>
     <h1>Accounts</h1>
-    <accounts-root class="grid"> </accounts-root>
+    <accounts-root> </accounts-root>
     <h1>Stocks</h1>
-    <stocks-root class="grid"> </stocks-root>
+    <stocks-root> </stocks-root>
   </app-root>
 
+  <!-- account -->
   <template id="accounts-root">
-    <div class="row header">
-      <div>broker</div>
-      <div>alias</div>
-      <div>currency</div>
-      <div>id</div>
+    <div class="grid">
+      <div class="row header">
+        <div>broker</div>
+        <div>alias</div>
+        <div>currency</div>
+        <div>id</div>
+      </div>
     </div>
   </template>
   <template id="account-row">
@@ -28,32 +31,36 @@
     <div name="id"></div>
   </template>
 
+  <!-- stock -->
   <template id="stocks-root">
-    <div class="row header">
-      <div>description</div>
-      <div>ticker</div>
-      <div info="Total cost at purchase in base currency">
-        <span>buy value:</span>
-        <money-string name="buy_value" currency="€"></money-string>
+    <select-broker></select-broker>
+    <div class="grid">
+      <div class="row header">
+        <div name="description"><div class="cell">description</div></div>
+        <div name="ticker"><div class="cell">ticker</div></div>
+        <div name="buy_value">buy</div>
+        <div name="market_value">market</div>
+        <div name="pl">p/l</div>
+        <div name="fx_pl">fx p/l</div>
+        <div name="positions">positions</div>
       </div>
-      <div info="Current market value in base currency">
-        <span>market value:</span>
+      <div class="row money">
+        <div name="description"></div>
+        <div name="ticker"></div>
+        <money-string
+          name="buy_value"
+          currency="€"
+          class="first"
+        ></money-string>
         <money-string name="market_value" currency="€"></money-string>
-      </div>
-      <div
-        info="Unrealised total profit/loss over position lifetime in base currency"
-      >
-        <span>pl:</span>
         <money-string name="pl" currency="€" pl></money-string>
+        <money-string name="fx_pl" currency="€" pl class="last"></money-string>
+        <div name="positions"></div>
       </div>
-      <div info="Profit/Loss as result of fx fluctuation in base currency">
-        <span>fx p/l:</span>
-        <money-string name="fx_pl" currency="€" pl></money-string>
-      </div>
-      <div>positions</div>
     </div>
   </template>
   <template id="stock-row">
+    <!--<border></border>-->
     <div name="description"></div>
     <div name="ticker"></div>
     <money-string name="buy_value" currency="€"></money-string>
@@ -64,33 +71,39 @@
     <positions-root></positions-root>
   </template>
 
+  <!-- position -->
   <template id="position-root">
-    <div class="header row">
-      <div info="Purchase date">date</div>
-      <div info="Amount of stocks">position</div>
-      <div info="Total cost at purchase in base currency">buy</div>
-      <div info="Current market value in base currency">market</div>
-      <div
-        info="Unrealised total profit/loss over position lifetime in base currency"
-      >
-        p/l
+    <div class="grid">
+      <div class="header row">
+        <div name="exchange">exch.</div>
+        <div name="date">date</div>
+        <div name="position">position</div>
+        <div name="buy_value">buy</div>
+        <div name="market_value">market</div>
+        <div name="pl">p/l</div>
+        <div name="fx_pl">fx p/l</div>
+        <div name="broker">broker</div>
       </div>
-      <div info="Profit/Loss as result of fx fluctuation in base currency">
-        fx p/l
-      </div>
-      <div info="Broker where position resides">broker</div>
-      <div info="Exchange where dive position was purchased">exchange</div>
     </div>
   </template>
 
-  <template id="position-row" class="row">
+  <template id="position-row">
+    <div name="exchange" class="center"></div>
     <date-string name="date"></date-string>
     <div name="position" class="center"></div>
-    <money-string name="buy" currency="€"></money-string>
-    <money-string name="market" currency="€"></money-string>
+    <money-string name="buy_value" currency="€"></money-string>
+    <money-string name="market_value" currency="€"></money-string>
     <money-string name="pl" currency="€" pl></money-string>
     <money-string name="fx_pl" currency="€" pl></money-string>
     <div name="broker" class="center"></div>
-    <div name="exchange" class="center"></div>
   </template>
 </body>
+
+<!-- widgets -->
+
+<template id="select-widget">
+  <span>
+    <label></label>
+    <select></select>
+  </span>
+</template>

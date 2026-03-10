@@ -2,59 +2,85 @@ import { AppElement } from "@frontend/components/AppElement.ts";
 import { StocksRoot } from "./StocksRoot";
 
 export class StockRow extends AppElement {
-  static observedAttributes = StocksRoot.value_keys;
+  static observedAttributes = ["broker"];
 
   constructor() {
     super();
     this.set_topic(this);
-    this.template_to_self("stock-row");
+    this.dom.template_to_self("stock-row");
     this.classList.add("row");
+    this.setAttribute("broker", "all");
 
-    StocksRoot.value_keys.forEach((key) =>
-      this.watch(key, (old_value: string, new_value: string) =>
-        this.set_value(old_value, new_value, key),
-      ),
-    );
+    this.props.watch("broker", this.handlers.broker);
   }
 
   connectedCallback() {
-    this.positions.setAttribute("ticker", this.ticker);
-    this.positions.setAttribute("span", this.children.length.toString());
-    this.render();
+    this.positions_root.setAttribute("ticker", this.ticker);
+    this.handlers.render();
+    this.props.set_money_values();
   }
 
-  private render() {
-    const stock = this.cache.get.stock(this.ticker)!;
-    const pos_count = stock.positions.size.toString();
+  private handlers = {
+    render: () => {
+      const stock = this.cache.get.stock(this.ticker)!;
 
-    this.query_by_name("description").innerHTML = stock.description;
-    this.query_by_name("ticker").innerHTML = stock.ticker;
-    this.query_by_name("positions").appendChild(this.toggle_button(pos_count));
+      this.props.query_by_name("description").innerHTML = stock.description;
+      this.props.query_by_name("ticker").innerHTML = stock.ticker;
+      this.props
+        .query_by_name("positions")
+        .appendChild(this.dom.make_toggle_button());
+    },
+    broker: (old_value: string, new_value: string) => {
+      if (old_value === new_value) return;
+      this.positions_root.setAttribute("broker", new_value);
+      this.dom.update_toggle_button();
+      this.props.set_money_values();
 
-    StocksRoot.value_keys.forEach((key) =>
-      this.setAttribute(key, this.positions.getAttribute(key)!),
-    );
-  }
-  private set_value = (old_value: string, new_value: string, key: string) => {
-    if (old_value === new_value) return;
-    this.query_by_name(key).setAttribute("value", new_value);
+      if (new_value === "all") return this.props.show();
+      this.has_positions ? this.props.show() : this.props.hide();
+    },
+    toggle_drawer: () => {
+      const old_state = this.positions_root.getAttribute("state");
+      const new_state = old_state === "open" ? "closed" : "open";
+      this.setAttribute("state", new_state);
+      this.positions_root.setAttribute("state", new_state);
+    },
   };
-  private toggle_button = (count: string) => {
-    const button = this.make_element("button", count);
-    button.addEventListener("click", this.toggle);
-    return button;
-  };
+  private props = this.api.props({
+    set_money_values: () => {
+      const values = this.positions_root.attributes;
+      StocksRoot.money_value_keys.forEach((key) => {
+        const value = values.getNamedItem(key)!.value;
+        this.setAttribute(key, value);
+        this.props.query_by_name(key).setAttribute("value", value);
+      });
+    },
+  });
 
-  private toggle = () => {
-    const state = this.positions.getAttribute("state");
-    this.positions.setAttribute("state", state === "open" ? "closed" : "open");
-  };
+  private dom = this.api.dom({
+    make_toggle_button: () => {
+      const button = this.dom.make_element("button", this.positions_count);
+      button.addEventListener("click", this.handlers.toggle_drawer);
+      return button;
+    },
+    update_toggle_button: () => {
+      this.toggle_button.innerHTML = this.positions_count;
+    },
+  });
 
   private get ticker() {
     return this.getAttribute("ticker")!;
   }
-
-  private get positions() {
+  private get positions_root(): HTMLElement {
     return this.querySelector("positions-root")!;
+  }
+  private get has_positions() {
+    return this.positions_root.style.display !== "none";
+  }
+  private get positions_count() {
+    return this.positions_root.getAttribute("position_count")!;
+  }
+  private get toggle_button() {
+    return this.props.query_by_name("positions").querySelector("button")!;
   }
 }

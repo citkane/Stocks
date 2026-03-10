@@ -1,8 +1,68 @@
 positions-root {
+  grid-column: 1/27;
+
+  display: block;
   overflow-y: hidden;
+  padding: 0 !important;
   transition: height 0.75s;
+  border: var(--border-light);
+  border-width: 2px;
 
   &[state="closed"] {
     height: 0 !important;
+    border-bottom: none;
+    border-width: 1px;
+  }
+
+  > .grid {
+    grid-template-columns: var(--grid-columns);
+    [name="exchange"] {
+      grid-column: 1/3;
+    }
+    [name="date"] {
+      grid-column: 3/9;
+    }
+    [name="position"] {
+      grid-column: 9/10;
+    }
+    [name="buy_value"] {
+      grid-column: 10/14;
+    }
+    [name="market_value"] {
+      grid-column: 14/18;
+    }
+    [name="pl"] {
+      grid-column: 18/22;
+    }
+    [name="fx_pl"] {
+      grid-column: 22/26;
+    }
+    [name="broker"] {
+      grid-column: 26/27;
+    }
+    > .row > * {
+      border: var(--border-light);
+      border-top: none;
+      border-right: none;
+      &:first-child {
+        border-left: none;
+      }
+    }
+    > position-row {
+      display: block;
+      font-size: var(--font-size-small);
+      [name="position"],
+      [name="date"],
+      [name="exchange"],
+      [name="broker"] {
+        text-align: center;
+      }
+      money-string {
+        padding-right: 30% !important;
+      }
+    }
+    > .header > * {
+      background-color: var(--col-grid-background);
+    }
   }
 }

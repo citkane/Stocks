@@ -1,10 +1,19 @@
 money-string {
-  display: inline-block;
+  display: block;
   text-align: right;
   &.pl {
-    color: green;
+    color: var(--col-pos);
   }
   &.pl.loss {
-    color: red;
+    color: var(--col-neg);
   }
+}
+select-broker {
+  label {
+    display: inline-block;
+    margin-right: var(--padding-cell);
+  }
+  display: inline-block;
+  margin: var(--padding-cell);
+  margin-left: none;
 }

@@ -1,56 +1,91 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { StocksRoot } from "../stocks";
 
 export class PositionsRoot extends AppElement {
-  static observedAttributes = ["ticker", "state", "span"];
+  static observedAttributes = ["ticker", "state", "broker"];
 
   constructor() {
     super();
     this.set_topic(this);
-    this.template_to_self("position-root");
+    this.dom.template_to_self("position-root");
+    this.setAttribute("broker", "all");
 
-    this.classList.add("grid");
-    this.set_grid_columns();
-
-    this.watch("state", this.open_close);
-    this.watch("ticker", this.render);
-    this.watch("span", this.span);
+    this.props.watch("ticker", this.handlers.render);
+    this.props.watch("state", this.handlers.open_close);
+    this.props.watch("broker", this.handlers.change_broker);
   }
 
-  private render = () => {
-    this.cache.positions
-      .filter((p) => p.ticker === this.ticker)
-      .forEach(this.append_position_row);
+  private handlers = {
+    render: (old_value: string, new_value: string) => {
+      if (old_value === new_value) return;
 
-    this.set_html_height();
-    this.setAttribute("state", "closed");
-    const values = StocksRoot.sum_values([...this.children]);
-    this.set_values_to_props(values);
-  };
-  private append_position_row = (p: position_t) => {
-    const row = this.make_element("position-row", "", `id=${p.id}`);
-    this.appendChild(row);
+      let positions = this.cache.get.stock(this.ticker)?.positions!;
+
+      this.dom.append_position_rows(positions);
+      this.data.refresh();
+
+      this.setAttribute("state", "closed");
+    },
+    change_broker: (old_value: string, new_value: string) => {
+      if (old_value === new_value) return;
+
+      this.position_rows.forEach((p) => p.setAttribute("broker", new_value));
+      this.data.refresh();
+
+      this.displayed_position_count > 0 ? this.props.show() : this.props.hide();
+    },
+    open_close: (old_value: string, new_value: string) => {
+      if (old_value === new_value) return;
+      this.setAttribute("state", new_value);
+    },
   };
 
-  private open_close = (old_value: string, new_value: string) => {
-    if (old_value === new_value) return;
-    this.set_html_height();
-    this.setAttribute("state", new_value);
-  };
+  private data = this.api.data({
+    refresh: () => {
+      this.props.set_displayed_position_count();
+      this.props.sum_values_to_props();
+      this.dom.set_html_height();
+    },
+  });
 
-  private set_html_height() {
-    this.style.height = `${this.scrollHeight}px`;
-  }
+  private dom = this.api.dom({
+    append_position_rows: (p: Set<position_t>) => {
+      p.forEach((p) => {
+        const row = this.dom.make_element("position-row", "", `id=${p.id}`);
+        this.grid.appendChild(row);
+      });
+    },
+    set_html_height: () => {
+      setTimeout(() => {
+        const height = `${this.scrollHeight}px`;
+        this.style.height = height;
+      });
+    },
+  });
+
+  private props = this.api.props({
+    sum_values_to_props: () => {
+      const values = this.data.money_totals(this.displayed_positions);
+      Object.keys(values).forEach((key) =>
+        this.setAttribute(key, values[key]!.toString()),
+      );
+    },
+    set_displayed_position_count: () =>
+      this.setAttribute(
+        "position_count",
+        this.displayed_positions.length.toString(),
+      ),
+  });
+
   private get ticker() {
     return this.getAttribute("ticker")!;
   }
-  private span = () => {
-    const span = this.getAttribute("span");
-    this.style.gridColumn = `1/${span}`;
-  };
-  private set_values_to_props(values: { [key: string]: number }) {
-    Object.keys(values).forEach((key) =>
-      this.setAttribute(key, values[key]!.toString()),
-    );
+  private get position_rows(): NodeListOf<HTMLElement> {
+    return this.querySelectorAll("position-row")!;
+  }
+  private get displayed_positions() {
+    return [...this.querySelectorAll("position-row:not([display=none])")];
+  }
+  private get displayed_position_count() {
+    return Number(this.getAttribute("position_count")!);
   }
 }

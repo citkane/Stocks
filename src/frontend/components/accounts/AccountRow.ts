@@ -4,7 +4,7 @@ export class AccountRow extends AppElement {
   constructor() {
     super();
     this.set_topic(this);
-    this.template_to_self("account-row");
+    this.dom.template_to_self("account-row");
     this.classList.add("row");
   }
 
@@ -13,15 +13,18 @@ export class AccountRow extends AppElement {
   }
 
   connectedCallback() {
-    this.render();
+    this.handlers.render();
   }
+  private handlers = {
+    render: () => {
+      const acc = this.cache.get.account(this.account_id)!;
 
-  private render() {
-    const acc = this.cache.get.account(this.account_id)!;
-
-    this.query_by_name("broker").innerHTML = acc.broker;
-    this.query_by_name("alias").innerHTML = acc.alias;
-    this.query_by_name("currency").innerHTML = acc.currency;
-    this.query_by_name("id").innerHTML = acc.original_id;
-  }
+      this.props.query_by_name("broker").innerHTML = acc.broker;
+      this.props.query_by_name("alias").innerHTML = acc.alias;
+      this.props.query_by_name("currency").innerHTML = acc.currency;
+      this.props.query_by_name("id").innerHTML = acc.original_id;
+    },
+  };
+  private props = this.api.props({});
+  private dom = this.api.dom({});
 }
