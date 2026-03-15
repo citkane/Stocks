@@ -7,9 +7,11 @@ export class StocksRoot extends AppElement {
   constructor() {
     super();
     this.set_topic(this);
+    this.setAttribute("broker", "all");
+
     this.dom.template_to_self("stocks-root");
     this.props.set_header_info();
-    this.setAttribute("broker", "all");
+    this.data.set_sort_registry();
 
     this.props.watch("ready", this.handlers.ready);
     this.broker_select.addEventListener(
@@ -22,6 +24,7 @@ export class StocksRoot extends AppElement {
     ready: (old_value: any, new_value: any) => {
       if (old_value === new_value) return;
       this.handlers.render();
+      this.dom.set_sort_actions();
     },
 
     render: () => {
@@ -46,6 +49,49 @@ export class StocksRoot extends AppElement {
   private dom = this.api.dom({
     make_stock_row: (s: stock_t) =>
       this.dom.make_element("stock-row", "", `ticker="${s.ticker}"`),
+    set_sort_actions: () => {
+      [...this.header.children].forEach((child) => {
+        const name = child.getAttribute("name")!;
+        child.addEventListener("click", () => this.dom.sort_stocks(name));
+      });
+    },
+    sort_stocks: (name: string) => {
+      this.dom.close_all_charts();
+
+      const sorted = this.stock_rows.sort((a, b) => {
+        const _a = a.getAttribute(name)!;
+        const _b = b.getAttribute(name)!;
+        if (
+          ["market_value", "buy_value", "pl", "fx_pl", "positions"].includes(
+            name,
+          )
+        ) {
+          const a_num = Number(_a);
+          const b_num = Number(_b);
+          console.log({ a_num, b_num });
+
+          if (a_num > b_num) return 1;
+          if (a_num < b_num) return -1;
+          return 0;
+        }
+        return _a.localeCompare(_b);
+      });
+      if (this.sort_registry[name] === "up") {
+        this.sort_registry[name] = "dn";
+        sorted.reverse();
+      } else {
+        this.sort_registry[name] = "up";
+      }
+      sorted.forEach((e) => {
+        this.grid.removeChild(e);
+        this.grid.appendChild(e);
+      });
+    },
+    close_all_charts: () => {
+      this.querySelectorAll("stock-chart").forEach((chart) =>
+        chart.setAttribute("state", "closed"),
+      );
+    },
   });
 
   private props = this.api.props({
@@ -64,8 +110,22 @@ export class StocksRoot extends AppElement {
     },
   });
 
-  private data = this.api.data({});
+  private data = this.api.data({
+    set_sort_registry: () => {
+      this.sort_registry = [...this.header.children].reduce(
+        (c, el) => {
+          const key = el.getAttribute("name")!;
+          c[key] = "up";
+          return c;
+        },
+        {} as { [key: string]: "up" | "dn" },
+      );
+    },
+  });
 
+  private get stock_rows() {
+    return [...this.querySelectorAll("stock-row")];
+  }
   private get displayed_stock_rows() {
     return [...this.querySelectorAll("stock-row:not([display=none])")];
   }
@@ -75,4 +135,11 @@ export class StocksRoot extends AppElement {
   private get money_row() {
     return this.querySelector(".money.row")!;
   }
+  private get header() {
+    return this.querySelector(".header")!;
+  }
+
+  private sort_registry: { [key: string]: "up" | "dn" } = {};
 }
+
+const sort_dir = [...StocksRoot.money_value_keys];

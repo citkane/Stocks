@@ -1,8 +1,4 @@
-import * as conf from "conf";
-import { Messenger, Ws, util } from "common";
-
-import type { Api } from "../../app";
-import type { App } from "../../App";
+import { Messenger, Ws } from "common";
 
 export class ClientWs extends Ws {
   constructor() {
@@ -15,10 +11,6 @@ export class ClientWs extends Ws {
     ws.addEventListener("close", (_event) => {});
     ws.addEventListener("error", (event) => this.is_connected.reject(event));
   }
-
-  public init = (app: App) => {
-    this.api = app.api;
-  };
 
   public connected() {
     return new Promise((resolve, reject) => {
@@ -36,6 +28,8 @@ export class ClientWs extends Ws {
   }
 
   public messenger: Messenger;
-  private is_connected = util.blank_resolver();
-  private api!: Api;
+  private is_connected = util.resolver.empty();
+  private get api() {
+    return frontend.api;
+  }
 }

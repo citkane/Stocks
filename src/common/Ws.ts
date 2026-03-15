@@ -1,14 +1,11 @@
-import type { Api as backend_api_t } from "backend";
-import type { Api as frontend_api_t } from "frontend";
-import type { Messenger } from "common";
-import type { message_t } from "types";
+import type { Messenger } from "./Messenger";
 
-type api_t = frontend_api_t | backend_api_t;
+type api_t = frontend.Api_t | backend.Api_t;
 type requests_t = Messenger["requests"];
 
 export class Ws {
   protected route = (
-    api: api_t,
+    api: Api_t,
     requests: requests_t,
     messenger: Messenger,
     mssg: message_t,
@@ -24,7 +21,7 @@ export class Ws {
   };
   //private respond = (mssg: message_t, p: req_t, api: api_t) =>
   //  this.responder(api, p, mssg);
-  private respond(mssg: message_t, p: req_t, api: api_t) {
+  private respond(mssg: message_t, p: req_t, api: Api_t) {
     const { topic } = mssg;
     const params = get_params(mssg);
     const key = topic as keyof api_t["request"];
@@ -39,7 +36,7 @@ export class Ws {
     //}
   }
 
-  private action = (api: api_t, mssg: message_t) => {
+  private action = (api: Api_t, mssg: message_t) => {
     const { topic } = mssg;
     const params = get_params(mssg);
     const key = topic as keyof api_t["set"];

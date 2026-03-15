@@ -15,35 +15,52 @@ export class StockRow extends AppElement {
   }
 
   connectedCallback() {
+    if (this.hasAttribute("sorting")) {
+      this.removeAttribute("sorting");
+      return;
+    }
     this.positions_root.setAttribute("ticker", this.ticker);
     this.handlers.render();
     this.props.set_money_values();
+    this.props.set_context();
+    this.dom.set_chart_button();
+  }
+  disconnectedCallback() {
+    this.setAttribute("sorting", "true");
   }
 
   private handlers = {
     render: () => {
-      const stock = this.cache.get.stock(this.ticker)!;
+      const { description, ticker } = this.stock;
 
-      this.props.query_by_name("description").innerHTML = stock.description;
-      this.props.query_by_name("ticker").innerHTML = stock.ticker;
-      this.props
-        .query_by_name("positions")
-        .appendChild(this.dom.make_toggle_button());
+      this.props.query_by_name("description").innerHTML = description;
+      this.ticker_button.innerHTML = ticker;
+      this.dom.set_toggle_button();
     },
     broker: (old_value: string, new_value: string) => {
       if (old_value === new_value) return;
       this.positions_root.setAttribute("broker", new_value);
-      this.dom.update_toggle_button();
+      this.dom.set_toggle_button();
       this.props.set_money_values();
 
       if (new_value === "all") return this.props.show();
       this.has_positions ? this.props.show() : this.props.hide();
     },
-    toggle_drawer: () => {
+    toggle_positions: () => {
       const old_state = this.positions_root.getAttribute("state");
       const new_state = old_state === "open" ? "closed" : "open";
       this.setAttribute("state", new_state);
       this.positions_root.setAttribute("state", new_state);
+    },
+    toggle_stock_chart: () => {
+      this.stock_chart.setAttribute("ticker", this.ticker);
+
+      const state = this.stock_chart.getAttribute("state");
+      if (!state) return this.stock_chart.setAttribute("state", "open");
+      this.stock_chart.setAttribute(
+        "state",
+        state === "open" ? "closed" : "open",
+      );
     },
   };
   private props = this.api.props({
@@ -55,24 +72,36 @@ export class StockRow extends AppElement {
         this.props.query_by_name(key).setAttribute("value", value);
       });
     },
+    set_context: () => {
+      this.setAttribute("description", this.stock.description);
+      this.setAttribute("positions", this.positions_count);
+    },
   });
 
   private dom = this.api.dom({
-    make_toggle_button: () => {
-      const button = this.dom.make_element("button", this.positions_count);
-      button.addEventListener("click", this.handlers.toggle_drawer);
-      return button;
-    },
-    update_toggle_button: () => {
+    set_toggle_button: () => {
       this.toggle_button.innerHTML = this.positions_count;
+      this.toggle_button.addEventListener(
+        "click",
+        this.handlers.toggle_positions,
+      );
+    },
+    set_chart_button: () => {
+      this.ticker_button.addEventListener(
+        "click",
+        this.handlers.toggle_stock_chart,
+      );
     },
   });
 
   private get ticker() {
     return this.getAttribute("ticker")!;
   }
-  private get positions_root(): HTMLElement {
-    return this.querySelector("positions-root")!;
+  private get ticker_button() {
+    return this.querySelector("[name=ticker] button")!;
+  }
+  private get stock() {
+    return this.cache.get.stock(this.ticker)!;
   }
   private get has_positions() {
     return this.positions_root.style.display !== "none";
@@ -82,5 +111,11 @@ export class StockRow extends AppElement {
   }
   private get toggle_button() {
     return this.props.query_by_name("positions").querySelector("button")!;
+  }
+  private get positions_root(): HTMLElement {
+    return this.querySelector("positions-root")!;
+  }
+  private get stock_chart(): HTMLElement {
+    return this.querySelector("stock-chart")!;
   }
 }

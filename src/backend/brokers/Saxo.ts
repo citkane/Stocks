@@ -1,43 +1,16 @@
-import { Authorise, Fetch, factory, type factory_t } from "backend/saxo";
-import { App, Cache } from "backend";
-import type { saxo_t } from "types";
-
-import saved_positions from "../../../.logs/SAXO_positions.json";
-import saved_accounts from "../../../.logs/SAXO_accounts.json";
-import saved_fx from "../../../.logs/FX_pairs.json";
+import Fetch from "./saxo/Fetch";
+import { saxo } from "./saxo/index";
 
 export class Saxo extends Fetch {
-  constructor(app: App) {
-    super(app);
-
-    const _factory = factory(this, this.app.http.url);
-    this.authorise = _factory.authorise;
-    this.oauth = _factory.oauth;
-    this.positions = _factory.positions;
-    this.accounts = _factory.accounts;
-
-    //this.cache_saved();
-  }
-
-  private cache_saved() {
-    Cache.fx_pairs = saved_fx;
-
-    this.cache_add_accounts(
-      "saxo",
-      saved_accounts as unknown as saxo_t.account_t[],
-    );
-    this.cache_add_positions(
-      "saxo",
-      saved_positions as unknown as saxo_t.position_t[],
-    );
-    Authorise.is_authorised = true;
-    this.is_authorised = () => Promise.resolve(true);
-  }
+  init_auth = () => this.authorise.init("saxo");
 
   wait_for_auth = () => this.authorise.wait_for_auth();
   is_authorised = () => this.authorise.is_authorised();
+
   get_code_url = () => this.authorise.get_code_url();
   set_token = (code: string) => this.oauth.set_token(code);
+  refresh_token = (refresh_token: string) =>
+    this.oauth.refresh_token(refresh_token);
 
   cache_accounts = () =>
     this.cache.saxo_accounts.length
@@ -49,6 +22,16 @@ export class Saxo extends Fetch {
       ? Promise.resolve(this.cache.saxo_positions)
       : this.fetch_positions_to_cache();
 
+  get_bar_data = (
+    conid: string,
+    period: period_t = [3, "y"],
+    granularity: period_t = [1, "d"],
+  ) =>
+    this.stocks.bar_data(conid, period, granularity).then((data) => {
+      logger.json("SAXO bar data", data);
+      return this.stocks.map_bar_data(data);
+    });
+
   private fetch_accounts_to_cache = () =>
     this.accounts
       .get_accounts()
@@ -59,8 +42,24 @@ export class Saxo extends Fetch {
       .get_positions()
       .then(this.cache_add_positions.bind(this, "saxo"));
 
-  public oauth: factory_t["oauth"];
-  private authorise: factory_t["authorise"];
-  private positions: factory_t["positions"];
-  private accounts: factory_t["accounts"];
+  accounts = new saxo.Accounts();
+  positions = new saxo.Positions();
+  oauth = new saxo.Oauth();
+  stocks = new saxo.Stocks();
+  authorise = new saxo.Authorise();
 }
+
+//private cache_saved() {
+//  Cache.fx_pairs = saved_fx;
+//
+//  this.cache_add_accounts(
+//    "saxo",
+//    saved_accounts as unknown as saxo_t.account_t[],
+//  );
+//  this.cache_add_positions(
+//    "saxo",
+//    saved_positions as unknown as saxo_t.position_t[],
+//  );
+//  //Authorise.is_authorised = true;
+//  //this.is_authorised = () => Promise.resolve(true);
+//}

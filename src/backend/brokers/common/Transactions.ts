@@ -1,9 +1,3 @@
-import type { ibkr_t } from "../../../types";
-import { util } from "../../../common/Util";
-//import type { Cache } from "../Cache";
-
-//type transactions_cache_t = "_ibkr_positions" | "_saxo_positions"
-
 export class Transactions {
   constructor(private transactions: ibkr_t.transaction_t[]) {}
   map(): transaction_t {
@@ -18,10 +12,10 @@ export class Transactions {
     const external_transfer = !buys.length && !sells.length;
     const open = external_transfer || position > 0;
     const account_id = transfers[transfers.length - 1]?.acctid || buy.acctid!;
-    const description = util.Title_Case(buy.desc!);
+    const description = util.string.title_case(buy.desc!);
     const fx_buy = buy.fxRate;
     const price_buy = buy?.pr!;
-    const date = util.date_time(buy?.date);
+    const date = util.time.ms(buy?.date);
 
     return {
       position,

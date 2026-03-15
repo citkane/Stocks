@@ -1,10 +1,6 @@
-import { Init } from "@frontend/app/Init";
+import { Global } from "@frontend/Global";
 
-export class Brokers extends Init {
-  constructor() {
-    super();
-  }
-
+export class Brokers extends Global {
   static account_headers = ["broker", "alias", "currency", "id"];
   static stock_headers = ["description", "ticker", "positions"];
   static positions_headers = [
@@ -37,6 +33,19 @@ export class Brokers extends Init {
         .request<"backend", position_t[]>("positions")
         .then((res) => res.data),
     ]);
+
+  chart_data = (
+    broker: broker_t,
+    conid: string,
+    period: period_t,
+    granularity: period_t,
+  ) =>
+    this.messenger.request<"backend", stock_data_t>("chart_data", broker, [
+      conid,
+      period,
+      granularity,
+    ]);
+
   static popup_login(url: string, name: string) {
     const width = 600;
     const height = 900;

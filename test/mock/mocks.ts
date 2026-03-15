@@ -1,4 +1,3 @@
-import type { ibkr_t } from "../../src/types";
 import { default as ibkr_accounts } from "./data/IBKR_accounts.json";
 import { default as ibkr_positions } from "./data/IBKR_positions.json";
 import { default as ibkr_transactions } from "./data/IBKR_transactions.json";

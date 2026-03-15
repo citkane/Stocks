@@ -1,10 +1,7 @@
 import { Login } from "frontend/saxo";
+import { Global } from "@frontend/Global";
 
-import type { Saxo } from "frontend";
-
-export class Authorise {
-  constructor(private saxo: Saxo) {}
-
+export class Authorise extends Global {
   public await_login = () =>
     this.is_backend_authorised().then((success) => {
       if (success) return;
@@ -15,19 +12,19 @@ export class Authorise {
     });
 
   private await_auth = () => {
-    return this.saxo.messenger
+    return this.messenger
       .request<"backend", boolean>("wait_for_auth", "saxo")
       .then((mssg) => mssg.data);
   };
 
   private req_login_url = () => {
-    return this.saxo.messenger
+    return this.messenger
       .request<"backend", string>("saxo_auth_url")
       .then((mssg) => mssg.data);
   };
 
   private is_backend_authorised = () =>
-    this.saxo.messenger
+    this.messenger
       .request<"backend", boolean>("is_authorised", "saxo")
       .then((mssg) => mssg.data);
 }

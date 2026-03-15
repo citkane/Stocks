@@ -1,9 +1,6 @@
-import type { Ibkr } from "backend";
-import type { ibkr_t } from "types";
+import { Global } from "backend";
 
-export class Accounts {
-  constructor(private ibkr: Ibkr) {}
-
+export default class Accounts extends Global {
   public get_accounts = () =>
     this.ibkr.fetch<ibkr_t.account_t[]>(this.endpoints.accounts());
 

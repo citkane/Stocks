@@ -39,3 +39,4 @@ clientportal.*
 conf.json
 .temp
 .logs
+*.sqlite

@@ -1,10 +1,8 @@
-import * as conf from "conf";
-import type { App, Brokers } from "frontend";
+import { Global } from "@frontend/Global";
 
-export class Router {
-  constructor(private app: App) {
-    this.brokers = app.brokers;
-
+export class Router extends Global {
+  constructor() {
+    super();
     window.addEventListener("hashchange", this.route);
     window.addEventListener("popstate", this.route);
     this.route();
@@ -22,6 +20,4 @@ export class Router {
         break;
     }
   }
-
-  private brokers: Brokers;
 }

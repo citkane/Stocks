@@ -1,7 +1,7 @@
 import { Login, factory, type factory_t } from "frontend/saxo";
-import { Init } from "@frontend/app/Init";
+import { Global } from "@frontend/Global";
 
-export class Saxo extends Init {
+export class Saxo extends Global {
   constructor() {
     super();
     const _factory = factory(this);

@@ -1,25 +1,29 @@
-import { Saxo, Ibkr, type App } from "backend";
+import { Global } from "backend";
 
 const currencies: currency_t[] = ["ZAR", "CNH", "HKD", "CHF"];
 const base_currency: currency_t = "EUR";
 
-export class Brokers {
-  constructor(private app: App) {
-    this.saxo = new Saxo(this.app);
-    this.ibkr = new Ibkr(this.app);
-  }
-
-  public is_broker_authorised = (b: broker_t) => this[b].is_authorised();
-  public wait_for_auth = (b: broker_t) => this[b].wait_for_auth();
+export class Brokers extends Global {
+  public is_broker_authorised = (b: broker_t) => this.broker[b].is_authorised();
+  public wait_for_auth = (b: broker_t) => this.broker[b].wait_for_auth();
   public get_saxo_code_url = () => this.saxo.get_code_url();
   public get_saxo_token = (code: string) => this.saxo.set_token(code);
+  public chart_data = (
+    b: broker_t,
+    conid: string,
+    period: period_t,
+    granularity: period_t,
+  ) => this.broker[b].get_bar_data(conid, period, granularity);
 
-  public init_brokers = () =>
-    (this.brokers_ready_resolver = this.wait_for_brokers_authorised()
+  public init_brokers = () => {
+    this.ibkr.init_auth();
+    this.saxo.init_auth();
+    return (this.brokers_ready_resolver = this.wait_for_brokers_authorised()
       .then(this.wait_for_fx_cache)
       .then(this.wait_for_accounts_cache)
       .then(this.wait_for_positions_cache)
       .then(() => (this.brokers_ready = true)));
+  };
 
   public wait_for_brokers() {
     return this.brokers_ready
@@ -57,11 +61,8 @@ export class Brokers {
   private wait_for_fx_cache = () =>
     this.ibkr.cache_fx().then(() => console.info("Cached FX rates"));
 
-  public saxo: Saxo;
-  public ibkr: Ibkr;
-  public static currencies = currencies;
-  public static base_currency = base_currency;
-
+  public currencies = currencies;
+  public base_currency = base_currency;
   private brokers_ready = false;
   private brokers_ready_resolver?: Promise<boolean>;
 }

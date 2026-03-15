@@ -22,7 +22,7 @@ export class AccountRow extends AppElement {
       this.props.query_by_name("broker").innerHTML = acc.broker;
       this.props.query_by_name("alias").innerHTML = acc.alias;
       this.props.query_by_name("currency").innerHTML = acc.currency;
-      this.props.query_by_name("id").innerHTML = acc.original_id;
+      this.props.query_by_name("id").innerHTML = acc.a_id;
     },
   };
   private props = this.api.props({});

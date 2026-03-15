@@ -1,13 +1,8 @@
-import * as conf from "conf";
 import { Messenger, Ws } from "common";
 
-import type { Api, App } from "..";
-import type { topic_set_t, data_t } from "../../types";
-
 export class ServerWs extends Ws {
-  constructor(app: App) {
+  constructor() {
     super();
-    this.api = app.api;
     this.ws = Bun.serve({
       port: conf.ws_port,
       fetch: this.ws_fetch,
@@ -20,7 +15,7 @@ export class ServerWs extends Ws {
     });
   }
 
-  publish(topic: topic_set_t<"frontend">, data?: data_t, params?: string[]) {
+  publish(topic: frontend.set_topic_t, data?: data_t, params?: string[]) {
     const mess = Messenger.encode(
       topic,
       data || "",
@@ -63,7 +58,7 @@ export class ServerWs extends Ws {
     messenger: Messenger,
   ) {
     messenger
-      .request<"frontend", topic_set_t<"frontend">[]>("topics")
+      .request<"frontend", frontend.set_topic_t[]>("topics")
       .then((message) => {
         this.target_topics = message.data;
         this.subscribe_all(ws);
@@ -75,8 +70,10 @@ export class ServerWs extends Ws {
     });
   }
 
+  private get api() {
+    return backend.app.api;
+  }
   private ws: Bun.Server<undefined>;
-  private target_topics?: topic_set_t<"frontend">[];
+  private target_topics?: frontend.set_topic_t[];
   private messengers = new Map<ws_t, Messenger>();
-  private api: Api;
 }

@@ -1,5 +1,3 @@
-import type { component_key_t } from "frontend";
-
 type watch_fnc_t = (old_value: string, new_value: string) => void;
 
 const money_value_keys = ["market_value", "buy_value", "pl", "fx_pl"];
@@ -47,15 +45,34 @@ export class AppElement extends HTMLElement {
   };
 
   protected get app() {
-    return window.app;
+    return frontend.app;
   }
-  protected get events() {
-    return window.app.events;
+  protected get router() {
+    return frontend.router;
+  }
+  protected get brokers() {
+    return frontend.brokers;
+  }
+  protected get ws() {
+    return frontend.ws;
   }
   protected get cache() {
-    return window.app.cache;
+    return frontend.cache;
   }
-  protected get grid(): HTMLElement {
+  protected get events() {
+    return frontend.events;
+  }
+  protected get saxo() {
+    return frontend.saxo;
+  }
+  protected get ibkr() {
+    return frontend.ibkr;
+  }
+  protected get messenger() {
+    return this.ws.messenger;
+  }
+
+  protected get grid() {
     return this.querySelector(".grid")!;
   }
 

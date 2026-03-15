@@ -1,14 +1,15 @@
-import { ibkr as conf } from "conf";
-import { Brokers, type Ibkr } from "frontend";
+import { Global } from "@frontend/Global";
+import { Brokers } from "@frontend/app/Brokers";
 
-export class Login {
-  constructor(private ibkr: Ibkr) {
+export class Login extends Global {
+  constructor() {
+    super();
     window.addEventListener("focus", () => Login.login_window?.focus());
   }
   public await_login = async () =>
     this.is_authorised().then((success) => {
       if (success) return;
-      Login.popup_login(conf.url.base);
+      Login.popup_login(conf.ibkr.url.base);
       return this.await_auth().then(Login.popup_close);
     });
 
@@ -22,7 +23,7 @@ export class Login {
       return true;
     });
   private is_authorised = () =>
-    this.ibkr.messenger
+    this.messenger
       .request<"backend", boolean>("is_authorised", "ibkr")
       .then((mssg) => mssg.data);
 

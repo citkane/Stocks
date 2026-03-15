@@ -5,7 +5,10 @@ type callback_t = (data: any) => any;
 
 type subkeys_t<T> = T extends any ? keyof T : never;
 type components_key_t = keyof typeof components;
-export type component_key_t = subkeys_t<(typeof components)[components_key_t]>;
+
+declare global {
+  type component_key_t = subkeys_t<(typeof components)[components_key_t]>;
+}
 
 export type event_data_t = { action: string; data: any };
 

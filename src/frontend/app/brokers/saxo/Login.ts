@@ -1,8 +1,7 @@
-import type { saxo_t } from "types";
-import { Brokers, type Saxo } from "frontend";
+import { Brokers } from "@frontend/app/Brokers";
 
 export class Login {
-  constructor(private saxo: Saxo) {
+  constructor(private saxo: frontend.Saxo_t) {
     window.addEventListener("focus", () => Login.login_window?.focus());
   }
 

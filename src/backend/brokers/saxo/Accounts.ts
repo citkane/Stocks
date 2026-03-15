@@ -1,14 +1,14 @@
-import type { Saxo } from "backend";
-import type { saxo_t } from "types";
+import { Global } from "backend";
 
-export class Accounts {
-  constructor(private saxo: Saxo) {}
+const api = "port/v1";
+
+export default class Accounts extends Global {
   public get_accounts = () =>
     this.saxo
       .fetch<saxo_t.accounts_t>(this.endpoints.accounts())
       .then((data) => data.Data);
 
   private endpoints = {
-    accounts: () => "accounts",
+    accounts: () => `${api}/accounts`,
   };
 }

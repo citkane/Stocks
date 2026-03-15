@@ -1,29 +1,8 @@
-import "@types/frontend.ts";
-import type { Messenger } from "types";
-import type {
-  ClientWs,
-  Api,
-  Brokers,
-  Events,
-  Cache,
-  Saxo,
-  Ibkr,
-} from "frontend";
+import { Global } from "@frontend/Global";
 
-export class App {
-  constructor(
-    public brokers: Brokers,
-    public api: Api,
-    public ws: ClientWs,
-    public cache: Cache,
-    public events: Events,
-    public messenger: Messenger,
-    public saxo: Saxo,
-    public ibkr: Ibkr,
-  ) {
-    window.app = this;
-    this.init_app();
-
+export default class App extends Global {
+  constructor() {
+    super();
     window.addEventListener("beforeunload", this.shutdown);
   }
 
@@ -38,22 +17,17 @@ export class App {
 
       console.info("App ready");
       this.init_components();
+      //this.brokers
+      //  .chart_data("ibkr", "504513998", [10, "y"], [1, "d"])
+      //  .then((res) => console.log(res.data));
     } catch (err) {
       console.error(err);
     }
   };
-  public add_shutdown_task = (task: Function) => {
+  public override add_shutdown_task = (task: Function) => {
     this.shutdown_tasks.push(task);
   };
 
-  private init_app = () => {
-    this.api.init(this);
-    this.ws.init(this);
-    this.brokers.init(this);
-    this.api.init(this);
-    this.saxo.init(this);
-    this.ibkr.init(this);
-  };
   private init_components = () => {
     const app_element = document.getElementsByTagName("app-root")[0];
     app_element?.setAttribute("ready", "true");

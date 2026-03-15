@@ -50,7 +50,7 @@ export class PositionsRoot extends AppElement {
   private dom = this.api.dom({
     append_position_rows: (p: Set<position_t>) => {
       p.forEach((p) => {
-        const row = this.dom.make_element("position-row", "", `id=${p.id}`);
+        const row = this.dom.make_element("position-row", "", `id=${p.p_id}`);
         this.grid.appendChild(row);
       });
     },

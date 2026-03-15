@@ -1,13 +1,12 @@
-import { saxo } from "conf";
-import type { Saxo } from "backend";
-import type { saxo_t } from "types";
+import { Global } from "backend";
+
+const paging_top = 100;
+const api = "port/v1";
+const { saxo } = conf;
 
 type pos_t = saxo_t.position_t;
-const paging_top = 100;
 
-export class Positions {
-  constructor(private saxo: Saxo) {}
-
+export default class Positions extends Global {
   public get_positions = (
     skip = 0,
     positions: pos_t[] = [],
@@ -20,12 +19,17 @@ export class Positions {
           : [...positions, ...data.Data],
       );
 
-  private field_groups =
-    "fieldGroups=DisplayAndFormat,ExchangeInfo,PositionView,PositionBase";
   private endpoints = {
-    positions: (skip: number) =>
-      `positions?ClientKey=${saxo.client_key}&${this.field_groups}&$top=${paging_top}&$skip=${skip}`,
+    positions: (skip: number) => {
+      const params = [
+        `ClientKey=${saxo.client_key}`,
+        `$top=${paging_top}`,
+        `$skip=${skip}`,
+        "fieldGroups=DisplayAndFormat,ExchangeInfo,PositionView,PositionBase",
+      ].join("&");
+      return `${api}/positions?${params}`;
+    },
     position: (id: string, client_key: string) =>
-      `positions/${id}?ClientKey=${client_key}`,
+      `${api}//positions/${id}?ClientKey=${client_key}`,
   };
 }

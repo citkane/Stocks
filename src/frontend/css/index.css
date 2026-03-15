@@ -3,7 +3,7 @@
 @import "./widgets.css";
 @import "./app/app-root.css";
 @import "./accounts/accounts-root.css";
-@import "./stocks/stocks-root.css";
+@import "./stocks/index.css";
 @import "./positions/positions-root.css";
 
 :root {

@@ -1,9 +1,6 @@
-import { Init } from "@frontend/app/Init";
+import { Global } from "@frontend/Global";
 
-export type topic_set_t = keyof InstanceType<typeof Api>["set"];
-export type topic_req_t = keyof InstanceType<typeof Api>["request"];
-
-export class Api extends Init implements Api_t {
+export default class Api extends Global implements Api_t {
   constructor() {
     super();
   }

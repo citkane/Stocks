@@ -10,18 +10,14 @@ type res_error_t = {
   status: number;
   statusText: string;
 };
-type req_t = {
-  messenger: Messenger;
-  req_uid: string;
-};
 
 type currency_t = "EUR" | "HKD" | "CNH" | "ZAR" | "CHF";
 type broker_t = "saxo" | "ibkr";
 type position_t = {
-  id: string;
-  original_id: string;
+  p_id: string;
+  con_id: string;
   broker: broker_t;
-  account_id: string;
+  a_id: string;
   description: string;
   ticker: string;
   currency: currency_t;
@@ -44,13 +40,15 @@ type transaction_t = {
   external_transfer: boolean;
 };
 type account_t = {
-  id: string;
-  original_id: string;
+  a_id: string;
+  a_id_original: string;
   broker: broker_t;
   alias: string;
   currency: currency_t;
 };
 type stock_t = {
+  con_id: string;
+  broker: broker_t;
   ticker: string;
   description: string;
   positions: Set<position_t>;
@@ -66,5 +64,24 @@ interface Api_t {
   set: {
     [key: string]: (...params: any[]) => void;
   };
-  init: (app: Class) => void;
 }
+
+type data_t = object | string | number | boolean;
+type stock_data_t = {
+  bar: {
+    open: number;
+    close: number;
+    high: number;
+    low: number;
+    time: UTCTimestamp;
+  }[];
+  volume: {
+    color: string;
+    value: number;
+    time: UTCTimestamp;
+  }[];
+  price: {
+    value: number;
+    time: UTCTimestamp;
+  }[];
+};

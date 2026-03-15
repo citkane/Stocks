@@ -1,7 +1,7 @@
 import { Login, factory, type factory_t } from "frontend/ibkr";
-import { Init } from "@frontend/app/Init";
+import { Global } from "@frontend/Global";
 
-export class Ibkr extends Init {
+export class Ibkr extends Global {
   constructor() {
     super();
     const _factory = factory(this);

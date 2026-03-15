@@ -60,16 +60,17 @@
     </div>
   </template>
   <template id="stock-row">
-    <!--<border></border>-->
     <div name="description"></div>
-    <div name="ticker"></div>
+    <div name="ticker"><button></button></div>
     <money-string name="buy_value" currency="€"></money-string>
     <money-string name="market_value" currency="€"></money-string>
     <money-string name="pl" currency="€" pl></money-string>
     <money-string name="fx_pl" currency="€" pl></money-string>
-    <div name="positions" class="center"></div>
+    <div name="positions" class="center"><button></button></div>
     <positions-root></positions-root>
+    <stock-chart></stock-chart>
   </template>
+  <template id="stock-chart"><inner></inner></template>
 
   <!-- position -->
   <template id="position-root">

@@ -1,16 +1,11 @@
-import { ibkr as conf } from "conf";
-import { util } from "common";
-import { Brokers, Ibkr } from "backend";
-import type { ibkr_t } from "types";
+import { Global } from "backend";
 
 type post_t = { endpoint: string; params: RequestInit };
 type position_partial_t = Partial<ibkr_t.position_t> | ibkr_t.position_t;
 
 const page_limit = 100;
 
-export class Positions {
-  constructor(private ibkr: Ibkr) {}
-
+export default class Positions extends Global {
   public get_positions = (
     account_id: string,
     page = 0,
@@ -39,9 +34,9 @@ export class Positions {
     Promise.all(
       positions.map((p) =>
         this.transactions_history(
-          this.ibkr.cache.ibkr_account_ids,
+          this.cache.ibkr_account_ids,
           p.conid!,
-          Brokers.base_currency,
+          this.brokers.base_currency,
         ).then((t) => {
           p.transactions = t;
           return p;
@@ -49,9 +44,9 @@ export class Positions {
       ),
     ).then((p) => p.flat());
 
-  private get_position = (account_id: string, con_id: number) =>
+  private get_position = (account_id: string, conid: number) =>
     this.ibkr.fetch<ibkr_t.position_t>(
-      this.endpoints.get.position(account_id, con_id),
+      this.endpoints.get.position(account_id, conid),
     );
 
   private transactions_history = (
@@ -59,15 +54,16 @@ export class Positions {
     con_id: number,
     currency: currency_t,
   ) => {
-    const { endpoint, params } = this.endpoints.post.transactions_history(
-      account_ids,
-      con_id,
-      currency,
-      util.aging_days(conf.start_date),
-    );
-    return this.ibkr
-      .fetch<ibkr_t.transactions_t>(endpoint, params)
-      .then((transactions) => transactions.transactions);
+    return Promise.resolve(this.db.select.ibkr_transactions(con_id));
+    //const { endpoint, params } = this.endpoints.post.transactions_history(
+    //  account_ids,
+    //  con_id,
+    //  currency,
+    //  util.time.aging_days(conf.start_date),
+    //);
+    //return this.ibkr
+    //  .fetch<ibkr_t.transactions_t>(endpoint, params)
+    //  .then((transactions) => transactions.transactions);
   };
 
   private page_positions = (

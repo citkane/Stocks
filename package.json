@@ -11,6 +11,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "bun-html-live-reload": "^1.0.4"
+    "lightweight-charts": "^5.1.0"
   }
 }

@@ -1,7 +1,8 @@
+import AuthBase from "./Authorise";
+
 export { Account } from "./Account";
-export { Position } from "./Position";
+export { SaxoPosition, IbkrPositions } from "./Position";
 export { Transactions } from "./Transactions";
 export { RateLimiter } from "./RateLimiter";
 export { Broker } from "./Broker";
-
-export * from "./authorise";
+export { AuthBase };

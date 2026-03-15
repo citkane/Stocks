@@ -1,6 +1,24 @@
+import "..";
+
+export { Global } from "./Global";
+
+declare global {
+  namespace frontend {
+    var app: App_t;
+    var router: Router_t;
+    var brokers: Brokers_t;
+    var api: Api_t;
+    var ws: Ws_t;
+    var cache: Cache_t;
+    var events: Events_t;
+    var saxo: Saxo_t;
+    var ibkr: Ibkr_t;
+  }
+}
+
 import "@frontend/components/index";
-import { App } from "@frontend/App";
-import { Api } from "@frontend/Api";
+import App from "@frontend/App";
+import Api from "@frontend/Api";
 import {
   Router,
   ClientWs,
@@ -11,26 +29,30 @@ import {
   Cache,
 } from "@frontend/app/index.ts";
 
-export * from "@frontend/Api.ts";
-export * from "@frontend/app/index.ts";
-export { App, Api };
+//export * from "@frontend/Api.ts";
+//export * from "@frontend/app/index.ts";
+//export { App, Api };
 
-const brokers = new Brokers();
-const api = new Api();
-const ws = new ClientWs();
-const cache = new Cache();
-const events = new Events();
-const saxo = new Saxo();
-const ibkr = new Ibkr();
-
-const app = new App(brokers, api, ws, cache, events, ws.messenger, saxo, ibkr);
+(window as any).frontend = {
+  app: new App(),
+};
+(window as any).frontend = {
+  ...frontend,
+  brokers: new Brokers(),
+  api: new Api(),
+  ws: new ClientWs(),
+  cache: new Cache(),
+  events: new Events(),
+  saxo: new Saxo(),
+  ibkr: new Ibkr(),
+};
 
 try {
-  await ws.connected();
+  await frontend.ws.connected();
   console.info("WebSocket connected");
 } catch (err) {
   console.info("WebSocket connection failed");
   console.error(err);
 }
 
-new Router(app);
+new Router();

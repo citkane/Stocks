@@ -1,0 +1,9 @@
+stock-chart {
+  display: block;
+  grid-column: 1/27;
+  overflow-y: hidden;
+  inner {
+    display: block;
+    width: 100%;
+  }
+}

@@ -17,7 +17,7 @@ export class AccountsRoot extends AppElement {
         const account_row = this.dom.make_element(
           "account-row",
           "",
-          `id="${a.id}"`,
+          `id="${a.a_id}"`,
         );
         this.grid.appendChild(account_row);
       });

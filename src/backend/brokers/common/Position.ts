@@ -1,79 +1,77 @@
-import { Brokers, Cache } from "backend";
-import type { ibkr_t, saxo_t } from "types";
-import { util } from "common";
+import { Global } from "backend";
 
-type exchanges_t = keyof typeof Position.exchanges;
+type exchanges_t = keyof typeof exchanges;
 
-export class Position {
-  constructor(
-    position: saxo_t.position_t | ibkr_t.position_t,
-    broker: broker_t,
-  ) {
-    this.position =
-      broker === "saxo"
-        ? new Saxo(position as saxo_t.position_t)
-        : new Ibkr(position as ibkr_t.position_t);
-  }
+const exchanges = {
+  SEHKNTL: "sse",
+  SEHKSZSE: "she",
+  xssc: "sse",
+  xdub: "dub",
+  xhkg: "hkse",
+  xsec: "she",
+  xetr: "etr",
+  xswx: "swx",
+  xjse: "jse",
+  xams: "ams",
+  xmil: "mil",
+  IBIS: "ibis",
+  FWB2: "fwb2",
+  IBIS2: "ibis2",
+  "BVME.ETF": "bvme",
+  SEHK: "hkse",
+};
 
-  map = () => this.position.map();
-
-  static pad_hkse_ticker(ticker: string) {
-    return ticker.length < 4 ? ticker!.padStart(4, "0") : ticker;
-  }
-
-  static exchanges = {
-    SEHKNTL: "sse",
-    SEHKSZSE: "she",
-    xssc: "sse",
-    xdub: "dub",
-    xhkg: "hkse",
-    xsec: "she",
-    xetr: "etr",
-    xswx: "swx",
-    xjse: "jse",
-    xams: "ams",
-    xmil: "mil",
-    IBIS: "ibis",
-    FWB2: "fwb2",
-    IBIS2: "ibis2",
-    "BVME.ETF": "bvme",
-    SEHK: "hkse",
-  };
-
-  private position: Saxo | Ibkr;
+function pad_hkse_ticker(ticker: string) {
+  return ticker.length < 4 ? ticker!.padStart(4, "0") : ticker;
 }
 
-class Saxo {
-  constructor(private position: saxo_t.position_t) {}
+export class SaxoPosition extends Global {
+  constructor(private position: saxo_t.position_t) {
+    super();
+  }
   map(): position_t {
     const p = this.position;
     const d = this.details(p);
 
+    const { ExecutionTimeOpen, ValueDate } = p.PositionBase;
+    const _date =
+      ExecutionTimeOpen.split("T")[0] === ValueDate.split("T")[0]
+        ? ExecutionTimeOpen
+        : ValueDate;
+
+    const p_id = `saxo_${p.PositionId}`;
+    const con_id = p.PositionBase.Uic.toString();
+    const a_id = p.PositionBase.AccountId;
+    const position = p.PositionBase.Amount;
     const currency: currency_t = p.DisplayAndFormat.Currency;
+    const fx_market = this.cache.fx_pairs[currency]!;
+    const fx_buy = p.PositionView.ConversionRateOpen;
+    const date = util.time.ms(_date);
+    const price_market = this.price_decimal(p, p.PositionView.CurrentPrice);
+    const price_buy = this.price_decimal(p, p.PositionBase.OpenPrice);
 
     return {
-      id: `saxo_${p.PositionId}`,
-      original_id: p.PositionId,
+      p_id,
+      con_id,
       broker: "saxo",
-      account_id: p.PositionBase.AccountId,
+      a_id,
       description: d.description,
       ticker: d.ticker!,
       currency,
       exchange: d.exchange,
-      position: p.PositionBase.Amount,
-      fx_market: Cache.fx_pairs[currency]!,
-      fx_buy: p.PositionView.ConversionRateOpen,
-      date: util.date_time(p.PositionBase.ExecutionTimeOpen),
-      price_market: this.price_decimal(p, p.PositionView.CurrentPrice),
-      price_buy: this.price_decimal(p, p.PositionBase.OpenPrice),
+      position,
+      fx_market,
+      fx_buy,
+      date,
+      price_market,
+      price_buy,
     };
   }
   private details(p: saxo_t.position_t) {
-    const description = util.Title_Case(p.DisplayAndFormat.Description);
+    const description = util.string.title_case(p.DisplayAndFormat.Description);
     let [ticker, exchange] = p.DisplayAndFormat.Symbol.split(":");
-    exchange =
-      Position.exchanges[exchange! as exchanges_t] || (exchange as exchanges_t);
-    if (exchange === "hkse") ticker = Position.pad_hkse_ticker(ticker!);
+    exchange = exchanges[exchange! as exchanges_t] || (exchange as exchanges_t);
+    if (exchange === "hkse") ticker = pad_hkse_ticker(ticker!);
     return { ticker, exchange, description };
   }
   private price_decimal(p: saxo_t.position_t, price: number) {
@@ -82,81 +80,150 @@ class Saxo {
   }
 }
 
-class Ibkr {
-  constructor(private position: ibkr_t.position_t) {
-    this.transaction = new Transactions(
-      (this.position as ibkr_t.position_t).transactions,
-      this.position,
-    ).map();
+export class IbkrPositions {
+  constructor(
+    //private transactions: ibkr_t.transaction_t[],
+    private p: ibkr_t.position_t,
+  ) {
+    this.positions = this.buys.map(
+      (buy, i) =>
+        new IbkrPosition(
+          this.p,
+          i,
+          buy.fxRate,
+          util.time.ms(buy.date),
+          buy.pr!,
+        ),
+    );
+  }
+  public positions: IbkrPosition[];
+
+  private get transfers() {
+    return this.p.transactions.filter(
+      (t) => t.type === "Transfer", //&& t.acctid === this.account_id,
+    );
+  }
+  private get buys() {
+    return this._buys ? this._buys : this.calculate_buys();
+  }
+  private get sells() {
+    return this.p.transactions.filter((t) => t.type === "Sell");
+  }
+
+  private calculate_buys() {
+    let _buys = this.p.transactions.filter((t) => t.type === "Buy");
+    const { sells } = this;
+    if (!sells.length)
+      return (this._buys = [..._buys, ...this.find_transfer_buys()]);
+
+    _buys = structuredClone(_buys);
+
+    return (this._buys = [
+      ...sells
+        .sort((a, b) => b.qty! - a.qty!)
+        .reduce((a, sell) => {
+          const sell_buys = this.narrow_buys_for_sell(sell, _buys);
+          return [...a, ...this.subtract_sell_from_buys(sell, sell_buys)];
+        }, [] as ibkr_t.transaction_t[]),
+      ...this.find_transfer_buys(),
+    ]);
+  }
+  private find_transfer_buys() {
+    const transfers = structuredClone(this.transfers).map((t) => {
+      const qty_str = t.desc.split(":").pop()!.replaceAll(",", "");
+      t.qty = Number(qty_str);
+      t.pr = Math.floor(t.amt * 100) / t.qty / 100;
+      return t;
+    });
+    const transfer_out = transfers.filter((t) => t.qty! < 0);
+    const transfer_in = transfers
+      .filter((t) => t.qty! > 0)
+      .filter((t_i) => {
+        return !transfer_out.find((t_o, i) => {
+          const found = t_o.date === t_i.date && Math.abs(t_o.qty!) === t_i.qty;
+          if (found) transfer_out.splice(i, 1);
+          return found;
+        });
+      });
+    return transfer_in;
+  }
+  private subtract_sell_from_buys(
+    sell: ibkr_t.transaction_t,
+    mutable_buys: ibkr_t.transaction_t[],
+  ) {
+    let sold = Math.abs(sell.qty!);
+    return mutable_buys
+      .map((bought) => {
+        if (bought.qty! >= sold) {
+          bought.qty = bought.qty! - sold;
+        } else {
+          sold = sold - bought.qty!;
+          bought.qty = 0;
+        }
+        return bought;
+      })
+      .filter((b) => b.qty! > 0);
+  }
+
+  private narrow_buys_for_sell(
+    sell: ibkr_t.transaction_t,
+    buys: ibkr_t.transaction_t[],
+  ) {
+    const sell_date = util.time.ms(sell.date);
+    return (
+      buys?.filter((buy) => {
+        const buy_date = util.time.ms(buy.date);
+        const is_later = sell_date >= buy_date;
+        const is_affordable = Math.abs(sell.qty!) <= buy.qty!;
+        return is_later && is_affordable;
+      }) || []
+    );
+  }
+  private _buys?: ibkr_t.transaction_t[];
+}
+
+class IbkrPosition extends Global {
+  constructor(
+    private position: ibkr_t.position_t,
+    private index: number,
+    private fx_buy: number,
+    private date: number,
+    private price_buy: number,
+  ) {
+    super();
   }
   map(): position_t {
     const p = this.position;
     const d = this.details(p);
 
     const currency = p.currency as currency_t;
+    const { conid } = p;
+    const { index: id, fx_buy, date, price_buy } = this;
 
     return {
-      id: `ibkr_${p.conid}`,
-      original_id: p.conid?.toString(),
+      p_id: `ibkr_${conid}_${id}`,
+      con_id: `${conid}`,
       broker: "ibkr",
-      account_id: p.acctId,
+      a_id: p.acctId,
       description: d.description,
       ticker: d.ticker,
       currency,
       exchange: d.exchange,
       position: p.position,
-      fx_market: Cache.fx_pairs![currency]!,
-      fx_buy: this.transaction?.fx_buy,
-      date: this.transaction?.date,
+      fx_market: this.cache.fx_pairs![currency]!,
+      fx_buy,
+      date,
       price_market: p.mktPrice,
-      price_buy: this.transaction?.price_buy,
+      price_buy,
     };
   }
 
   private details(p: ibkr_t.position_t) {
-    const description = util.Title_Case(p.name);
+    const description = util.string.title_case(p.name);
     const exchange =
-      Position.exchanges[p.listingExchange as exchanges_t] || p.listingExchange;
+      exchanges[p.listingExchange as exchanges_t] || p.listingExchange;
     let ticker = p.ticker;
-    if (!!ticker && exchange === "hkse")
-      ticker = Position.pad_hkse_ticker(ticker!);
+    if (!!ticker && exchange === "hkse") ticker = pad_hkse_ticker(ticker!);
     return { ticker, exchange, description };
-  }
-
-  private transaction: transaction_t;
-}
-class Transactions {
-  constructor(
-    private transactions: ibkr_t.transaction_t[],
-    private p: ibkr_t.position_t,
-  ) {}
-  map(): transaction_t {
-    const transfers = this.transactions.filter((t) => t.type === "Transfer");
-    const buys = this.transactions.filter((t) => t.type === "Buy");
-    const buy = (buys[0] || transfers[0])!;
-    const sells = this.transactions.filter((t) => t.type === "Sell");
-    const position = this.transactions.reduce(
-      (accum, t) => (accum += t.qty || 0),
-      0,
-    );
-    const external_transfer = !buys.length && !sells.length;
-    const open = external_transfer || position > 0;
-    const account_id = transfers[transfers.length - 1]?.acctid || buy.acctid!;
-    const description = util.Title_Case(buy.desc!);
-    const fx_buy = buy.fxRate;
-    const price_buy =
-      buy.pr || Math.round(buy.amt * 100) / this.p.position / 100;
-    const date = util.date_time(buy?.date);
-
-    return {
-      position,
-      open,
-      account_id,
-      description,
-      fx_buy,
-      price_buy,
-      date,
-      external_transfer,
-    };
   }
 }

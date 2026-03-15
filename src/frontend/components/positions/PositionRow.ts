@@ -1,5 +1,5 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Brokers } from "frontend";
+import { Brokers } from "@frontend/app/Brokers";
 
 export class PositionRow extends AppElement {
   static observedAttributes = ["broker"];

@@ -1,5 +1,3 @@
-import { withHtmlLiveReload } from "bun-html-live-reload";
-import * as conf from "conf";
 import index_html from "@frontend/index.html";
 
 const css_root = "./src/frontend";
@@ -40,7 +38,7 @@ export class ServerHttp {
     async GET(req: Request) {
       let filepath = new URL(req.url).pathname;
       filepath = `${css_root}${filepath}`;
-      console.log(filepath);
+      //console.log(filepath);
       const css = await Bun.file(filepath).text();
       return new Response(css, {
         headers: {

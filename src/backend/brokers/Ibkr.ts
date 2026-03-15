@@ -1,37 +1,8 @@
-import { Authorise, Fetch, factory, type factory_t } from "backend/ibkr";
-import { Brokers, Cache, type App } from "backend";
-import type { ibkr_t } from "types";
-
-import saved_positions from "../../../.logs/IBKR_positions.json";
-import saved_accounts from "../../../.logs/IBKR_accounts.json";
-import saved_fx from "../../../.logs/FX_pairs.json";
+import Fetch from "./ibkr/Fetch";
+import { ibkr } from "./ibkr/index";
 
 export class Ibkr extends Fetch {
-  constructor(app: App) {
-    super(app);
-
-    const _factory = factory(this);
-    this.authorise = _factory.authorise;
-    this.accounts = _factory.accounts;
-    this.positions = _factory.positions;
-
-    //this.cache_saved();
-  }
-
-  private cache_saved() {
-    Cache.fx_pairs = saved_fx;
-
-    this.cache_add_accounts(
-      "ibkr",
-      saved_accounts as unknown as ibkr_t.account_t[],
-    );
-    this.cache_add_positions(
-      "ibkr",
-      saved_positions as unknown as ibkr_t.position_t[],
-    );
-    Authorise.is_authorised = true;
-    this.is_authorised = () => Promise.resolve(true);
-  }
+  init_auth = () => this.authorise.init("ibkr");
 
   is_authorised = () => this.authorise.is_authorised();
   wait_for_auth = () => this.authorise.wait_for_auth();
@@ -47,7 +18,23 @@ export class Ibkr extends Fetch {
       : this.fetch_positions_to_cache();
 
   cache_fx = () =>
-    Cache.has_fx_pairs ? Promise.resolve() : this.fetch_fx_to_cache();
+    this.cache.has_fx_pairs ? Promise.resolve() : this.fetch_fx_to_cache();
+
+  get_bar_data = (
+    conid: string,
+    period: period_t = [3, "y"],
+    granularity: period_t = [1, "d"],
+  ) =>
+    this.stocks
+      .bar_data(
+        conid,
+        util.string.period(period),
+        util.string.period(granularity),
+      )
+      .then((data) => {
+        logger.json("IBKR bar data", data);
+        return this.stocks.map_bar_data(data.data);
+      });
 
   private fetch_accounts_to_cache = () =>
     this.accounts
@@ -57,7 +44,7 @@ export class Ibkr extends Fetch {
   private fetch_positions_to_cache = () =>
     Promise.all(
       this.cache.ibkr_accounts.map((a) =>
-        this.positions.get_positions(a.original_id),
+        this.positions.get_positions(a.a_id_original),
       ),
     )
       .then((p) => p.flat() as ibkr_t.position_t[])
@@ -65,20 +52,38 @@ export class Ibkr extends Fetch {
       .then(this.positions.merge_position_transactions)
       .then(this.cache_add_positions.bind(this, "ibkr"))
       .catch((err) => {
-        console.error(err, "IBKR positions");
+        logger.error(err, "IBKR positions");
       });
 
   private fetch_fx_to_cache = () => {
     return Promise.all(
-      Brokers.currencies.map((source) =>
-        this.accounts.get_fx(source, Brokers.base_currency).then((rate) => {
-          return { [source]: rate.rate };
-        }),
+      this.brokers.currencies.map((source) =>
+        this.accounts
+          .get_fx(source, this.brokers.base_currency)
+          .then((rate) => {
+            return { [source]: rate.rate };
+          }),
       ),
     ).then(this.cache_add_fx);
   };
 
-  private accounts: factory_t["accounts"];
-  private positions: factory_t["positions"];
-  private authorise: factory_t["authorise"];
+  accounts = new ibkr.Accounts();
+  positions = new ibkr.Positions();
+  stocks = new ibkr.Stocks();
+  authorise = new ibkr.Authorise();
 }
+
+//private _cache_saved() {
+//  Cache.fx_pairs = saved_fx;
+//
+//  cache_add_accounts(
+//    "ibkr",
+//    saved_accounts as unknown as ibkr_t.account_t[],
+//  );
+//  cache_add_positions(
+//    "ibkr",
+//    saved_positions as unknown as ibkr_t.position_t[],
+//  );
+//  //Authorise.is_authorised = true;
+//  //this.is_authorised = () => Promise.resolve(true);
+//}

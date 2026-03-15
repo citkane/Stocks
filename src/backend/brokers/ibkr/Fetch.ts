@@ -1,23 +1,15 @@
-import { App, RateLimiter, type Ibkr } from "backend";
-import { Broker } from "@backend/brokers/common/Broker";
+import { Broker, RateLimiter } from "@backend/brokers/common/index";
 
-import { ibkr as conf } from "conf";
-
-const base_url = `${conf.url.base}/${conf.url.endpoints.api}`;
 const limit_rate = 100;
-const default_params: RequestInit = {
+
+const { ibkr } = conf;
+const base_url = `${ibkr.url.base}/${ibkr.url.endpoints.api}`;
+const default_params = {
   tls: { rejectUnauthorized: false },
 } as RequestInit;
 
-export class Fetch extends Broker {
-  constructor(app: App) {
-    super(app);
-  }
-  public fetch<T = any>(
-    this: Ibkr,
-    endpoint: string,
-    params: RequestInit = {},
-  ) {
+export default class Fetch extends Broker {
+  public fetch<T = any>(endpoint: string, params: RequestInit = {}) {
     params = { ...default_params, ...(params || {}) };
     const req = new Request(encodeURI(`${base_url}/${endpoint}`));
     return this.limiter.fetch(() =>

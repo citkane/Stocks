@@ -1,19 +1,19 @@
 export class Cache {
   add = {
     position: (position: position_t) => {
-      const { id } = position;
-      this._positions.set(id, position);
+      const { p_id } = position;
+      this._positions.set(p_id, position);
       this.add_stock(position);
     },
     account: (account: account_t) => {
-      const { id } = account;
-      this._accounts.set(id, account);
+      const { a_id } = account;
+      this._accounts.set(a_id, account);
     },
   };
   get = {
-    account: (id: string) => this._accounts.get(id),
+    account: (a_id: string) => this._accounts.get(a_id),
     stock: (ticker: string) => this._stocks.get(ticker),
-    position: (id: string) => this._positions.get(id),
+    position: (p_id: string) => this._positions.get(p_id),
   };
   get accounts() {
     return [...this._accounts.values()];
@@ -25,8 +25,10 @@ export class Cache {
     return [...this._stocks.values()];
   }
   private add_stock(position: position_t) {
-    const { ticker, description } = position;
+    const { ticker, description, con_id, broker } = position;
     const stock: stock_t = this._stocks.get(ticker) || {
+      con_id,
+      broker,
       ticker,
       description,
       positions: new Set<position_t>(),

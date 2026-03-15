@@ -1,17 +1,12 @@
-import { saxo as conf } from "conf";
-import { RateLimiter, type App } from "backend";
-import { Oauth } from "backend/saxo";
-import { Broker } from "@backend/brokers/common/Broker";
+import { Broker, RateLimiter } from "@backend/brokers/common/index";
 
 const limit_rate = 250;
+const { saxo } = conf;
 
-export class Fetch extends Broker {
-  constructor(app: App) {
-    super(app);
-  }
+export default class Fetch extends Broker {
   public fetch<T = any>(
     endpoint: string,
-    base_url = conf.url.api,
+    base_url = saxo.url.api,
     params: RequestInit = {},
   ) {
     const default_params = this.default_params();
@@ -24,9 +19,10 @@ export class Fetch extends Broker {
   }
 
   private default_params(): RequestInit {
+    const token = this.saxo.oauth.token;
     return {
       headers: {
-        Authorization: `Bearer ${Oauth.token.access_token}`,
+        Authorization: `Bearer ${token.access_token}`,
       },
     };
   }

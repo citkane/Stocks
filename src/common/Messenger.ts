@@ -1,38 +1,41 @@
-import type {
-  topic_req_t as topic_req_b_t,
-  topic_set_t as topic_set_b_t,
-} from "backend";
-import type {
-  topic_req_t as topic_req_f_t,
-  topic_set_t as topic_set_f_t,
-} from "frontend";
+type context_t = "backend" | "frontend";
+type topic_t = req_topic_t | set_topic_t;
 
-type context_t = void | "backend" | "frontend";
-type topic_t<T = void> = topic_req_t<T> | topic_set_t<T>;
-type topic_req_t<T = void> = [T] extends [void]
-  ? topic_req_b_t | topic_req_f_t
-  : T extends "backend"
-    ? topic_req_b_t
-    : T extends "frontend"
-      ? topic_req_f_t
-      : never;
-export type topic_set_t<T = void> = [T] extends [void]
-  ? topic_set_b_t | topic_set_f_t
-  : T extends "backend"
-    ? topic_set_b_t
-    : T extends "frontend"
-      ? topic_set_f_t
-      : never;
-export type data_t = object | string | number | boolean;
-export type message_t<T = void, D = data_t> = {
-  topic: topic_t<T>;
-  data: D;
-  req_uid?: string;
-  res_uid?: string;
-  params?: string[];
-  error?: boolean;
-};
+type req_topic_t<T = context_t> = T extends ["frontend"]
+  ? frontend.req_topic_t
+  : T extends ["backend"]
+    ? backend.req_topic_t
+    : frontend.req_topic_t | backend.req_topic_t;
+type set_topic_t<T = context_t> = T extends ["frontend"]
+  ? frontend.set_topic_t
+  : T extends ["backend"]
+    ? backend.set_topic_t
+    : frontend.set_topic_t | backend.set_topic_t;
 
+declare global {
+  namespace frontend {
+    type req_topic_t = keyof frontend.Api_t["request"];
+    type set_topic_t = keyof frontend.Api_t["set"];
+  }
+  namespace backend {
+    type req_topic_t = keyof backend.Api_t["request"];
+    type set_topic_t = keyof backend.Api_t["set"];
+  }
+
+  type message_t<T = context_t, D = data_t> = {
+    topic: req_topic_t<T>;
+    data: D;
+    req_uid?: string;
+    res_uid?: string;
+    params?: string[];
+    error?: boolean;
+  };
+
+  type req_t = {
+    messenger: Messenger;
+    req_uid: string;
+  };
+}
 export class Messenger {
   constructor(private ws: ws_t) {}
 
@@ -40,7 +43,7 @@ export class Messenger {
     message: string,
   ): message_t<T, D> => {
     const mssg_array = JSON.parse(message) as [
-      topic_t<T>,
+      req_topic_t<T>,
       D,
       string?,
       string?,
@@ -58,36 +61,36 @@ export class Messenger {
     };
   };
   static encode = (
-    topic: topic_t | "",
-    data: data_t,
+    topic?: topic_t,
+    data?: data_t,
     req_uid?: string,
     res_uid?: string,
-    params?: string[],
+    params?: any[],
     error?: boolean,
   ) => {
     return JSON.stringify([topic, data, req_uid, res_uid, params, error]);
   };
 
   request<T = context_t, D = data_t>(
-    topic: topic_req_t<T>,
+    topic: req_topic_t<T>,
     data: data_t = "",
-    params?: string[],
+    params?: any[],
   ) {
     const req_uid = this.get_uid();
     return new Promise<message_t<T, D>>((resolve, reject) => {
       this.requests.set(req_uid, { resolve, reject });
-      this.send(topic as topic_set_t, data, req_uid, undefined, params);
+      this.send(topic as set_topic_t, data, req_uid, undefined, params);
     });
   }
-  response = (res_uid: string, data: data_t): void => {
-    this.send("", data, undefined, res_uid);
+  response = (res_uid: string, data?: data_t): void => {
+    this.send(undefined, data, undefined, res_uid);
   };
   send(
-    topic: topic_set_t | "",
-    data: data_t,
+    topic?: topic_t,
+    data?: data_t,
     req_uid?: string,
     res_uid?: string,
-    params?: string[],
+    params?: any[],
     error?: boolean,
   ) {
     const mssg = Messenger.encode(topic, data, req_uid, res_uid, params, error);
@@ -111,7 +114,7 @@ export class Messenger {
       error = { status, statusText };
     }
     //console.error(`Response ${uid}:`, error);
-    this.send("", error, undefined, uid, undefined, true);
+    this.send(undefined, error, undefined, uid, undefined, true);
     return;
   }
 

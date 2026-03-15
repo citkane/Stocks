@@ -1,26 +1,24 @@
 import { expect, test, describe } from "bun:test";
-import { util } from "../src/Util";
-
+import { util } from "../src/common";
 
 describe("Static", () => {
   describe("Date utils", () => {
     test("returns number", () => {
-      expect(util.date()).toBeNumber();
+      expect(util.time.to_epoch()).toBeNumber();
     });
     test("returns days", () => {
-      const now = util.date();
+      const now = util.time.to_epoch();
       const yesterday = new Date(now - 24 * 60 * 60 * 1000).toString();
-      const days = util.aging_days(yesterday);
+      const days = util.time.aging_days(yesterday);
       expect(days).toEqual(1);
     });
   });
   describe("Text utils", () => {
     test("title case", () => {
-      expect(util.Title_Case("title case")).toEqual("Title Case");
+      expect(util.string.title_case("title case")).toEqual("Title Case");
       console.error = () => {};
       // @ts-expect-error
-      expect(util.Title_Case()).toEqual("");
+      expect(util.string.title_case()).toEqual("");
     });
   });
 });
-
