@@ -1,9 +1,10 @@
-import { Broker, RateLimiter } from "@backend/brokers/common/index";
+import { RateLimiter } from "@backend/brokers/common/index";
+import { Global } from "backend";
 
 const limit_rate = 250;
 const { saxo } = conf;
 
-export default class Fetch extends Broker {
+export class Fetch extends Global {
   public fetch<T = any>(
     endpoint: string,
     base_url = saxo.url.api,
@@ -13,16 +14,14 @@ export default class Fetch extends Broker {
     params.headers = { ...default_params.headers, ...(params.headers || {}) };
     const req = new Request(encodeURI(`${base_url}/${endpoint}`));
 
-    return this.limiter.fetch(() =>
-      fetch(req, params).then(this.response),
-    ) as Promise<T>;
+    return this.limiter.fetch(() => fetch(req, params)) as Promise<T>;
   }
 
   private default_params(): RequestInit {
-    const token = this.saxo.oauth.token;
+    const bearer = this.saxo.auth_token.access_token;
     return {
       headers: {
-        Authorization: `Bearer ${token.access_token}`,
+        Authorization: `Bearer ${bearer}`,
       },
     };
   }

@@ -1,8 +1,12 @@
-import type { saxo, ibkr } from "../";
 import { Global } from "backend";
 
-export default class Authorise extends Global {
-  wait_for_auth(): Promise<boolean> {
+export class AuthBase extends Global {
+  constructor(private _broker: broker_t) {
+    super();
+    setTimeout(() => this.poll_for_auth());
+  }
+
+  await_auth(): Promise<boolean> {
     return new Promise((resolve) => {
       if (this.auth.authorised) return resolve(true);
       const interval = setInterval(() => {
@@ -44,11 +48,7 @@ export default class Authorise extends Global {
       .catch(() => this.poll_for_auth());
   }
 
-  init(b: broker_t) {
-    this.auth = this.broker[b].authorise;
-    this.poll_for_auth();
+  private get auth() {
+    return this.broker[this._broker].auth;
   }
-  private auth!:
-    | InstanceType<typeof saxo.Authorise>
-    | InstanceType<typeof ibkr.Authorise>;
 }

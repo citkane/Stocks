@@ -1,8 +1,8 @@
-import AuthBase from "@backend/brokers/common/Authorise";
+import { AuthBase } from "@backend/brokers/common/AuthBase";
 
 const keepalive_interval = 60000;
 
-export default class Authorise extends AuthBase {
+export class Authorise extends AuthBase {
   constructor() {
     super("ibkr");
   }

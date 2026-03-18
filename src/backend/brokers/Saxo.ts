@@ -1,65 +1,68 @@
-import Fetch from "./saxo/Fetch";
-import { saxo } from "./saxo/index";
+import {
+  Account,
+  Accounts,
+  Authorise,
+  Fetch,
+  Oauth,
+  Position,
+  Positions,
+  Stocks,
+  Cache,
+} from "./saxo/index";
 
 export class Saxo extends Fetch {
-  init_auth = () => this.authorise.init("saxo");
+  public await_ready = () =>
+    this.authorise.authorised
+      ? Promise.resolve()
+      : this.ready_resolver ||
+        this.define_ready_resolver().then(() => {
+          this.ibkr.await_ready().then(this.update);
+        });
 
-  wait_for_auth = () => this.authorise.wait_for_auth();
-  is_authorised = () => this.authorise.is_authorised();
+  public is_authorised = () => this.authorise.is_authorised();
+  public fetch_auth_url = () => this.authorise.fetch_code_url();
+  public set_auth_token = (code: string) => this.oauth.set_token(code);
+  public read_auth_token = () => this.oauth.read_token();
+  public refresh_token = (token: string) => this.oauth.refresh_token(token);
 
-  get_code_url = () => this.authorise.get_code_url();
-  set_token = (code: string) => this.oauth.set_token(code);
-  refresh_token = (refresh_token: string) =>
-    this.oauth.refresh_token(refresh_token);
-
-  cache_accounts = () =>
-    this.cache.saxo_accounts.length
-      ? Promise.resolve(this.cache.saxo_accounts)
-      : this.fetch_accounts_to_cache();
-
-  cache_positions = () =>
-    this.cache.saxo_positions.length
-      ? Promise.resolve(this.cache.saxo_positions)
-      : this.fetch_positions_to_cache();
-
-  get_bar_data = (
+  public chart_data = (
     conid: string,
-    period: period_t = [3, "y"],
-    granularity: period_t = [1, "d"],
-  ) =>
-    this.stocks.bar_data(conid, period, granularity).then((data) => {
-      logger.json("SAXO bar data", data);
-      return this.stocks.map_bar_data(data);
-    });
+    period: period_t,
+    granularity: period_t,
+  ) => this.stocks.chart_data(conid, period, granularity);
 
-  private fetch_accounts_to_cache = () =>
+  public get auth_token() {
+    return this.oauth.token;
+  }
+  public get auth() {
+    return this.authorise;
+  }
+  public cache = new Cache();
+
+  private define_ready_resolver = () =>
+    (this.ready_resolver = this.authorise
+      .await_auth()
+      .then(() => console.info("Saxo is ready")));
+
+  private update = () => {
+    this.update_accounts();
+    this.update_positions();
+  };
+  private update_accounts = () =>
     this.accounts
-      .get_accounts()
-      .then(this.cache_add_accounts.bind(this, "saxo"));
-
-  private fetch_positions_to_cache = () =>
+      .update()
+      .then((accs) => accs.map((a) => new Account(a).translate()))
+      .then((accs) => (this.cache.accounts = accs));
+  private update_positions = () =>
     this.positions
-      .get_positions()
-      .then(this.cache_add_positions.bind(this, "saxo"));
+      .update()
+      .then((pos) => pos.map((p) => new Position(p).translate()))
+      .then((pos) => (this.cache.positions = pos));
 
-  accounts = new saxo.Accounts();
-  positions = new saxo.Positions();
-  oauth = new saxo.Oauth();
-  stocks = new saxo.Stocks();
-  authorise = new saxo.Authorise();
+  private accounts = new Accounts();
+  private positions = new Positions();
+  private oauth = new Oauth();
+  private stocks = new Stocks();
+  private authorise = new Authorise();
+  private ready_resolver?: Promise<void>;
 }
-
-//private cache_saved() {
-//  Cache.fx_pairs = saved_fx;
-//
-//  this.cache_add_accounts(
-//    "saxo",
-//    saved_accounts as unknown as saxo_t.account_t[],
-//  );
-//  this.cache_add_positions(
-//    "saxo",
-//    saved_positions as unknown as saxo_t.position_t[],
-//  );
-//  //Authorise.is_authorised = true;
-//  //this.is_authorised = () => Promise.resolve(true);
-//}

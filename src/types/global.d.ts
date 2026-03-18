@@ -1,6 +1,7 @@
 type window_t = ReturnType<typeof window.open>;
 
-type resolve_t = (value: any) => void;
+type resolve_t = Promise.resolve;
+type reject_t = Promise.reject;
 type resolver_t = {
   resolve: resolve_t;
   reject: resolve_t;
@@ -11,7 +12,6 @@ type res_error_t = {
   statusText: string;
 };
 
-type currency_t = "EUR" | "HKD" | "CNH" | "ZAR" | "CHF";
 type broker_t = "saxo" | "ibkr";
 type position_t = {
   p_id: string;

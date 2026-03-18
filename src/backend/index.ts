@@ -8,7 +8,6 @@ declare global {
   namespace backend {
     namespace app {
       var api: Api_t;
-      var cache: Cache_t;
       var db: Database_t;
       var brokers: Brokers_t;
       var http: Http_t;
@@ -24,7 +23,7 @@ declare global {
 (globalThis as any).logger = Logger;
 
 import { ServerHttp, ServerWs } from "./servers";
-import { Database, Cache } from "./storage";
+import { Database } from "./database";
 import { Brokers, Saxo, Ibkr } from "./brokers";
 import Api from "./Api.ts";
 import App from "./App.ts";
@@ -34,7 +33,6 @@ import App from "./App.ts";
   ws: new ServerWs(),
   brokers: new Brokers(),
   api: new Api(),
-  cache: new Cache(),
   db: new Database(),
 };
 

@@ -14,9 +14,10 @@ export default class App extends Global {
     process.on("SIGTERM", this.shutdown);
     process.on("SIGKILL", this.shutdown);
   }
-  add_shutdown_fnc = (fnc: Function) => {
+  public add_shutdown_fnc = (fnc: Function) => {
     this.shutdown_fns.push(fnc);
   };
+
   private open_browser() {
     Bun.spawn([browser_script, this.app.http.url]);
   }

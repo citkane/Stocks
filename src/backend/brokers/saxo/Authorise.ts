@@ -1,11 +1,14 @@
 import { randomUUIDv7 } from "bun";
-import AuthBase from "@backend/brokers/common/Authorise";
+import { AuthBase } from "@backend/brokers/common";
 
 const keepalive_interval = 1190000;
 
-export default class Authorise extends AuthBase {
+export class Authorise extends AuthBase {
+  constructor() {
+    super("saxo");
+  }
   public is_authorised = async (): Promise<boolean> =>
-    this.saxo.oauth.read_token().then((token) => {
+    this.saxo.read_auth_token().then((token) => {
       if (!token) return (this.authorised = false);
 
       return this.saxo
@@ -13,7 +16,7 @@ export default class Authorise extends AuthBase {
         .then((success) => (this.authorised = success));
     });
 
-  public get_code_url = (): Promise<string> => {
+  public fetch_code_url = (): Promise<string> => {
     const base_url = conf.saxo.url.auth;
     return this.saxo.fetch(this.endpoint, base_url).then((res) => res.url);
   };

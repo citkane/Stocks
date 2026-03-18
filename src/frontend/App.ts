@@ -12,7 +12,7 @@ export default class App extends Global {
       await this.brokers.wait_for_auth();
 
       console.info("App awaiting warm cache");
-      await this.brokers.wait_for_cache();
+      //await this.brokers.wait_for_cache();
       await this.warm_the_cache();
 
       console.info("App ready");

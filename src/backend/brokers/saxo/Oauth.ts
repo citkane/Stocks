@@ -4,7 +4,7 @@ const endpoint = "token";
 const url = conf.saxo.url.auth;
 const token_file = `.temp/saxo.token.json`;
 
-export default class Oauth extends Global {
+export class Oauth extends Global {
   public read_token = async () => {
     const file = await Bun.file(token_file);
     if (!(await file.exists())) return false;

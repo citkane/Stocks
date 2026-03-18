@@ -2,13 +2,18 @@ import { Global } from "backend";
 
 const col = util.colours;
 
-export default class Stocks extends Global {
-  public bar_data(conid: string, period: string, bar: string) {
-    const endpoint = this.endpoints.get.bar_data(conid, period, bar);
-    return this.ibkr.fetch<ibkr_t.bar_data_t>(endpoint);
+export class Stocks extends Global {
+  public chart_data(conid: string, period: period_t, bar: period_t) {
+    const endpoint = this.endpoints.get.bar_data(
+      conid,
+      util.string.period(period),
+      util.string.period(bar),
+    );
+    return this.ibkr.fetch<ibkr_t.bar_data_t>(endpoint).then(this.map_bar_data);
   }
-  public map_bar_data = (data: ibkr_t.bar_data_t["data"]) =>
-    data.reduce(
+
+  private map_bar_data = (data: ibkr_t.bar_data_t) =>
+    data.data.reduce(
       (c, point) => {
         const time = util.time.ms_day_end(point.t, true);
         c.bar.push({

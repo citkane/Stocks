@@ -6,16 +6,13 @@ const { saxo } = conf;
 
 type pos_t = saxo_t.position_t;
 
-export default class Positions extends Global {
-  public get_positions = (
-    skip = 0,
-    positions: pos_t[] = [],
-  ): Promise<pos_t[]> =>
+export class Positions extends Global {
+  public update = (skip = 0, positions: pos_t[] = []): Promise<pos_t[]> =>
     this.saxo
       .fetch<saxo_t.positions_t>(this.endpoints.positions(skip))
       .then((data) =>
         !!data.__next
-          ? this.get_positions(skip + paging_top, [...positions, ...data.Data])
+          ? this.update(skip + paging_top, [...positions, ...data.Data])
           : [...positions, ...data.Data],
       );
 
@@ -32,4 +29,49 @@ export default class Positions extends Global {
     position: (id: string, client_key: string) =>
       `${api}//positions/${id}?ClientKey=${client_key}`,
   };
+}
+
+export class Position extends Global {
+  constructor(private position: saxo_t.position_t) {
+    super();
+  }
+
+  translate(): position_t {
+    const p = this.position;
+    const { ExchangeId } = p.Exchange;
+    const { Currency, Symbol, Description } = p.DisplayAndFormat;
+    const { ConversionRateOpen, CurrentPrice } = p.PositionView;
+    const { Uic, AccountId, Amount, ExecutionTimeOpen, ValueDate, OpenPrice } =
+      p.PositionBase;
+    const { ticker, exchange, description } = util.string.format_ticker(
+      ExchangeId,
+      Symbol,
+      Description,
+    );
+    const _date =
+      ExecutionTimeOpen.split("T")[0] === ValueDate.split("T")[0]
+        ? ExecutionTimeOpen
+        : ValueDate;
+    return {
+      p_id: `saxo_${p.PositionId}`,
+      con_id: Uic.toString(),
+      broker: "saxo",
+      a_id: AccountId,
+      description,
+      ticker,
+      currency: Currency,
+      exchange,
+      position: Amount,
+      fx_market: this.brokers.fx_rate(Currency),
+      fx_buy: ConversionRateOpen,
+      date: util.time.ms(_date),
+      price_market: this.price_decimal(p, CurrentPrice),
+      price_buy: this.price_decimal(p, OpenPrice),
+    };
+  }
+
+  private price_decimal(p: saxo_t.position_t, price: number) {
+    let decimals = p.DisplayAndFormat.Decimals;
+    return decimals ? price : price / 100;
+  }
 }

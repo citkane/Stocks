@@ -18,7 +18,8 @@ export class PositionsRoot extends AppElement {
     render: (old_value: string, new_value: string) => {
       if (old_value === new_value) return;
 
-      let positions = this.cache.get.stock(this.ticker)?.positions!;
+      let positions = this.cache.get.stock(this.ticker)?.positions;
+      if (!positions) return;
 
       this.dom.append_position_rows(positions);
       this.data.refresh();

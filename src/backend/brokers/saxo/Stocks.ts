@@ -4,8 +4,8 @@ const api = "chart/v3";
 const bar_data_limit = 1200;
 const { red, green } = util.colours;
 
-export default class Stocks extends Global {
-  public bar_data = (
+export class Stocks extends Global {
+  public chart_data = (
     conid: string,
     period: period_t = [3, "y"],
     granularity: period_t = [1, "d"],
@@ -27,10 +27,12 @@ export default class Stocks extends Global {
             }),
           );
       }),
-    ).then((data) => data.flat());
+    )
+      .then((data) => data.flat())
+      .then(this.map_bar_data);
   };
 
-  public map_bar_data = (data: saxo_t.bar_data_t["Data"]) =>
+  private map_bar_data = (data: saxo_t.bar_data_t["Data"]) =>
     data.reduce(
       (c, point) => {
         const time = util.time.ms_day_end(point.Time, true);

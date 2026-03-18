@@ -42,7 +42,8 @@ export class StockChart extends AppElement {
 
   private handlers = {
     render: async (old_value: string, new_value: string) => {
-      if (old_value === new_value) return;
+      const stock = this.stock;
+      if (!stock || old_value === new_value) return;
       if (new_value === "closed") {
         this.style.height = "0";
         this.chart?.remove();
@@ -55,6 +56,8 @@ export class StockChart extends AppElement {
       const volume = this.dom.add_volume_series();
 
       const data = await this.data;
+      if (!data) return;
+
       bar.setData(data.bar);
       baseline.setData(data.price);
       volume.setData(data.volume);
@@ -111,7 +114,10 @@ export class StockChart extends AppElement {
       return volume;
     },
     add_buy_lines: (series: ISeriesApi<"Baseline">) => {
-      this.stock.positions.forEach((p) =>
+      const stock = this.stock;
+      if (!stock) return;
+
+      stock.positions.forEach((p) =>
         series.createPriceLine({
           price: p.price_buy,
           color: util.colours.blue,
@@ -123,7 +129,10 @@ export class StockChart extends AppElement {
       );
     },
     create_buy_markers: (series: ISeriesApi<"Baseline">) => {
-      const markers = [...this.stock.positions].map((p) => {
+      const stock = this.stock;
+      if (!stock) return;
+
+      const markers = [...stock.positions].map((p) => {
         const time = Math.floor(Number(p.date) / 1000); //Math.floor(Number(p.date) / 1000) as Time;
         console.log(time);
 
@@ -145,7 +154,7 @@ export class StockChart extends AppElement {
   });
 
   private get stock() {
-    return this.cache.get.stock(this.ticker)!;
+    return this.cache.get.stock(this.ticker);
   }
   private get ticker() {
     return this.getAttribute("ticker")!;
@@ -155,6 +164,9 @@ export class StockChart extends AppElement {
   }
 
   private get baseline() {
+    const stock = this.stock;
+    if (!stock) return;
+
     const buy = [...this.stock.positions].reduce(
       (c, p) => {
         const [value, position] = c;
@@ -167,17 +179,19 @@ export class StockChart extends AppElement {
     return Math.round((value! * 100) / position!) / 100;
   }
   private get data() {
+    const stock = this.stock;
+    if (!stock) return Promise.resolve();
+
     return this.chart_data
       ? Promise.resolve(this.chart_data)
       : this.brokers
-          .chart_data(
-            this.stock.broker,
-            this.stock.con_id,
-            chart_span,
-            chart_granularity,
-          )
+          .chart_data(stock.broker, stock.con_id, chart_span, chart_granularity)
           .then((res) => res.data)
-          .then((data) => (this.chart_data = data));
+          .then((data) => (this.chart_data = data))
+          .catch((err) => {
+            console.error(err);
+            return Promise.resolve();
+          });
   }
   private get visible_range() {
     return {

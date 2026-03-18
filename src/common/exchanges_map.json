@@ -1,0 +1,18 @@
+{
+  "SEHKNTL": "sse",
+  "SHANGHAI_SC": "sse",
+  "SEHKSZSE": "she",
+  "SHENZHEN_SC": "she",
+  "SEHK": "hkse",
+  "HKEX": "hkse",
+  "EGD": "dub",
+  "XETR_ETF": "etr",
+  "SWX_ETF": "swx",
+  "JSE": "jse",
+  "AMS": "ams",
+  "MIL_ETF": "mil",
+  "IBIS": "ibis",
+  "FWB2": "fwb2",
+  "IBIS2": "ibis2",
+  "BVME.ETF": "bvme"
+}

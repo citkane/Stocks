@@ -5,9 +5,6 @@ export class Global {
   protected get broker() {
     return backend.broker;
   }
-  protected get cache() {
-    return this.app.cache;
-  }
   protected get db() {
     return this.app.db;
   }

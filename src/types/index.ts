@@ -7,7 +7,7 @@ import type { Brokers as Brokers_b } from "@backend/brokers";
 import type {
   Cache as Cache_b,
   Database as Database_b,
-} from "@backend/storage";
+} from "@backend/database";
 import type { ServerHttp, ServerWs } from "@backend/servers";
 
 import type App_f from "@frontend/App";

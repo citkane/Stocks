@@ -54,7 +54,7 @@ declare global {
       position: number;
       mktPrice: number;
       mktValue: number;
-      currency: string;
+      currency: currency_t;
       avgCost: number;
       avgPrice: number;
       realizedPnl: number;
@@ -83,7 +83,7 @@ declare global {
       time: number;
       chineseName: string;
       allExchanges: string;
-      listingExchange: string;
+      listingExchange: exchanges_t;
       countryCode: string;
       name: string;
       lastTradingDay: string;

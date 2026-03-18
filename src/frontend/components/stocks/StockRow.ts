@@ -31,6 +31,7 @@ export class StockRow extends AppElement {
 
   private handlers = {
     render: () => {
+      if (!this.stock) return;
       const { description, ticker } = this.stock;
 
       this.props.query_by_name("description").innerHTML = description;
@@ -67,12 +68,14 @@ export class StockRow extends AppElement {
     set_money_values: () => {
       const values = this.positions_root.attributes;
       StocksRoot.money_value_keys.forEach((key) => {
-        const value = values.getNamedItem(key)!.value;
+        const value = values.getNamedItem(key)?.value;
+        if (!value) return;
         this.setAttribute(key, value);
         this.props.query_by_name(key).setAttribute("value", value);
       });
     },
     set_context: () => {
+      if (!this.stock) return;
       this.setAttribute("description", this.stock.description);
       this.setAttribute("positions", this.positions_count);
     },
@@ -101,7 +104,7 @@ export class StockRow extends AppElement {
     return this.querySelector("[name=ticker] button")!;
   }
   private get stock() {
-    return this.cache.get.stock(this.ticker)!;
+    return this.cache.get.stock(this.ticker);
   }
   private get has_positions() {
     return this.positions_root.style.display !== "none";

@@ -17,7 +17,8 @@ export class AccountRow extends AppElement {
   }
   private handlers = {
     render: () => {
-      const acc = this.cache.get.account(this.account_id)!;
+      const acc = this.cache.get.account(this.account_id);
+      if (!acc) return;
 
       this.props.query_by_name("broker").innerHTML = acc.broker;
       this.props.query_by_name("alias").innerHTML = acc.alias;

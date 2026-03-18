@@ -63,7 +63,7 @@ declare global {
       };
       Exchange: {
         Description: string;
-        ExchangeId: string;
+        ExchangeId: exchanges_t;
         IsOpen: boolean;
         TimeZoneId: string;
       };

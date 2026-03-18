@@ -1,5 +1,6 @@
-type time_t = keyof typeof to_minutes;
+import { exchanges } from ".";
 
+type time_t = keyof typeof to_minutes;
 declare global {
   type period_t = [number, time_t];
 }
@@ -54,6 +55,16 @@ export class Util {
     epoch_to_utc: (ms: number) => {
       const date = new Date(ms);
       return date.toUTCString();
+    },
+    format_ticker: (
+      _exchange: exchanges_t,
+      ticker: string,
+      description: string,
+    ) => {
+      const exchange = exchanges[_exchange] || _exchange;
+      if (!!ticker && exchange === "hkse") ticker = pad_hkse_ticker(ticker!);
+      description = this.string.title_case(description);
+      return { exchange, ticker, description };
     },
   };
   static time = {
@@ -120,7 +131,6 @@ export class Util {
       return { resolve: () => {}, reject: () => {} };
     },
   };
-
   static colours = {
     red: "#ef5350",
     green: "#26a69a",
@@ -135,3 +145,6 @@ const to_minutes = {
   m: (count: number) => count * to_minutes.d(30),
   y: (count: number) => count * to_minutes.d(364),
 };
+function pad_hkse_ticker(ticker: string) {
+  return ticker.length < 4 ? ticker!.padStart(4, "0") : ticker;
+}

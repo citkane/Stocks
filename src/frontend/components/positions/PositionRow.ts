@@ -17,11 +17,10 @@ export class PositionRow extends AppElement {
   }
   private handlers = {
     render: () => {
-      const market_value = this.market_value.toString();
-      const buy_value = this.buy_value.toString();
-      const pl = this.pl.toString();
-      const fx_pl = this.fx_pl.toString();
-      const { date, position, broker, exchange } = this.position;
+      const data = this.data;
+      if (!data) return;
+      const { market_value, buy_value, pl, fx_pl, position: _position } = data;
+      const { date, position, broker, exchange } = _position;
       const { query_by_name } = this.props;
 
       query_by_name("date").setAttribute("value", date.toString());
@@ -41,7 +40,7 @@ export class PositionRow extends AppElement {
     broker: (old_value: string, new_value: string) => {
       if (old_value === new_value) return;
       if (new_value === "all") return this.props.show();
-      this.position.broker === new_value
+      this.position?.broker === new_value
         ? this.props.show()
         : this.props.hide();
     },
@@ -49,21 +48,24 @@ export class PositionRow extends AppElement {
 
   private dom = this.api.dom({});
   private props = this.api.props({});
-
-  private get pl() {
-    return (this.market_value * 100 - this.buy_value * 100) / 100;
-  }
-  private get fx_pl() {
-    return Brokers.fx_pl(this.position);
-  }
-  private get market_value() {
-    return Brokers.market_value(this.position);
-  }
-  private get buy_value() {
-    return Brokers.buy_value(this.position);
-  }
   private get position() {
-    return this.cache.get.position(this.position_id)!;
+    const p = this.cache.get.position(this.position_id);
+    return p ? p : undefined;
+  }
+  private get data() {
+    const position = this.position;
+    if (!position) return;
+    const market_value = Brokers.market_value(position);
+    const fx_pl = Brokers.fx_pl(position);
+    const buy_value = Brokers.buy_value(position);
+    const pl = (market_value * 100 - buy_value * 100) / 100;
+    return {
+      position,
+      market_value: market_value.toString(),
+      fx_pl: fx_pl.toString(),
+      buy_value: buy_value.toString(),
+      pl: pl.toString(),
+    };
   }
   private get position_id() {
     return this.getAttribute("id")!;
