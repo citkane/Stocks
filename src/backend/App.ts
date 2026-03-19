@@ -7,7 +7,7 @@ export default class App extends Global {
     super();
 
     this.open_browser();
-    this.brokers.init_brokers().catch((err) => logger.error(err));
+    this.brokers.init_brokers(); //.catch((err) => logger.error(err));
 
     this.add_shutdown_fnc(this.close_clients);
     process.on("SIGINT", this.shutdown);
@@ -35,8 +35,8 @@ export default class App extends Global {
         }, 10);
       })
       .catch((err) => {
-        logger.error(err);
-        process.exit(1);
+        //logger.error(err);
+        //process.exit(1);
       });
   };
 

@@ -1,33 +1,38 @@
+import { Fetch } from "@backend/brokers/common/index";
 import {
   Accounts,
   Authorise,
-  Fetch,
   Positions,
   Stocks,
   Cache,
   Account,
 } from "./ibkr/index";
 
-const fx_endpoint = "iserver/exchangerate";
+const fetch_rate_limit = 100;
+function fetch_default_params() {
+  return {
+    tls: { rejectUnauthorized: false },
+  } as RequestInit;
+}
 
 export class Ibkr extends Fetch {
+  constructor() {
+    super(fetch_rate_limit, fetch_default_params);
+  }
   public await_ready = () =>
     this.authorise.authorised
       ? Promise.resolve()
-      : this.ready_resolver ||
-        this.define_ready_resolver().then(() => {
-          this.update();
-        });
+      : this.ready_resolver || this.define_ready_resolver();
 
-  public is_authorised = () => this.authorise.is_authorised();
-  public chart_data = (
-    conid: string,
-    period: period_t,
-    granularity: period_t,
-  ) => this.stocks.chart_data(conid, period, granularity);
+  public chart_data = (...p: p.chart_data) => this.stocks.chart_data(...p);
+
+  public get is_authorised() {
+    return this.authorise.authorised;
+  }
   public get auth() {
     return this.authorise;
   }
+
   public cache = new Cache();
 
   private define_ready_resolver = () =>
@@ -51,19 +56,16 @@ export class Ibkr extends Fetch {
 
   private fetch_fx_pairs = () => {
     const { currencies } = this.brokers;
-    return Promise.all(currencies.map(this.fetch_fx))
+    return Promise.all(currencies.map(this.stocks.fx_rate))
       .then(this.map_fx_pairs)
-      .then((fx_rates) => (this.cache.fx_rates = fx_rates));
+      .then((fx_rates) => {
+        this.cache.fx_rates = fx_rates;
+      });
   };
-  private fetch_fx = (source: currency_t) => {
+
+  private map_fx_pairs = (pairs: fx_pair_t[]) => {
     const { base_currency } = this.brokers;
-    return this.ibkr.fetch<ibkr_t.fx_rate_t>(
-      `${fx_endpoint}?Source=${source}&Target=${base_currency}`,
-    );
-  };
-  private map_fx_pairs = (pairs: ibkr_t.fx_rate_t[]) => {
-    const { base_currency } = this.brokers;
-    const collector = { [base_currency]: 1 } as unknown as fx_rates_t;
+    const collector: fx_rates_t = { [base_currency]: 1 } as any;
     return pairs.reduce((c, val) => {
       return { ...c, ...val };
     }, collector);

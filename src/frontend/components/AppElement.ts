@@ -83,7 +83,7 @@ export class AppElement extends HTMLElement {
       },
       query_by_name: (name: string) => {
         const child = this.querySelector(`*[name="${name}"]`);
-        if (!child) throw Error(`No direct child named "${name}" found.`);
+        //if (!child) throw Error(`No direct child named "${name}" found.`);
         return child;
       },
 

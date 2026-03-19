@@ -1,16 +1,20 @@
 import { Global } from "backend";
 
-const api = "port/v1";
-
 export class Accounts extends Global {
+  constructor() {
+    super();
+  }
   public update = () =>
     this.saxo
       .fetch<saxo_t.accounts_t>(this.endpoints.accounts())
       .then((data) => data.Data);
 
   private endpoints = {
-    accounts: () => `${api}/accounts`,
+    accounts: () => `${this.api_url}/port/v1/accounts`,
   };
+  private get api_url() {
+    return util.url.saxo.api;
+  }
 }
 
 export class Account extends Global {

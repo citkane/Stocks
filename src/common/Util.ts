@@ -6,6 +6,16 @@ declare global {
 }
 
 export class Util {
+  static get url() {
+    return {
+      saxo: {
+        api: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.api}`,
+        auth: `${conf.saxo.url.auth}`,
+        chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
+      },
+      ibkr: { api: `${conf.ibkr.url.base}/${conf.ibkr.url.endpoints.api}` },
+    };
+  }
   static string = {
     title_case: (str: string) =>
       str

@@ -6,9 +6,10 @@ export class Login {
   }
 
   public login_backend = () => {
+    const { request } = this.saxo.messenger;
     const auth_code = this.parse_code_from_url();
-    this.saxo.messenger
-      .request<"backend", boolean>("saxo_authorise", auth_code)
+    request<"backend">("saxo_fetch_token", auth_code)
+      .then(() => request<"backend", boolean>("is_authorised", "saxo"))
       .then((messg) => (messg.data ? Login.popup_close() : Login.go_back()))
       .catch(Login.go_back);
   };

@@ -5,8 +5,11 @@ export class Accounts extends Global {
     this.ibkr.fetch<ibkr_t.account_t[]>(this.endpoints.accounts());
 
   private endpoints = {
-    accounts: () => "portfolio/accounts",
+    accounts: () => `${this.api_url}/portfolio/accounts`,
   };
+  private get api_url() {
+    return util.url.ibkr.api;
+  }
 }
 
 export class Account extends Global {

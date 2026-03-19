@@ -1,10 +1,12 @@
 import { Global } from "backend";
 
-const api = "chart/v3";
 const bar_data_limit = 1200;
 const { red, green } = util.colours;
 
 export class Stocks extends Global {
+  constructor() {
+    super();
+  }
   public chart_data = (
     conid: string,
     period: period_t = [3, "y"],
@@ -84,11 +86,14 @@ export class Stocks extends Global {
           `Uic=${conid}`,
           `Count=${bar_data_limit}`,
         ];
-        return `${api}/charts?${params.join("&")}`;
+        return `${this.api_chart_url}/charts?${params.join("&")}`;
       },
     },
     post: {},
   };
+  private get api_chart_url() {
+    return util.url.saxo.chart;
+  }
 }
 
 function period_to_starts(

@@ -1,29 +1,36 @@
+import { Fetch } from "@backend/brokers/common/index";
 import {
   Account,
   Accounts,
   Authorise,
-  Fetch,
-  Oauth,
   Position,
   Positions,
   Stocks,
   Cache,
 } from "./saxo/index";
 
+const fetch_rate_limit = 250;
+function fetch_params(this: Saxo): RequestInit {
+  return {
+    headers: {
+      Authorization: `Bearer ${this.auth_bearer}`,
+    },
+  };
+}
+
 export class Saxo extends Fetch {
+  constructor() {
+    super(fetch_rate_limit, fetch_params);
+    fetch_params.bind(this);
+  }
+
   public await_ready = () =>
     this.authorise.authorised
       ? Promise.resolve()
-      : this.ready_resolver ||
-        this.define_ready_resolver().then(() => {
-          this.ibkr.await_ready().then(this.update);
-        });
+      : this.ready_resolver || this.define_ready_resolver();
 
-  public is_authorised = () => this.authorise.is_authorised();
   public fetch_auth_url = () => this.authorise.fetch_code_url();
-  public set_auth_token = (code: string) => this.oauth.set_token(code);
-  public read_auth_token = () => this.oauth.read_token();
-  public refresh_token = (token: string) => this.oauth.refresh_token(token);
+  public fetch_auth_token = (code: string) => this.authorise.fetch_token(code);
 
   public chart_data = (
     conid: string,
@@ -31,11 +38,14 @@ export class Saxo extends Fetch {
     granularity: period_t,
   ) => this.stocks.chart_data(conid, period, granularity);
 
-  public get auth_token() {
-    return this.oauth.token;
+  public get auth_bearer() {
+    return this.authorise.token.access_token;
   }
   public get auth() {
     return this.authorise;
+  }
+  public get is_authorised() {
+    return this.authorise.authorised;
   }
   public cache = new Cache();
 
@@ -61,7 +71,6 @@ export class Saxo extends Fetch {
 
   private accounts = new Accounts();
   private positions = new Positions();
-  private oauth = new Oauth();
   private stocks = new Stocks();
   private authorise = new Authorise();
   private ready_resolver?: Promise<void>;

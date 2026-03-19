@@ -30,14 +30,18 @@ export class Cache extends CacheBroker {
   }
 
   public override set fx_rates(rates: fx_rates_t) {
+    this.db.insert.fx_rates(rates);
     CacheBrokers.fx_rates = rates;
+  }
+  public override get fx_rates() {
+    return super.fx_rates;
   }
   private set_transaction = (t: ibkr_t.transaction_t) => {
     const { conid } = t;
     if (!this._transactions.has(conid))
       this._transactions.set(conid, new Set());
-    const set = this._transactions.get(conid)!;
-    set.add(t);
+    const transactions_set = this._transactions.get(conid)!;
+    transactions_set.add(t);
   };
 
   private _transactions = new Map<number, Set<ibkr_t.transaction_t>>();

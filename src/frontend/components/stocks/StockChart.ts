@@ -134,8 +134,6 @@ export class StockChart extends AppElement {
 
       const markers = [...stock.positions].map((p) => {
         const time = Math.floor(Number(p.date) / 1000); //Math.floor(Number(p.date) / 1000) as Time;
-        console.log(time);
-
         return {
           price: p.price_buy,
           color: util.colours.blue,

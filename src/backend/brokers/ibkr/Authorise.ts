@@ -1,11 +1,12 @@
 import { AuthBase } from "@backend/brokers/common/AuthBase";
 
-const keepalive_interval = 60000;
+const ping_auth_interval = 60000;
 
 export class Authorise extends AuthBase {
   constructor() {
-    super("ibkr");
+    super("ibkr", ping_auth_interval);
   }
+
   public is_authorised = () =>
     this.renew_auth()
       .then((status) => (this.authorised = status.authenticated))
@@ -13,14 +14,17 @@ export class Authorise extends AuthBase {
 
   private renew_auth = () =>
     this.ibkr
-      .fetch<ibkr_t.tickle_t>(this.endpoints.tickle)
+      .fetch<ibkr_t.tickle_t>(this.endpoints.tickle())
       .then((tickle) => tickle.iserver.authStatus);
 
   private endpoints = {
-    status: "iserver/auth/status",
-    tickle: "tickle",
+    status: () => `${this.api_url}/iserver/auth/status`,
+    tickle: () => `${this.api_url}/tickle`,
   };
 
   public authorised = false;
-  public keepalive_interval = keepalive_interval;
+
+  private get api_url() {
+    return util.url.ibkr.api;
+  }
 }

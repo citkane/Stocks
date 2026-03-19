@@ -27,14 +27,15 @@ export class CacheBroker extends Global {
     return [...this._accounts.keys()];
   }
   public get fx_rates() {
-    return CacheBrokers.fx_rates;
+    return CacheBrokers.fx_rates
+      ? CacheBrokers.fx_rates
+      : (CacheBrokers.fx_rates = this.db.select.fx_rates());
   }
   public set accounts(accs: account_t[]) {
     this.db.insert.accounts(accs);
     accs.forEach(this.setter.account);
   }
   public set positions(pos: position_t[]) {
-    console.log({ pos });
     this.db.insert.positions(pos);
     pos.forEach(this.setter.position);
   }

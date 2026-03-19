@@ -53,7 +53,7 @@ type stock_t = {
   description: string;
   positions: Set<position_t>;
 };
-type fx_pairs_t = {
+type fx_pair_t = {
   [key: string]: number;
 };
 
@@ -85,3 +85,13 @@ type stock_data_t = {
     time: UTCTimestamp;
   }[];
 };
+
+type interval_t = ReturnType<typeof setInterval>;
+
+/**
+ * Function parameter types
+ */
+namespace p {
+  type chart_data = [conid: string, period: period_t, granularity: period_t];
+  type req_broker = [p: req_t, broker: broker_t];
+}

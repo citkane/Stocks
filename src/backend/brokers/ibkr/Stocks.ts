@@ -3,6 +3,16 @@ import { Global } from "backend";
 const col = util.colours;
 
 export class Stocks extends Global {
+  constructor() {
+    super();
+  }
+  public fx_rate = (source: currency_t) => {
+    const { base_currency } = this.brokers;
+    const endpoint = this.endpoints.get.fx_rate(source, base_currency);
+    return this.ibkr.fetch<ibkr_t.fx_rate_t>(endpoint).then((rate) => {
+      return { [source]: rate.rate };
+    });
+  };
   public chart_data(conid: string, period: period_t, bar: period_t) {
     const endpoint = this.endpoints.get.bar_data(
       conid,
@@ -39,6 +49,9 @@ export class Stocks extends Global {
 
   private endpoints = {
     get: {
+      fx_rate: (source: currency_t, target: currency_t) => {
+        return `${this.api_url}/iserver/exchangerate?Source=${source}&Target=${target}`;
+      },
       bar_data: (conid: string, period: string, granularity: string) => {
         const params = [
           `conid=${conid}`,
@@ -46,9 +59,12 @@ export class Stocks extends Global {
           `bar=${granularity}`,
         ].join("&");
 
-        return `iserver/marketdata/history?${params}`;
+        return `${this.api_url}/iserver/marketdata/history?${params}`;
       },
     },
     post: {},
   };
+  private get api_url() {
+    return util.url.ibkr.api;
+  }
 }

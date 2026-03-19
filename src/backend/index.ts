@@ -1,7 +1,8 @@
 import "../index";
 import Logger from "./Logger.ts";
-
 export { Global } from "./Global.ts";
+
+const db_file = "stocks.sqlite";
 
 declare global {
   var logger: backend.Logger_t;
@@ -33,7 +34,7 @@ import App from "./App.ts";
   ws: new ServerWs(),
   brokers: new Brokers(),
   api: new Api(),
-  db: new Database(),
+  db: new Database(db_file),
 };
 
 (globalThis as any).backend.broker = {

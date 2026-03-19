@@ -71,17 +71,17 @@ export class Messenger {
     return JSON.stringify([topic, data, req_uid, res_uid, params, error]);
   };
 
-  request<T = context_t, D = data_t>(
+  request = <T = context_t, D = data_t>(
     topic: req_topic_t<T>,
     data: data_t = "",
     params?: any[],
-  ) {
+  ) => {
     const req_uid = this.get_uid();
     return new Promise<message_t<T, D>>((resolve, reject) => {
       this.requests.set(req_uid, { resolve, reject });
       this.send(topic as set_topic_t, data, req_uid, undefined, params);
     });
-  }
+  };
   response = (res_uid: string, data?: data_t): void => {
     this.send(undefined, data, undefined, res_uid);
   };

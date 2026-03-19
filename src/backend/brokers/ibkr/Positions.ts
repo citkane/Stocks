@@ -6,6 +6,10 @@ type positions_t = ibkr_t.position_t[];
 const page_limit = 100;
 
 export class Positions extends Global {
+  constructor() {
+    super();
+  }
+
   public select_positions = () => this.db.select.positions("ibkr");
   public update = () =>
     Promise.all(this.ibkr.cache.accounts.map((a) => this.get_positions(a)))
@@ -50,15 +54,18 @@ export class Positions extends Global {
   private endpoints = {
     get: {
       positions: (account_id: string, page: number) =>
-        `portfolio/${account_id}/positions/${page}`,
+        `${this.api_url}/portfolio/${account_id}/positions/${page}`,
       position: (account_id: string, con_id: number) =>
-        `portfolio/${account_id}/position/${con_id}`,
+        `${this.api_url}/portfolio/${account_id}/position/${con_id}`,
     },
     post: {
       positions_invalidate_cache: (account_id: string) =>
-        `portfolio/${account_id}/positions/invalidate`,
+        `${this.api_url}/portfolio/${account_id}/positions/invalidate`,
     },
   };
+  private get api_url() {
+    return util.url.ibkr.api;
+  }
 }
 
 export class Position extends Global {

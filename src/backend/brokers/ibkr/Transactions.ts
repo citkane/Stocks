@@ -9,29 +9,29 @@ class Transaction extends Global {
   }
 
   public update_transactions() {
-    return this.fetch().then((ts) => {
-      this.transactions = ts;
-      delete this._position;
-      delete this._sells;
-      delete this._transfers;
-      return this;
-    }); //this.db.select.ibkr_transactions(this.con_id);
+    return this.fetch_transactions()
+      .then(this.add_transactions_ids)
+      .then((trans) => (this.ibkr.cache.transactions = trans))
+      .then(() => this.ibkr.cache.transactions_for_con(this.con_id))
+      .then((ts) => {
+        this.transactions = ts;
+        delete this._position;
+        delete this._sells;
+        delete this._transfers;
+        return this;
+      }); //this.db.select.ibkr_transactions(this.con_id);
   }
 
-  private fetch() {
-    const { endpoint, params } = this.endpoint(
+  private fetch_transactions() {
+    const { url, params } = this.endpoints.post.transactions(
       this.ibkr.cache.account_ids,
       this.con_id,
       this.brokers.base_currency,
       this.last_transaction_days_ago,
     );
     return this.ibkr
-      .fetch<ibkr_t.transactions_t>(endpoint, params)
-      .then((transactions) => transactions.transactions)
-      .then(this.add_transactions_ids)
-      .then((trans) => (this.ibkr.cache.transactions = trans))
-      .then(() => this.ibkr.cache.transactions_for_con(this.con_id));
-    //.then(this.update_transactions);
+      .fetch<ibkr_t.transactions_t>(url, params)
+      .then((transactions) => transactions.transactions);
   }
 
   private add_transactions_ids = (transactions: ibkr_t.transaction_t[]) =>
@@ -43,22 +43,28 @@ class Transaction extends Global {
     const date = this.transactions[this.transactions.length - 1]?.date!;
     return util.time.aging_days(date);
   }
-  private endpoint(
-    acctIds: string[],
-    con_id: number,
-    currency: currency_t,
-    days: number,
-  ) {
-    return {
-      endpoint: `pa/transactions`,
-      params: {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ acctIds, conids: [con_id], currency, days }),
+  private endpoints = {
+    post: {
+      transactions: (
+        acctIds: string[],
+        con_id: number,
+        currency: currency_t,
+        days: number,
+      ) => {
+        return {
+          url: `${this.api_url}/pa/transactions`,
+          params: {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ acctIds, conids: [con_id], currency, days }),
+          },
+        };
       },
-    };
+    },
+  };
+  private get api_url() {
+    return util.url.ibkr.api;
   }
-
   protected get sells() {
     return (
       this._sells ||

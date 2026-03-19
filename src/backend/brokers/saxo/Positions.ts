@@ -1,12 +1,14 @@
 import { Global } from "backend";
 
-const paging_top = 100;
-const api = "port/v1";
-const { saxo } = conf;
-
 type pos_t = saxo_t.position_t;
 
+const paging_top = 100;
+const { client_key } = conf.saxo;
+
 export class Positions extends Global {
+  constructor() {
+    super();
+  }
   public update = (skip = 0, positions: pos_t[] = []): Promise<pos_t[]> =>
     this.saxo
       .fetch<saxo_t.positions_t>(this.endpoints.positions(skip))
@@ -19,16 +21,19 @@ export class Positions extends Global {
   private endpoints = {
     positions: (skip: number) => {
       const params = [
-        `ClientKey=${saxo.client_key}`,
+        `ClientKey=${client_key}`,
         `$top=${paging_top}`,
         `$skip=${skip}`,
         "fieldGroups=DisplayAndFormat,ExchangeInfo,PositionView,PositionBase",
       ].join("&");
-      return `${api}/positions?${params}`;
+      return `${this.api_url}/positions?${params}`;
     },
-    position: (id: string, client_key: string) =>
-      `${api}//positions/${id}?ClientKey=${client_key}`,
+    position: (id: string) =>
+      `${this.api_url}/positions/${id}?ClientKey=${client_key}`,
   };
+  private get api_url() {
+    return util.url.saxo.api;
+  }
 }
 
 export class Position extends Global {

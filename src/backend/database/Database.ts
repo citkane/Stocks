@@ -1,84 +1,80 @@
 import { Database as Db } from "bun:sqlite";
-import { sql } from "./sql";
+import { Sql } from "./Sql";
 
-export class Database {
+export class Database extends Sql {
   constructor(
-    private db_file = "stocks.sqlite",
-    drops: [string, string][] = [],
+    private db_file: string,
+    drops: db.table_n[] = [],
   ) {
-    this.db = new Db(this.db_file, { create: true });
-    drops.forEach((drop) => {
-      this.drop_query(...(drop as [any, string]));
-    });
-    this.create_query("ibkr", "transactions");
-    this.create_query("all", "accounts");
-    this.create_query("all", "positions");
+    super();
+
+    this.dbase = new Db(this.db_file, { create: true });
+    drops.forEach(this.drop_table);
+    setTimeout(() => this.table_names.forEach(this.create_table));
   }
-  select = {
-    ibkr_transactions: (conid: number) =>
-      this.select_query(
-        "ibkr",
-        "transactions",
+  public select = {
+    ibkr_transactions: (conid: number) => {
+      return this.select_rows(
+        "ibkr_transactions",
         ["conid", "=", conid],
         ["date", "ASC"],
         ["id"],
-      ) as ibkr_t.transaction_t[],
-    accounts: (broker: broker_t) =>
-      this.select_query(
-        "all",
+      ).all() as ibkr_t.transaction_t[];
+    },
+    accounts: (broker: broker_t) => {
+      return this.select_rows(
         "accounts",
         ["broker", "=", broker],
         ["alias", "ASC"],
-      ) as account_t[],
-    positions: (broker: broker_t) =>
-      this.select_query(
-        "all",
+      ).all() as account_t[];
+    },
+    positions: (broker: broker_t) => {
+      return this.select_rows(
         "positions",
         ["broker", "=", broker],
         ["description", "ASC"],
-      ) as position_t[],
-  };
-  insert = {
-    ibkr_transactions: (transactions: ibkr_t.transaction_t[]) =>
-      this.insert_query("ibkr", "transactions", transactions),
-    accounts: (accounts: account_t[]) =>
-      this.insert_query("all", "accounts", accounts),
-    positions: (positions: position_t[]) =>
-      this.insert_query("all", "positions", positions),
+      ).all() as position_t[];
+    },
+    fx_rates: () => {
+      return this.select_rows("fx_rates").get() as fx_rates_t;
+    },
   };
 
-  private create_query<T extends db.broker_n, C extends db.table_n<T>>(
-    broker: T,
-    table: C,
-  ) {
-    const sql_string = sql.create(broker, table);
-    return this.db.query(sql_string).run();
-  }
-  private drop_query<T extends db.broker_n, C extends db.table_n<T>>(
-    broker: T,
-    table: C,
-  ) {
-    const sql_string = sql.drop(broker, table);
-    return this.db.query(sql_string).run();
-  }
-  private insert_query<T extends db.broker_n, C extends db.table_n<T>>(
-    broker: T,
-    table: C,
-    data: db.data_t[],
-  ) {
-    const sql_string = sql.insert(broker, table, data);
-    console.log(sql_string);
-    return this.db.query(sql_string).run();
-  }
-  private select_query<T extends db.broker_n, C extends db.table_n<T>>(
-    broker: T,
-    table: C,
-    condition: db.con_t<T, C>,
-    sort: db.sort_t<T, C>,
-    ignore?: db.ignore_t<T, C>,
-  ) {
-    const sql_string = sql.select(broker, table, condition, sort, ignore);
-    return this.db.query(sql_string).all();
-  }
-  private db: Db;
+  public insert = {
+    ibkr_transactions: (transactions: ibkr_t.transaction_t[]) => {
+      this.insert_rows("ibkr_transactions", transactions);
+    },
+    accounts: (accounts: account_t[]) => {
+      this.insert_rows("accounts", accounts);
+    },
+    positions: (positions: position_t[]) => {
+      this.insert_rows("positions", positions);
+    },
+    fx_rates: (rates: fx_rates_t) => {
+      this.insert_rows("fx_rates", [rates]);
+    },
+  };
+
+  private create_table = <T extends db.table_n>(table: T) => {
+    const sql_string = this.sql.create(table);
+    return this.dbase.query(sql_string).run();
+  };
+  private drop_table = (table: db.table_n) => {
+    const sql_string = this.sql.drop(table);
+    this.dbase.query(sql_string).run();
+  };
+  private insert_rows = <T extends db.table_n>(table: T, data: db.data_t[]) => {
+    const sql_string = this.sql.insert(table, data);
+    this.dbase.query(sql_string).run();
+  };
+  private select_rows = <T extends db.table_n>(
+    table: T,
+    condition?: db.condition_t<T>,
+    sort?: db.sort_t<T>,
+    ignore?: db.ignore_t<T>,
+  ) => {
+    const sql_string = this.sql.select(table, condition, sort, ignore);
+    return this.dbase.query(sql_string);
+  };
+  private dbase: Db;
 }
