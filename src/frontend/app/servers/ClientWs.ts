@@ -4,7 +4,7 @@ export class ClientWs extends Ws {
   constructor() {
     super();
     const ws = new WebSocket(`ws://0.0.0:${conf.ws_port}`);
-    this.messenger = new Messenger(ws);
+    this.messenger = new Messenger(ws, "frontend");
 
     ws.addEventListener("message", (event) => this.router(event.data));
     ws.addEventListener("open", (event) => this.is_connected.resolve(event));

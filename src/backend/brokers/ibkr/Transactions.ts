@@ -11,8 +11,8 @@ class Transaction extends Global {
   public update_transactions() {
     return this.fetch_transactions()
       .then(this.add_transactions_ids)
-      .then((trans) => (this.ibkr.cache.transactions = trans))
-      .then(() => this.ibkr.cache.transactions_for_con(this.con_id))
+      .then((trans) => (this.ibkr.cache.transactions = Promise.resolve(trans)))
+      .then(() => this.ibkr.cache.get_transactions(this.con_id))
       .then((ts) => {
         this.transactions = ts;
         delete this._position;
@@ -22,11 +22,12 @@ class Transaction extends Global {
       }); //this.db.select.ibkr_transactions(this.con_id);
   }
 
-  private fetch_transactions() {
+  private async fetch_transactions() {
+    const accounts = await this.ibkr.cache.account_ids;
     const { url, params } = this.endpoints.post.transactions(
-      this.ibkr.cache.account_ids,
+      accounts,
       this.con_id,
-      this.brokers.base_currency,
+      this.base_currency,
       this.last_transaction_days_ago,
     );
     return this.ibkr
@@ -123,14 +124,16 @@ export class Transactions extends Transaction {
     super(ibkr_position.conid);
   }
   public get positions() {
-    return this.buys.map((buy, i) =>
-      new Position(
-        this.ibkr_position,
-        i,
-        buy.fxRate,
-        util.time.ms(buy.date),
-        buy.pr!,
-      ).translate(),
+    return Promise.all(
+      this.buys.map((buy, i) =>
+        new Position(
+          this.ibkr_position,
+          i,
+          buy.fxRate,
+          util.time.ms(buy.date),
+          buy.pr!,
+        ).translate(),
+      ),
     );
   }
 

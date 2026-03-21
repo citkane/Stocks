@@ -14,24 +14,19 @@ export class Brokers extends Global {
     "exchange",
   ];
 
-  saxo_login = () => this.saxo.login_backend();
-  wait_for_auth = () =>
+  await_login = () =>
     Promise.all([
       this.saxo.await_login().then(() => console.info("Saxo authorised")),
       this.ibkr.await_login().then(() => console.info("IBKR authorised")),
     ]);
 
-  cache_position = (position: position_t) => this.cache.add.position(position);
-  cache_account = (account: account_t) => this.cache.add.account(account);
+  //cache_position = (position: position_t) => this.cache.add.position(position);
+  //cache_account = (account: account_t) => this.cache.add.account(account);
   //wait_for_cache = () => this.messenger.request<"backend">("wait_for_cache");
   request_cache = () =>
     Promise.all([
-      this.messenger
-        .request<"backend", account_t[]>("accounts")
-        .then((res) => res.data),
-      this.messenger
-        .request<"backend", position_t[]>("positions")
-        .then((res) => res.data),
+      this.request<account_t[]>("accounts"),
+      this.request<position_t[]>("positions"),
     ]);
 
   chart_data = (
@@ -40,20 +35,20 @@ export class Brokers extends Global {
     period: period_t,
     granularity: period_t,
   ) =>
-    this.messenger.request<"backend", stock_data_t>("chart_data", broker, [
+    this.request<stock_data_t>("chart_data", broker, [
       conid,
       period,
       granularity,
     ]);
 
-  static popup_login(url: string, name: string) {
-    const width = 600;
-    const height = 900;
-    const windowFeatures = `popup,innerWidth=${width},innerHeight=${height}`;
-    const login_window = window.open(url, name, windowFeatures);
-    login_window?.resizeTo(width, height);
-    return login_window;
-  }
+  //static popup_window(url: string, name: string) {
+  //  const width = 600;
+  //  const height = 900;
+  //  const windowFeatures = `popup,innerWidth=${width},innerHeight=${height}`;
+  //  const login_window = window.open(url, name, windowFeatures);
+  //  login_window?.resizeTo(width, height);
+  //  return login_window;
+  //}
 
   static fx_pl(p: position_t) {
     const buy = this.buy_value(p);

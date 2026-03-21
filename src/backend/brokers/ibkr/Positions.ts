@@ -6,14 +6,11 @@ type positions_t = ibkr_t.position_t[];
 const page_limit = 100;
 
 export class Positions extends Global {
-  constructor() {
-    super();
-  }
-
   public select_positions = () => this.db.select.positions("ibkr");
   public update = () =>
-    Promise.all(this.ibkr.cache.accounts.map((a) => this.get_positions(a)))
-      .then((ps) => ps.flat())
+    this.ibkr.cache.accounts
+      .then((accs) => Promise.all(accs.map((a) => this.get_positions(a))))
+      .then((positions) => positions.flat())
       .then(this.audit_positions)
       .then(this.map_transactions_to_positions);
 
@@ -28,7 +25,7 @@ export class Positions extends Global {
 
   private get_positions = (a: account_t, p = 0, _pos: positions_t = []) =>
     this.ibkr
-      .fetch<positions_t>(this.endpoints.get.positions(a.a_id, p))
+      .fetch<positions_t>(this.endpoints.get.positions(a.a_id_original, p))
       .then((pos) => this.page(a, p, [..._pos, ...pos], pos.length));
 
   private page = (
@@ -78,7 +75,7 @@ export class Position extends Global {
   ) {
     super();
   }
-  translate(): position_t {
+  async translate(): Promise<position_t> {
     const p = this.position;
     const { exchange, ticker, description } = util.string.format_ticker(
       p.listingExchange,
@@ -106,7 +103,7 @@ export class Position extends Global {
       currency,
       exchange,
       position,
-      fx_market: this.brokers.fx_rate(currency),
+      fx_market: await this.fx_rate(currency),
       fx_buy,
       date,
       price_market,

@@ -12,8 +12,15 @@ export class Util {
         api: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.api}`,
         auth: `${conf.saxo.url.auth}`,
         chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
+        redirect: {
+          code: `${conf.saxo.url.redirect.code}`,
+          token: `${conf.saxo.url.redirect.token}`,
+        },
       },
-      ibkr: { api: `${conf.ibkr.url.base}/${conf.ibkr.url.endpoints.api}` },
+      ibkr: {
+        api: `${conf.ibkr.url.base}/${conf.ibkr.url.endpoints.api}`,
+        login: `${conf.ibkr.url.base}`,
+      },
     };
   }
   static string = {

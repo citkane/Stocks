@@ -1,3 +1,11 @@
+const currencies = ["ZAR", "CNH", "HKD", "CHF"] as const;
+const base_currency = "EUR";
+
+declare global {
+  type currency_t = (typeof currencies)[number] | typeof base_currency;
+  type fx_rates_t = { [T in currency_t]: number };
+}
+
 export class Global {
   protected get app() {
     return backend.app;
@@ -26,4 +34,33 @@ export class Global {
   protected get ibkr() {
     return this.broker.ibkr;
   }
+  protected get currencies() {
+    return currencies as unknown as currency_t[];
+  }
+  protected get base_currency() {
+    return base_currency as currency_t;
+  }
+  protected fx_rate(currency: currency_t) {
+    return this.brokers.cache.fx_rates.then((rates) => rates[currency]);
+  }
+
+  protected add_shutdown_fnc = (fnc: Function) => {
+    this.shutdown_fns.push(fnc);
+  };
+  protected shutdown = (code: any) => {
+    console.info("");
+    console.info(code, "App is shutting down...");
+    Promise.all(this.shutdown_fns.map((fnc) => fnc()))
+      .then(() => {
+        setTimeout(() => {
+          console.info("process ended");
+          process.exit(0);
+        }, 10);
+      })
+      .catch((err) => {
+        //logger.error(err);
+        //process.exit(1);
+      });
+  };
+  private shutdown_fns: Function[] = [];
 }

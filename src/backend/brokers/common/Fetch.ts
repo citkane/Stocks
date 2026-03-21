@@ -1,56 +1,66 @@
 import { Global } from "backend";
 
-type fetch_fnc = () => Promise<any>;
+type fetch_fnc_t = () => Promise<any>;
+type params_factory_t = () => RequestInit;
 
 export class Fetch extends Global {
   constructor(
     rate_limit: number,
-    private default_params: () => RequestInit,
+    private params_factory: params_factory_t,
   ) {
     super();
     this.limiter = new RateLimiter(rate_limit);
   }
-  public fetch<T = any>(url: string, params: RequestInit = {}) {
-    params = { ...this.default_params(), ...(params || {}) };
-    const req = new Request(encodeURI(url));
-    return new Promise<T>((resolve, reject) =>
-      this.limiter.fetch(() =>
-        fetch(req, params)
-          .then((res) => this.response<T>(res, resolve, reject))
-          .catch((err) => reject(err)),
-      ),
+  public fetch = <T>(url: string, params: RequestInit = {}) =>
+    new Promise<T>((resolve, reject) =>
+      this.queue(url, params, resolve, reject),
     );
-  }
-  private response<T>(
-    res: Response,
+  private queue = (
+    url: string,
+    params: RequestInit,
     resolve: resolve_t,
     reject: reject_t,
-  ): Promise<T> {
-    if (!res.ok) {
-      const { url, status, statusText } = res;
-      const err_message = `Error in fetch response:\n${JSON.stringify({ url, status, statusText }, null, 4)}`;
-      return reject(err_message);
+  ) => {
+    const req = new Request(encodeURI(url));
+    params = { ...this.default_params, ...params };
+    this.limiter.queue(() =>
+      fetch(req, params)
+        .then((res) => this.response(res, resolve, reject))
+        .catch((err) => reject(err)),
+    );
+  };
+  private response(res: Response, resolve: resolve_t, reject: reject_t) {
+    const { url, status, statusText, ok, headers } = res;
+    const type = headers.get("content-type");
+
+    if (!ok) {
+      return reject({ "Fetch error: ": { url, status, statusText } });
     }
-    const type = res.headers.get("content-type");
-    if (type?.includes("application/json")) return resolve(res.json());
-    return resolve(res);
+    type?.includes("application/json")
+      ? res.json().then(resolve)
+      : resolve(res);
+  }
+
+  private get default_params() {
+    return this.params_factory();
   }
   private limiter: RateLimiter;
 }
 
-class RateLimiter {
+class RateLimiter extends Global {
   constructor(private rate: number) {
-    this.poll();
+    super();
+    const interval = setInterval(this.fetch, this.rate);
+    this.add_shutdown_fnc(() => clearInterval(interval));
   }
-  fetch = (fnc: fetch_fnc) => {
+  queue = (fnc: fetch_fnc_t) => {
     this.req_queue.push(fnc);
   };
-  private poll = () =>
-    setInterval(() => {
-      if (!this.req_queue.length) return;
-      const fetch_fnc = this.req_queue.pop()!;
-      fetch_fnc();
-    }, this.rate);
+  private fetch = () => {
+    //this.req_queue.length && console.log("fetch queue", this.req_queue.length);
+    const fetch = this.req_queue.pop();
+    !!fetch && fetch();
+  };
 
-  private req_queue: fetch_fnc[] = [];
+  private req_queue: fetch_fnc_t[] = [];
 }

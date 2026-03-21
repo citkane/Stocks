@@ -10,18 +10,11 @@ import {
 } from "./saxo/index";
 
 const fetch_rate_limit = 250;
-function fetch_params(this: Saxo): RequestInit {
-  return {
-    headers: {
-      Authorization: `Bearer ${this.auth_bearer}`,
-    },
-  };
-}
 
 export class Saxo extends Fetch {
   constructor() {
-    super(fetch_rate_limit, fetch_params);
-    fetch_params.bind(this);
+    super(fetch_rate_limit, fetch_params_factory);
+    fetch_params_factory.bind(this);
   }
 
   public await_ready = () =>
@@ -37,6 +30,20 @@ export class Saxo extends Fetch {
     period: period_t,
     granularity: period_t,
   ) => this.stocks.chart_data(conid, period, granularity);
+
+  public update = {
+    accounts: () =>
+      (this.cache.accounts = this.accounts
+        .update()
+        .then((accs) => accs.map((a) => new Account(a).translate()))),
+
+    positions: () =>
+      (this.cache.positions = this.positions
+        .update()
+        .then((pos) =>
+          Promise.all(pos.map((p) => new Position(p).translate())),
+        )),
+  };
 
   public get auth_bearer() {
     return this.authorise.token.access_token;
@@ -54,24 +61,17 @@ export class Saxo extends Fetch {
       .await_auth()
       .then(() => console.info("Saxo is ready")));
 
-  private update = () => {
-    this.update_accounts();
-    this.update_positions();
-  };
-  private update_accounts = () =>
-    this.accounts
-      .update()
-      .then((accs) => accs.map((a) => new Account(a).translate()))
-      .then((accs) => (this.cache.accounts = accs));
-  private update_positions = () =>
-    this.positions
-      .update()
-      .then((pos) => pos.map((p) => new Position(p).translate()))
-      .then((pos) => (this.cache.positions = pos));
-
   private accounts = new Accounts();
   private positions = new Positions();
   private stocks = new Stocks();
-  private authorise = new Authorise();
+  private authorise = new Authorise(fetch_rate_limit);
   private ready_resolver?: Promise<void>;
+}
+
+function fetch_params_factory(this: Saxo): RequestInit {
+  return {
+    headers: {
+      Authorization: `Bearer ${this.auth_bearer}`,
+    },
+  };
 }

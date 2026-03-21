@@ -66,12 +66,11 @@ export class Tables extends Global {
   private get fx_rates() {
     return this._fx_rates
       ? this._fx_rates
-      : (this._fx_rates = [
-          ...this.brokers.currencies,
-          this.brokers.base_currency,
-        ].map((currency) => {
-          return [currency, "DECIMAL(38,8) NOT NULL"];
-        }));
+      : (this._fx_rates = [...this.currencies, this.base_currency].map(
+          (currency) => {
+            return [currency, "DECIMAL(38,8) NOT NULL"];
+          },
+        ));
   }
   private _fx_rates?: [string, string][];
 }

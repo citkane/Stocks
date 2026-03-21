@@ -22,21 +22,25 @@ export default class Api extends Global implements Api_t {
     saxo_auth_url: (p: req_t) => {
       this.res.saxo_fetch_auth_url(p);
     },
-    saxo_fetch_token: (...p: [req_t, auth_code_t]) => {
-      this.res.saxo_fetch_token(...p);
-    },
+
     chart_data: (...pbd: [...p.req_broker, ...p.chart_data]) => {
       this.res.chart_data(...pbd);
     },
   };
-  set = {};
+  set = {
+    saxo_make_token: (code: auth_code_t) => {
+      this.action.saxo_make_token(code);
+    },
+  };
 
   private res = {
-    accounts: (p: req_t) => {
-      p.messenger.response(p.req_uid, this.cache.accounts);
+    accounts: async (p: req_t) => {
+      const accounts = await this.cache.accounts;
+      p.messenger.response(p.req_uid, accounts);
     },
-    positions: (p: req_t) => {
-      p.messenger.response(p.req_uid, this.cache.positions);
+    positions: async (p: req_t) => {
+      const positions = await this.cache.positions;
+      p.messenger.response(p.req_uid, positions);
     },
 
     is_authorised: (p: req_t, broker: broker_t) => {
@@ -48,12 +52,7 @@ export default class Api extends Global implements Api_t {
         .then(() => p.messenger.response(p.req_uid))
         .catch((err) => server_error(p, err));
     },
-    saxo_fetch_token: (p: req_t, code: auth_code_t) => {
-      this.brokers["saxo"]
-        .fetch_auth_token(code.code)
-        .then(() => p.messenger.response(p.req_uid))
-        .catch((err) => server_error(p, err));
-    },
+
     saxo_fetch_auth_url: (p: req_t) => {
       this.brokers["saxo"]
         .fetch_auth_url()
@@ -68,6 +67,11 @@ export default class Api extends Global implements Api_t {
         .chart_data(...pa)
         .then((data) => p.messenger.response(p.req_uid, data))
         .catch((err) => server_error(p, err));
+    },
+  };
+  private action = {
+    saxo_make_token: (code: auth_code_t) => {
+      this.saxo.fetch_auth_token(code.code);
     },
   };
 

@@ -10,13 +10,13 @@ export class Router extends Global {
 
   private async route() {
     const url = new URL(window.location.href);
-    const { pathname, hash } = url;
+    const { pathname } = url;
     switch (pathname) {
       case "/":
         this.app.run();
         break;
       case `/${conf.saxo.url.redirect.code}`:
-        this.brokers.saxo_login();
+        this.saxo.send_token_code();
         break;
     }
   }

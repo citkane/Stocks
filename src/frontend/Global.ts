@@ -1,34 +1,41 @@
 export class Global {
-  get app() {
+  protected get app() {
     return frontend.app;
   }
-  get router() {
+  protected get router() {
     return frontend.router;
   }
-  get brokers() {
+  protected get brokers() {
     return frontend.brokers;
   }
-  get api() {
+  protected get api() {
     return frontend.api;
   }
-  get ws() {
+  protected get ws() {
     return frontend.ws;
   }
-  get cache() {
+  protected get cache() {
     return frontend.cache;
   }
-  get events() {
+  protected get events() {
     return frontend.events;
   }
-  get saxo() {
+  protected get saxo() {
     return frontend.saxo;
   }
-  get ibkr() {
+  protected get ibkr() {
     return frontend.ibkr;
   }
-  get messenger() {
+  protected get messenger() {
     return this.ws.messenger;
   }
+  protected get request() {
+    return this.messenger.request;
+  }
+  protected get send() {
+    return this.messenger.send;
+  }
+
   protected add_shutdown_task = (fn: Function) => {
     this.app.add_shutdown_task(fn);
   };

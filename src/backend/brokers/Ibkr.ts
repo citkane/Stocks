@@ -24,7 +24,18 @@ export class Ibkr extends Fetch {
       ? Promise.resolve()
       : this.ready_resolver || this.define_ready_resolver();
 
-  public chart_data = (...p: p.chart_data) => this.stocks.chart_data(...p);
+  public chart_data = (...p: p.chart_data) =>
+    this.stocks.fetch_chart_data(...p);
+
+  public update = {
+    fx: () => (this.cache.fx_rates = this.stocks.update_fx()),
+    accounts: () =>
+      (this.cache.accounts = this.accounts
+        .update()
+        .then((accs) => accs.map((a) => new Account(a).translate()))),
+
+    positions: () => (this.cache.positions = this.positions.update()),
+  };
 
   public get is_authorised() {
     return this.authorise.authorised;
@@ -38,43 +49,12 @@ export class Ibkr extends Fetch {
   private define_ready_resolver = () =>
     (this.ready_resolver = this.authorise
       .await_auth()
-      .then(this.fetch_fx_pairs)
       .then(() => console.info("IBKR is ready")));
-
-  private update = () => this.update_accounts().then(this.update_positions);
-  private update_accounts = () =>
-    this.accounts
-      .update()
-      .then((accs) => accs.map((a) => new Account(a).map()))
-      .then((accs) => (this.cache.accounts = accs))
-      .then(() => console.info("IBKR accounts updated"));
-  private update_positions = () =>
-    this.positions
-      .update()
-      .then((pos) => (this.cache.positions = pos))
-      .then(() => console.info("IBKR positions updated"));
-
-  private fetch_fx_pairs = () => {
-    const { currencies } = this.brokers;
-    return Promise.all(currencies.map(this.stocks.fx_rate))
-      .then(this.map_fx_pairs)
-      .then((fx_rates) => {
-        this.cache.fx_rates = fx_rates;
-      });
-  };
-
-  private map_fx_pairs = (pairs: fx_pair_t[]) => {
-    const { base_currency } = this.brokers;
-    const collector: fx_rates_t = { [base_currency]: 1 } as any;
-    return pairs.reduce((c, val) => {
-      return { ...c, ...val };
-    }, collector);
-  };
 
   private positions = new Positions();
   private stocks = new Stocks();
   private accounts = new Accounts();
-  private authorise = new Authorise();
+  private authorise = new Authorise(fetch_rate_limit);
 
   private ready_resolver?: Promise<void>;
 }

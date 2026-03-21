@@ -9,11 +9,11 @@ export default class App extends Global {
   public run = async () => {
     try {
       console.info("App awaiting authorisation");
-      await this.brokers.wait_for_auth();
+      await this.brokers.await_login();
 
-      console.info("App awaiting warm cache");
+      //console.info("App awaiting warm cache");
       //await this.brokers.wait_for_cache();
-      await this.warm_the_cache();
+      //await this.warm_the_cache();
 
       console.info("App ready");
       this.init_components();
@@ -32,11 +32,11 @@ export default class App extends Global {
     const app_element = document.getElementsByTagName("app-root")[0];
     app_element?.setAttribute("ready", "true");
   };
-  private warm_the_cache = async () => {
-    const [accounts, positions] = await this.brokers.request_cache();
-    accounts.forEach(this.cache.add.account);
-    positions.forEach(this.cache.add.position);
-  };
+  //private warm_the_cache = async () => {
+  //  const [accounts, positions] = await this.brokers.request_cache();
+  //  accounts.forEach(this.cache.add.account);
+  //  positions.forEach(this.cache.add.position);
+  //};
   private shutdown = async (_e: Event) => {
     console.info("Shutting down");
     await Promise.all(this.shutdown_tasks.map((fnc) => fnc(), []));

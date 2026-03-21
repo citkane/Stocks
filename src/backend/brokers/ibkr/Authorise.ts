@@ -3,13 +3,13 @@ import { AuthBase } from "@backend/brokers/common/AuthBase";
 const ping_auth_interval = 60000;
 
 export class Authorise extends AuthBase {
-  constructor() {
-    super("ibkr", ping_auth_interval);
+  constructor(fetch_rate: number) {
+    super("ibkr", ping_auth_interval, fetch_rate);
   }
 
   public is_authorised = () =>
     this.renew_auth()
-      .then((status) => (this.authorised = status.authenticated))
+      .then((status) => status.authenticated)
       .catch((_err) => false);
 
   private renew_auth = () =>
@@ -21,8 +21,6 @@ export class Authorise extends AuthBase {
     status: () => `${this.api_url}/iserver/auth/status`,
     tickle: () => `${this.api_url}/tickle`,
   };
-
-  public authorised = false;
 
   private get api_url() {
     return util.url.ibkr.api;

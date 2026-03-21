@@ -1,18 +1,31 @@
+import { SQL } from "bun";
 import { Tables } from "./Tables";
 
+let sql: SQL;
+
 export class Sql extends Tables {
+  constructor(sql_file: string) {
+    super();
+    sql = new SQL({
+      adapter: "sqlite",
+      filename: sql_file,
+      create: true,
+      strict: true,
+    });
+  }
   protected sql = {
     create: (table: db.table_n) => {
-      return `CREATE TABLE IF NOT EXISTS ${table} (${this.table_sql(table)})`;
+      if (table === "fx_rates") console.log(this.table_sql(table));
+      const table_data = sql`(${this.table_sql(table)})`;
+      return sql`CREATE TABLE IF NOT EXISTS ${sql(table)} ${table_data}`
+        .then(() => sql`PRAGMA table_info(${sql(table)})`)
+        .then((c) => console.log(c));
     },
     drop: (table: db.table_n) => {
-      return `DROP TABLE IF EXISTS ${table};`;
+      return sql`DROP TABLE IF EXISTS ${sql(table)};`;
     },
     insert: (table: db.table_n, values: db.data_t[]) => {
-      let str = `INSERT INTO ${table} VALUES ${this.values_sql(table, values)}`;
-      const primary_key = this.primary_key(table);
-      if (!!primary_key) str += ` ON CONFLICT (${primary_key}) DO NOTHING`;
-      return `${str};`;
+      return sql`INSERT INTO ${sql(table)} ${sql(values)} ${this.primary_conflict_sql(table)}`;
     },
     select: <T extends db.table_n>(
       table: T,
@@ -20,57 +33,51 @@ export class Sql extends Tables {
       sort?: db.sort_t<T>,
       ignore?: db.ignore_t<T>,
     ) => {
-      const r = this.rows_sql(table, ignore);
-      let str = `SELECT ${r} FROM ${table}`;
-      if (!!condition) {
-        condition[2] = `'${condition[2]}'`;
-        const c = condition.join(" ");
-        str += ` WHERE ${c}`;
-      }
-      if (!!sort) {
-        const s = sort.join(" ");
-        str += ` ORDER BY ${s}`;
-      }
-      return `${str};`;
+      const columns = this.columns_sql(table, ignore);
+      const cond = this.condition_sql(condition);
+      const sorter = this.sort_sql(sort);
+      return sql`SELECT ${columns} FROM ${sql(table)} ${cond} ${sorter}`;
     },
   };
-
-  private values_sql = (table: db.table_n, data: db.data_t[]) => {
-    const keys = this.tables[table].map((row) => row[0]);
-    return data
-      .map((item) =>
-        keys.map((key) => this.value_to_sql((item as any)[key])).join(", "),
-      )
-      .map((row) => `(${row})`)
-      .join(", ");
+  private sort_sql = (sort?: db.sort_t<any>) => {
+    if (!sort) return sql``;
+    const [column, dir] = sort;
+    const str = `ORDER BY ${column} ${dir}`;
+    return sql(str);
   };
-  private value_to_sql(value: string | number) {
-    return typeof value === "number" ? `${value}` : `'${value}'`;
-  }
+  private condition_sql = (condition?: db.condition_t<any>) => {
+    if (!condition) return sql``;
+    const [col, operator, value] = condition;
+    const str = `WHERE ${col} ${operator} ${value}`;
+    return sql(str);
+  };
 
-  private rows_sql = <T extends keyof db.tables_t>(
+  private columns_sql = <T extends keyof db.tables_t>(
     table: T,
     ignore: db.ignore_t<T> = [],
   ) => {
-    return this.table_cols(table)
+    const columns = this.table_cols(table)
       .filter((col) => !ignore.includes(col[0]!))
       .map((c) => c[0]!)
       .join(", ");
+    return sql(columns);
   };
 
   private table_sql = (table: db.table_n) => {
     const cols = this.table_cols(table);
-    return cols.map((c) => `${c[0]} ${c[1]}`).join(", ");
+    const str = `${cols.map((c) => `${c[0]} ${c[1]}`).join(", ")}`;
+    return sql(str);
   };
 
-  private table_cols = (table: db.table_n) => {
-    return this.tables[table];
-  };
-
-  private primary_key = (table: db.table_n) => {
+  private primary_conflict_sql = (table: db.table_n) => {
     const primary_row = this.table_cols(table).find((col) =>
       col[1].includes("PRIMARY KEY"),
     );
-    return primary_row ? primary_row[0] : undefined;
+    if (!primary_row) return sql``;
+    const str = `ON CONFLICT (${primary_row[0]}) DO NOTHING`;
+    return sql(str);
+  };
+  private table_cols = (table: db.table_n) => {
+    return this.tables[table];
   };
 }

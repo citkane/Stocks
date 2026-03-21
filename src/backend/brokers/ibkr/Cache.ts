@@ -2,36 +2,52 @@ import { CacheBroker, CacheBrokers } from "@backend/brokers";
 
 export class Cache extends CacheBroker {
   public override get positions() {
-    if (!super.positions.length)
-      this.db.select.positions("ibkr").forEach(this.setter.position);
-    return super.positions;
+    return super.positions.then((positions) =>
+      positions.length
+        ? positions
+        : this.db.select
+            .positions("ibkr")
+            .then((pos) => pos.forEach(this.setter.position))
+            .then(() => super.positions),
+    );
   }
-  public override set positions(positions: position_t[]) {
+  public override set positions(positions: Promise<position_t[]>) {
     super.positions = positions;
   }
   public override get accounts() {
-    if (!super.accounts.length)
-      this.db.select.accounts("ibkr").forEach(this.setter.account);
-    return super.accounts;
+    return super.accounts.then((accounts) =>
+      accounts.length
+        ? accounts
+        : this.db.select
+            .accounts("ibkr")
+            .then((accs) => accs.forEach(this.setter.account))
+            .then(() => super.accounts),
+    );
   }
-  public override set accounts(accounts: account_t[]) {
+  public override set accounts(accounts: Promise<account_t[]>) {
     super.accounts = accounts;
   }
-  public transactions_for_con(conid: number) {
-    if (!this._transactions.has(conid))
-      this.db.select.ibkr_transactions(conid).forEach(this.set_transaction);
-    const trans = this._transactions.get(conid)!;
-    return [...trans.values()];
+  public get_transactions(conid: number) {
+    return this._transactions.has(conid)
+      ? Promise.resolve([...this._transactions.get(conid)!.values()])
+      : this.db.select.ibkr_transactions(conid).then((trans) => {
+          trans.forEach(this.set_transaction);
+          return trans;
+        });
+  }
+  public set transactions(trs: Promise<ibkr_t.transaction_t[]>) {
+    trs.then((trs) =>
+      this.db.insert.ibkr_transactions(trs).then(() => {
+        trs.forEach(this.set_transaction);
+      }),
+    );
   }
 
-  public set transactions(trs: ibkr_t.transaction_t[]) {
-    this.db.insert.ibkr_transactions(trs);
-    trs.forEach(this.set_transaction);
-  }
-
-  public override set fx_rates(rates: fx_rates_t) {
-    this.db.insert.fx_rates(rates);
-    CacheBrokers.fx_rates = rates;
+  public override set fx_rates(rates: Promise<fx_rates_t>) {
+    rates.then(async (rates) => {
+      await this.db.insert.fx_rates(rates);
+      CacheBrokers.fx_rates = Promise.resolve(rates);
+    });
   }
   public override get fx_rates() {
     return super.fx_rates;

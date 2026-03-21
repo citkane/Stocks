@@ -16,7 +16,7 @@ export class Account extends Global {
   constructor(private account: ibkr_t.account_t) {
     super();
   }
-  map() {
+  translate() {
     return {
       a_id: `ibkr_${this.account.accountId}`,
       a_id_original: this.account.accountId,

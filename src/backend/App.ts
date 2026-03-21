@@ -7,16 +7,21 @@ export default class App extends Global {
     super();
 
     this.open_browser();
-    this.brokers.init_brokers(); //.catch((err) => logger.error(err));
-
     this.add_shutdown_fnc(this.close_clients);
+
+    this.brokers
+      .init_brokers()
+      .then(this.ibkr.update.fx)
+      .then(this.brokers.update.accounts)
+      .then(this.brokers.update.positions)
+      .catch((err) => console.error(err));
+    //.then(() => console.log(this.brokers.cache.accounts)); //.catch((err) => logger.error(err));
+
     process.on("SIGINT", this.shutdown);
     process.on("SIGTERM", this.shutdown);
     process.on("SIGKILL", this.shutdown);
+    process.on("beforeExit", this.shutdown);
   }
-  public add_shutdown_fnc = (fnc: Function) => {
-    this.shutdown_fns.push(fnc);
-  };
 
   private open_browser() {
     Bun.spawn([browser_script, this.app.http.url]);
@@ -24,21 +29,4 @@ export default class App extends Global {
   private close_clients = () => {
     this.ws.publish("shutdown", "");
   };
-  private shutdown = () => {
-    console.info("");
-    console.info("App is shutting down...");
-    Promise.all(this.shutdown_fns.map((fnc) => fnc()))
-      .then(() => {
-        setTimeout(() => {
-          console.info("process ended");
-          process.exit(0);
-        }, 10);
-      })
-      .catch((err) => {
-        //logger.error(err);
-        //process.exit(1);
-      });
-  };
-
-  private shutdown_fns: Function[] = [];
 }

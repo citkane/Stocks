@@ -15,7 +15,7 @@ export class ServerWs extends Ws {
     });
   }
 
-  publish(topic: frontend.set_topic_t, data?: data_t, params?: string[]) {
+  publish(topic: frontend.send_topic_t, data?: data_t, params?: string[]) {
     const mess = Messenger.encode(
       topic,
       data || "",
@@ -39,7 +39,7 @@ export class ServerWs extends Ws {
     return new Response("Upgrade failed", { status: 500 });
   }
   private ws_open = (ws: Bun.ServerWebSocket) => {
-    const messenger = new Messenger(ws);
+    const messenger = new Messenger(ws, "backend");
     this.messengers.set(ws, messenger);
     !!this.target_topics
       ? this.subscribe_all(ws)
@@ -47,9 +47,6 @@ export class ServerWs extends Ws {
   };
   private ws_close = (ws: Bun.ServerWebSocket) => {
     this.messengers.delete(ws);
-    setTimeout(() => {
-      if (!this.messengers.size) process.exit(0);
-    }, 1000);
   };
   private ws_drain = (_ws: Bun.ServerWebSocket) => {};
 
@@ -57,12 +54,10 @@ export class ServerWs extends Ws {
     ws: Bun.ServerWebSocket,
     messenger: Messenger,
   ) {
-    messenger
-      .request<"frontend", frontend.set_topic_t[]>("topics")
-      .then((message) => {
-        this.target_topics = message.data;
-        this.subscribe_all(ws);
-      });
+    messenger.request<frontend.send_topic_t[]>("topics").then((topics) => {
+      this.target_topics = topics;
+      this.subscribe_all(ws);
+    });
   }
   private subscribe_all(ws: Bun.ServerWebSocket) {
     this.target_topics?.forEach((topic) => {
@@ -74,6 +69,6 @@ export class ServerWs extends Ws {
     return backend.app.api;
   }
   private ws: Bun.Server<undefined>;
-  private target_topics?: frontend.set_topic_t[];
+  private target_topics?: frontend.send_topic_t[];
   private messengers = new Map<ws_t, Messenger>();
 }

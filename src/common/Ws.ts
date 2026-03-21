@@ -55,7 +55,7 @@ export class Ws {
     const { res_uid } = mssg;
     const resolver = requests.get(res_uid!)!;
     requests.delete(mssg.res_uid!);
-    mssg.error ? resolver.reject(mssg) : resolver.resolve(mssg);
+    mssg.error ? resolver.reject(mssg) : resolver.resolve(mssg.data);
   }
 }
 

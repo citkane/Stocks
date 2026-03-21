@@ -10,7 +10,7 @@ export class Accounts extends Global {
       .then((data) => data.Data);
 
   private endpoints = {
-    accounts: () => `${this.api_url}/port/v1/accounts`,
+    accounts: () => `${this.api_url}/accounts`,
   };
   private get api_url() {
     return util.url.saxo.api;

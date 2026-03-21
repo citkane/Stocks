@@ -54,7 +54,7 @@ type stock_t = {
   positions: Set<position_t>;
 };
 type fx_pair_t = {
-  [key: string]: number;
+  currency_t: number;
 };
 
 interface Api_t {

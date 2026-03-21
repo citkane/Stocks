@@ -1,35 +1,18 @@
-import { Brokers } from "@frontend/app/Brokers";
+import { Popup } from "@frontend/app/brokers/Popup";
 
-export class Login {
-  constructor(private saxo: frontend.Saxo_t) {
-    window.addEventListener("focus", () => Login.login_window?.focus());
+export class Login extends Popup {
+  constructor() {
+    super("saxo");
   }
-
-  public login_backend = () => {
-    const { request } = this.saxo.messenger;
-    const auth_code = this.parse_code_from_url();
-    request<"backend">("saxo_fetch_token", auth_code)
-      .then(() => request<"backend", boolean>("is_authorised", "saxo"))
-      .then((messg) => (messg.data ? Login.popup_close() : Login.go_back()))
-      .catch(Login.go_back);
+  public await_login = async () => {
+    const authorised = await this.req.authorised();
+    return authorised
+      ? null
+      : this.req.url().then(this.popup.open).then(this.req.await_auth);
   };
-  public static popup_login = (url: string) => {
-    Login.login_window = Brokers.popup_login(url, "SAXO");
-  };
-  public static popup_close = () => {
-    Login.login_window?.close();
-    window.focus();
-  };
-
-  public static go_back = () => {
-    Login.login_window?.history.back();
-  };
-
-  private parse_code_from_url = () => {
+  public send_token_code = () => {
     const url = new URL(window.location.href);
-    const params = Object.fromEntries(url.searchParams);
-    return params as saxo_t.auth_code_t;
+    const code = Object.fromEntries(url.searchParams) as saxo_t.auth_code_t;
+    this.send("saxo_make_token", code);
   };
-
-  private static login_window: window_t;
 }
