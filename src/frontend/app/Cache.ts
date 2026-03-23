@@ -15,8 +15,14 @@ export class Cache {
     stock: (ticker: string) => this._stocks.get(ticker),
     position: (p_id: string) => this._positions.get(p_id),
   };
+  set accounts(accounts: account_t[]) {
+    accounts.forEach(this.add.account);
+  }
   get accounts() {
     return [...this._accounts.values()];
+  }
+  set positions(positions: position_t[]) {
+    positions.forEach(this.add.position);
   }
   get positions() {
     return [...this._positions.values()];

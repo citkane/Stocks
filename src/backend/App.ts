@@ -11,11 +11,8 @@ export default class App extends Global {
 
     this.brokers
       .init_brokers()
-      .then(this.ibkr.update.fx)
       .then(this.brokers.update.accounts)
-      .then(this.brokers.update.positions)
-      .catch((err) => console.error(err));
-    //.then(() => console.log(this.brokers.cache.accounts)); //.catch((err) => logger.error(err));
+      .then(this.brokers.update.positions);
 
     process.on("SIGINT", this.shutdown);
     process.on("SIGTERM", this.shutdown);

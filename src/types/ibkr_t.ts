@@ -23,7 +23,7 @@ declare global {
       accountVan: currency_t;
       accountTitle: string;
       displayName: string;
-      accountAlias: string;
+      accountAlias?: string;
       accountStatus: number;
       currency: currency_t;
       type: string;

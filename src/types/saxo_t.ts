@@ -34,7 +34,7 @@ declare global {
       Currency: string;
       CurrencyDecimals: number;
       DirectMarketAccess: boolean;
-      DisplayName: string;
+      DisplayName?: string;
       ExternalReference: string;
       FractionalOrderEnabled: boolean;
       FractionalOrderEnabledAssetTypes: string[];

@@ -7,11 +7,17 @@ export class Brokers extends Global {
   };
 
   public update = {
-    accounts: () => Promise.resolve(),
-    //Promise.all([this.saxo.update.accounts(), this.ibkr.update.accounts()]),
-    positions: () => this.saxo.update.positions(),
-    //Promise.all([this.saxo.update.positions(), this.ibkr.update.positions()]),
+    accounts: () =>
+      Promise.all([this.saxo.update.accounts(), this.ibkr.update.accounts()]),
+    positions: () =>
+      this.ibkr.update
+        .fx()
+        .then(() =>
+          Promise.all([
+            this.saxo.update.positions(),
+            this.ibkr.update.positions(),
+          ]),
+        ),
   };
-
   public cache = new CacheBrokers();
 }

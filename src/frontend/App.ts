@@ -11,15 +11,13 @@ export default class App extends Global {
       console.info("App awaiting authorisation");
       await this.brokers.await_login();
 
-      //console.info("App awaiting warm cache");
-      //await this.brokers.wait_for_cache();
-      //await this.warm_the_cache();
+      console.info("App awaiting cache");
+      const [accounts, positions] = await this.brokers.request_cache();
+      this.cache.accounts = accounts;
+      this.cache.positions = positions;
 
       console.info("App ready");
       this.init_components();
-      //this.brokers
-      //  .chart_data("ibkr", "504513998", [10, "y"], [1, "d"])
-      //  .then((res) => console.log(res.data));
     } catch (err) {
       console.error(err);
     }
@@ -32,11 +30,7 @@ export default class App extends Global {
     const app_element = document.getElementsByTagName("app-root")[0];
     app_element?.setAttribute("ready", "true");
   };
-  //private warm_the_cache = async () => {
-  //  const [accounts, positions] = await this.brokers.request_cache();
-  //  accounts.forEach(this.cache.add.account);
-  //  positions.forEach(this.cache.add.position);
-  //};
+
   private shutdown = async (_e: Event) => {
     console.info("Shutting down");
     await Promise.all(this.shutdown_tasks.map((fnc) => fnc(), []));

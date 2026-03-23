@@ -7,6 +7,5 @@ export class Ibkr extends Global {
     this.add_shutdown_task(this.login.popup.close);
   }
   await_login = () => this.login.await_login().then(this.login.popup.close);
-
   private login = new Login();
 }

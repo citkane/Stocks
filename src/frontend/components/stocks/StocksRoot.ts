@@ -68,7 +68,6 @@ export class StocksRoot extends AppElement {
         ) {
           const a_num = Number(_a);
           const b_num = Number(_b);
-          console.log({ a_num, b_num });
 
           if (a_num > b_num) return 1;
           if (a_num < b_num) return -1;

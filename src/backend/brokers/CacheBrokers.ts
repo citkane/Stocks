@@ -32,11 +32,7 @@ export class CacheBroker extends Global {
   public get account_ids() {
     return Promise.resolve([...this._accounts.keys()]);
   }
-  public get fx_rates() {
-    return CacheBrokers.fx_rates.then((rates) =>
-      rates ? rates : (CacheBrokers.fx_rates = this.db.select.fx_rates()),
-    );
-  }
+
   public set accounts(accs: Promise<account_t[]>) {
     accs.then(async (accs) => {
       await this.db.insert.accounts(accs);

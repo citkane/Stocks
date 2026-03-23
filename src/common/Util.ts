@@ -79,7 +79,8 @@ export class Util {
       description: string,
     ) => {
       const exchange = exchanges[_exchange] || _exchange;
-      if (!!ticker && exchange === "hkse") ticker = pad_hkse_ticker(ticker!);
+      ticker = ticker.split(":")[0]!;
+      if (exchange === "hkse") ticker = pad_hkse_ticker(ticker!);
       description = this.string.title_case(description);
       return { exchange, ticker, description };
     },

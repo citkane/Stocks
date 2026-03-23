@@ -31,20 +31,32 @@ export class Saxo extends Fetch {
     granularity: period_t,
   ) => this.stocks.chart_data(conid, period, granularity);
 
+  //public update = {
+  //  accounts: () =>
+  //    (this.cache.accounts = this.accounts
+  //      .update()
+  //      .then((accs) => accs.map((a) => new Account(a).translate()))),
+  //
+  //  positions: () =>
+  //    (this.cache.positions = this.positions
+  //      .update()
+  //      .then((pos) =>
+  //        Promise.all(pos.map((p) => new Position(p).translate())),
+  //      )),
+  //};
   public update = {
     accounts: () =>
-      (this.cache.accounts = this.accounts
-        .update()
-        .then((accs) => accs.map((a) => new Account(a).translate()))),
+      (this.cache.accounts = this.accounts.update().then((accs) => {
+        logger.json("SAXO accounts", accs);
+        return accs.map((a) => new Account(a).translate());
+      })),
 
     positions: () =>
-      (this.cache.positions = this.positions
-        .update()
-        .then((pos) =>
-          Promise.all(pos.map((p) => new Position(p).translate())),
-        )),
+      (this.cache.positions = this.positions.update().then((pos) => {
+        logger.json("SAXO positions", pos);
+        return Promise.all(pos.map((p) => new Position(p).translate()));
+      })),
   };
-
   public get auth_bearer() {
     return this.authorise.token.access_token;
   }

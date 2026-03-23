@@ -9,15 +9,10 @@ import {
 } from "./ibkr/index";
 
 const fetch_rate_limit = 100;
-function fetch_default_params() {
-  return {
-    tls: { rejectUnauthorized: false },
-  } as RequestInit;
-}
 
 export class Ibkr extends Fetch {
   constructor() {
-    super(fetch_rate_limit, fetch_default_params);
+    super(fetch_rate_limit, default_fetch_params);
   }
   public await_ready = () =>
     this.authorise.authorised
@@ -28,7 +23,7 @@ export class Ibkr extends Fetch {
     this.stocks.fetch_chart_data(...p);
 
   public update = {
-    fx: () => (this.cache.fx_rates = this.stocks.update_fx()),
+    fx: () => this.stocks.update_fx().then((rates) => (this.fx_rates = rates)),
     accounts: () =>
       (this.cache.accounts = this.accounts
         .update()
@@ -45,6 +40,7 @@ export class Ibkr extends Fetch {
   }
 
   public cache = new Cache();
+  public fx_rates?: fx_rates_t;
 
   private define_ready_resolver = () =>
     (this.ready_resolver = this.authorise
@@ -57,4 +53,10 @@ export class Ibkr extends Fetch {
   private authorise = new Authorise(fetch_rate_limit);
 
   private ready_resolver?: Promise<void>;
+}
+
+function default_fetch_params() {
+  return {
+    tls: { rejectUnauthorized: false },
+  } as RequestInit;
 }

@@ -184,7 +184,6 @@ export class StockChart extends AppElement {
       ? Promise.resolve(this.chart_data)
       : this.brokers
           .chart_data(stock.broker, stock.con_id, chart_span, chart_granularity)
-          .then((res) => res.data)
           .then((data) => (this.chart_data = data))
           .catch((err) => {
             console.error(err);

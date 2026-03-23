@@ -26,6 +26,7 @@ export class Tables extends Global {
         ["conid", "INT"],
         ["cur", "CHAR(3) NOT NULL"],
         ["date", "DATETIME NOT NULL"],
+        ["rawDate", "VARCHAR NOT NULL"],
         ["fxRate", "DECIMAL(38,5) NOT NULL"],
         ["pr", "DECIMAL(38,2)"],
         ["qty", "SMALLINT"],
@@ -38,7 +39,7 @@ export class Tables extends Global {
         ["a_id", "VARCHAR PRIMARY KEY"],
         ["a_id_original", "VARCHAR NOT NULL"],
         ["broker", "CHAR(4) NOT NULL"],
-        ["alias", "VARCHAR NOT NULL"],
+        ["alias", "VARCHAR"],
         ["currency", "CHAR(3) NOT NULL"],
       ],
       positions: [
@@ -57,20 +58,9 @@ export class Tables extends Global {
         ["price_market", "DECIMAL(38,8) NOT NULL"],
         ["price_buy", "DECIMAL(38,8) NOT NULL"],
       ],
-      fx_rates: this.fx_rates,
     } as const;
   }
   protected get table_names() {
     return Object.keys(this.tables) as db.table_n[];
   }
-  private get fx_rates() {
-    return this._fx_rates
-      ? this._fx_rates
-      : (this._fx_rates = [...this.currencies, this.base_currency].map(
-          (currency) => {
-            return [currency, "DECIMAL(38,8) NOT NULL"];
-          },
-        ));
-  }
-  private _fx_rates?: [string, string][];
 }

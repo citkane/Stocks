@@ -43,7 +43,7 @@ type account_t = {
   a_id: string;
   a_id_original: string;
   broker: broker_t;
-  alias: string;
+  alias?: string;
   currency: currency_t;
 };
 type stock_t = {

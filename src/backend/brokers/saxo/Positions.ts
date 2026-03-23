@@ -41,7 +41,7 @@ export class Position extends Global {
     super();
   }
 
-  async translate(): Promise<position_t> {
+  translate(): position_t {
     const p = this.position;
     const { ExchangeId } = p.Exchange;
     const { Currency, Symbol, Description } = p.DisplayAndFormat;
@@ -67,7 +67,7 @@ export class Position extends Global {
       currency: Currency,
       exchange,
       position: Amount,
-      fx_market: await this.fx_rate(Currency),
+      fx_market: this.fx_rate(Currency),
       fx_buy: ConversionRateOpen,
       date: util.time.ms(_date),
       price_market: this.price_decimal(p, CurrentPrice),

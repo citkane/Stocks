@@ -35,23 +35,15 @@ export class Cache extends CacheBroker {
           return trans;
         });
   }
-  public set transactions(trs: Promise<ibkr_t.transaction_t[]>) {
-    trs.then((trs) =>
-      this.db.insert.ibkr_transactions(trs).then(() => {
-        trs.forEach(this.set_transaction);
-      }),
-    );
-  }
-
-  public override set fx_rates(rates: Promise<fx_rates_t>) {
-    rates.then(async (rates) => {
-      await this.db.insert.fx_rates(rates);
-      CacheBrokers.fx_rates = Promise.resolve(rates);
+  public set transactions(transactions: Promise<ibkr_t.transaction_t[]>) {
+    transactions.then((transactions) => {
+      if (!transactions.length) return console.warn("No transactions");
+      this.db.insert.ibkr_transactions(transactions).then(() => {
+        transactions.forEach(this.set_transaction);
+      });
     });
   }
-  public override get fx_rates() {
-    return super.fx_rates;
-  }
+
   private set_transaction = (t: ibkr_t.transaction_t) => {
     const { conid } = t;
     if (!this._transactions.has(conid))

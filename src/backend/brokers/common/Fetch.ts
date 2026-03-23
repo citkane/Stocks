@@ -57,7 +57,6 @@ class RateLimiter extends Global {
     this.req_queue.push(fnc);
   };
   private fetch = () => {
-    //this.req_queue.length && console.log("fetch queue", this.req_queue.length);
     const fetch = this.req_queue.pop();
     !!fetch && fetch();
   };

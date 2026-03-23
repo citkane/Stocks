@@ -41,7 +41,8 @@ export class Global {
     return base_currency as currency_t;
   }
   protected fx_rate(currency: currency_t) {
-    return this.brokers.cache.fx_rates.then((rates) => rates[currency]);
+    if (!this.ibkr.fx_rates) throw Error("No fx rates found.");
+    return this.ibkr.fx_rates[currency];
   }
 
   protected add_shutdown_fnc = (fnc: Function) => {
