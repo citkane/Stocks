@@ -8,7 +8,7 @@ positions-root {
   border: var(--border-light);
   border-width: 2px;
 
-  &[state="closed"] {
+  &[drawer="closed"] {
     height: 0 !important;
     border-bottom: none;
     border-width: 1px;

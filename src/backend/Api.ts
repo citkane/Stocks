@@ -1,9 +1,9 @@
 import { Global } from "backend";
 
-type auth_code_t = saxo_t.auth_code_t;
+type auth_code_t = b.s.auth_code_t;
 
 export default class Api extends Global implements Api_t {
-  request = {
+  requests = {
     accounts: (p: req_t) => {
       this.res.accounts(p);
     },
@@ -27,7 +27,7 @@ export default class Api extends Global implements Api_t {
       this.res.chart_data(...pbd);
     },
   };
-  set = {
+  setter = {
     saxo_make_token: (code: auth_code_t) => {
       this.action.saxo_make_token(code);
     },
@@ -59,13 +59,11 @@ export default class Api extends Global implements Api_t {
         .then((url) => p.messenger.response(p.req_uid, url))
         .catch((err) => server_error(p, err));
     },
-    //wait_for_cache: (p: req_t) => {
-    //  this.brokers.init_brokers().then(() => p.messenger.response(p.req_uid));
-    //},
+
     chart_data: (p: req_t, broker: broker_t, ...pa: p.chart_data) => {
-      this.brokers[broker]
-        .chart_data(...pa)
-        .then((data) => p.messenger.response(p.req_uid, data))
+      this.brokers.chart
+        .data(broker, ...pa)
+        .then((data) => p.messenger.response(p.req_uid, data || []))
         .catch((err) => server_error(p, err));
     },
   };
@@ -81,6 +79,6 @@ export default class Api extends Global implements Api_t {
 }
 
 function server_error(p: req_t, err: any) {
-  //logger.error(err);
+  console.error(err);
   p.messenger.error(p.req_uid, 500, err);
 }

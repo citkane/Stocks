@@ -1,6 +1,6 @@
 import { exchanges } from ".";
 
-type time_t = keyof typeof to_minutes;
+type time_t = keyof typeof period_to_ms;
 declare global {
   type period_t = [number, time_t];
 }
@@ -12,6 +12,7 @@ export class Util {
         api: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.api}`,
         auth: `${conf.saxo.url.auth}`,
         chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
+        history: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.history}`,
         redirect: {
           code: `${conf.saxo.url.redirect.code}`,
           token: `${conf.saxo.url.redirect.token}`,
@@ -60,17 +61,17 @@ export class Util {
      * @param ms
      * @returns
      */
-    epoch_to_iso_date: (ms: number) => {
+    epoch_to_iso_date: (ms: number = this.time.ms_now()) => {
       return this.string.epoch_to_iso(ms).split("T")[0]!;
     },
 
     /**
      * Convert epoch to a UTC time string "Day, dd mm yyyy hh:mm:ss TZONE"
-     * @param ms
+     * @param date_time
      * @returns
      */
-    epoch_to_utc: (ms: number) => {
-      const date = new Date(ms);
+    epoch_to_utc: (date_time: number | string) => {
+      const date = new Date(date_time);
       return date.toUTCString();
     },
     format_ticker: (
@@ -101,31 +102,58 @@ export class Util {
      * @param seconds Flag if return should be in seconds
      * @returns
      */
-    ms_now: <T = number>(seconds = false) => this.time.ms<T>("now", seconds),
+    ms_now: () => this.time.ms("now"),
     /**
      * Converts a date to ms from epoch
      * @param date
-     * @param seconds Flag if return should be in seconds
      */
-    ms: <T = number>(date: string | number, seconds = false) => {
-      const epoch =
-        date === "now" ? new Date().valueOf() : new Date(date).valueOf(); //getUTCMilliseconds();
-      return seconds ? (Math.floor(epoch / 1000) as T)! : (epoch as T)!;
-    },
-    ms_day_end: (time: string | number, seconds = false) => {
-      if (typeof time === "number") time = this.string.epoch_to_iso(time);
-      const [date, _time] = time.split("T");
-      return this.time.ms(`${date}T23:59:59.999999Z`, seconds);
+    ms: (date: string | number) =>
+      date === "now" ? new Date().valueOf() : new Date(date).valueOf(),
+    /**
+     * Converts a date to seconds from epoch
+     * @param date
+     */
+    sec: (date: string | number) => Math.floor(this.time.ms(date) / 1000),
+    /**
+     * Returns ms from the epoch rounded up to the given granularity
+     * @param date_time
+     * @param period
+     * @returns ms from epoch minus 1ms to ensure period end.
+     */
+    ms_period_end: (date_time: string | number, period: period_t): number => {
+      const day_ms = this.time.period_to_ms([1, "d"]);
+      const period_ms = this.time.period_to_ms(period);
+
+      // end of last day in given period
+      if (period_ms > day_ms) {
+        const days_ms = Math.floor(period_ms / day_ms) * day_ms;
+        const day_end = this.time.ms_period_end(date_time, [1, "d"]);
+        return day_end + days_ms;
+      }
+      // end of day
+      if (period_ms === day_ms) {
+        const date_time_string =
+          typeof date_time === "number"
+            ? this.string.epoch_to_iso(date_time)
+            : date_time;
+        const [date, _time] = date_time_string.split("T");
+        return this.time.ms(`${date}T23:59:59.999999Z`);
+      }
+      // end of given period
+      date_time =
+        typeof date_time === "number" ? date_time : this.time.ms(date_time);
+      const periods = Math.ceil(date_time / period_ms);
+
+      return period_ms * periods - 1;
     },
     /**
      * Calculates ms from epoch for the given period ago
      * @param period
      * @param seconds Flag if return should be in seconds
      */
-    epoch_ago: <T = number>(period: period_t, seconds = false) => {
-      const ms_ago = to_minutes[period[1]](period[0]) * 60 * 1000;
-      const epoch = this.time.ms_now() - ms_ago;
-      return seconds ? (Math.floor(epoch / 1000) as T)! : (epoch as T)!;
+    epoch_ago: (period: period_t) => {
+      const ms_ago = period_to_ms[period[1]](period[0]);
+      return this.time.ms_now() - ms_ago;
     },
     /**
      * Converts a time period to minutes.
@@ -133,7 +161,8 @@ export class Util {
      * @returns
      */
     period_to_min: (period: period_t) => {
-      return to_minutes[period[1]](period[0]);
+      const ms = this.time.period_to_ms(period);
+      return Math.floor(ms / 1000 / 60);
     },
     /**
      * Converts a time period to milliseconds.
@@ -141,7 +170,7 @@ export class Util {
      * @returns
      */
     period_to_ms: (period: period_t) => {
-      return to_minutes[period[1]](period[0]) * 60 * 1000;
+      return period_to_ms[period[1]](period[0]);
     },
   };
   static resolver = {
@@ -156,12 +185,14 @@ export class Util {
   };
 }
 
-const to_minutes = {
-  min: (count: number) => count,
-  h: (count: number) => count * 60,
-  d: (count: number) => count * to_minutes.h(24),
-  m: (count: number) => count * to_minutes.d(30),
-  y: (count: number) => count * to_minutes.d(364),
+const period_to_ms = {
+  s: (count: number) => count * 1000,
+  min: (count: number) => count * period_to_ms.s(60),
+  h: (count: number) => count * period_to_ms.min(60),
+  d: (count: number) => count * period_to_ms.h(24),
+  w: (count: number) => count * period_to_ms.d(7),
+  m: (count: number) => count * period_to_ms.d(30.4375),
+  y: (count: number) => count * period_to_ms.d(365.25),
 };
 function pad_hkse_ticker(ticker: string) {
   return ticker.length < 4 ? ticker!.padStart(4, "0") : ticker;

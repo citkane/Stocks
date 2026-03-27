@@ -24,8 +24,8 @@ export class Ws {
   private respond(mssg: message_t, p: req_t, api: Api_t) {
     const { topic } = mssg;
     const params = get_params(mssg);
-    const key = topic as keyof api_t["request"];
-    const fnc = api.request[key] as Function;
+    const key = topic as keyof api_t["requests"];
+    const fnc = api.requests[key] as Function;
     fnc(p, ...params);
 
     //try {
@@ -39,8 +39,8 @@ export class Ws {
   private action = (api: Api_t, mssg: message_t) => {
     const { topic } = mssg;
     const params = get_params(mssg);
-    const key = topic as keyof api_t["set"];
-    const fnc = api.set[key] as Function;
+    const key = topic as keyof api_t["setter"];
+    const fnc = api.setter[key] as Function;
     fnc(...params);
 
     //try {

@@ -12,7 +12,7 @@ export class Login extends Popup {
   };
   public send_token_code = () => {
     const url = new URL(window.location.href);
-    const code = Object.fromEntries(url.searchParams) as saxo_t.auth_code_t;
+    const code = Object.fromEntries(url.searchParams) as b.s.auth_code_t;
     this.send("saxo_make_token", code);
   };
 }

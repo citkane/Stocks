@@ -2,11 +2,11 @@ import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class StocksRoot extends AppElement {
   static money_value_keys = ["market_value", "buy_value", "pl", "fx_pl"];
-  static observedAttributes = ["ready"];
+  static observedAttributes = ["ready", "account", "broker"];
 
   constructor() {
     super();
-    this.set_topic(this);
+    this.api.set_topic(this);
     this.setAttribute("broker", "all");
 
     this.dom.template_to_self("stocks-root");
@@ -14,39 +14,34 @@ export class StocksRoot extends AppElement {
     this.data.set_sort_registry();
 
     this.props.watch("ready", this.handlers.ready);
-    this.broker_select.addEventListener(
-      "change",
-      this.handlers.broker_selected,
-    );
+    this.props.watch("broker", this.handlers.select);
+    this.props.watch("account", this.handlers.select);
   }
 
   private handlers = {
-    ready: (old_value: any, new_value: any) => {
-      if (old_value === new_value) return;
-      this.handlers.render();
+    ready: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
+      this.dom.render();
       this.dom.set_sort_actions();
     },
 
+    select: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
+
+      this.stock_rows.forEach((sr) => sr.setAttribute(p.name, p.new));
+      this.props.set_money_totals();
+    },
+  };
+
+  private dom = this.api.dom({
     render: () => {
       this.cache.stocks
         .sort((a, b) => a.description.localeCompare(b.description))
         .forEach((stock) => {
           this.grid.appendChild(this.dom.make_stock_row(stock));
         });
-
       this.props.set_money_totals();
     },
-    broker_selected: (e: Event) => {
-      const broker = (e.target! as HTMLSelectElement).value;
-      this.querySelectorAll("stock-row").forEach((e) =>
-        e.setAttribute("broker", broker),
-      );
-
-      this.props.set_money_totals();
-    },
-  };
-
-  private dom = this.api.dom({
     make_stock_row: (s: stock_t) =>
       this.dom.make_element("stock-row", "", `ticker="${s.ticker}"`),
     set_sort_actions: () => {
@@ -128,9 +123,7 @@ export class StocksRoot extends AppElement {
   private get displayed_stock_rows() {
     return [...this.querySelectorAll("stock-row:not([display=none])")];
   }
-  private get broker_select() {
-    return this.querySelector("select-broker")!;
-  }
+
   private get money_row() {
     return this.querySelector(".money.row")!;
   }

@@ -3,11 +3,21 @@ import { AppElement } from "@frontend/components/AppElement";
 export class Select extends AppElement {
   constructor() {
     super();
-    this.dom.template_to_self("select-widget");
+    this.base_dom.template_to_self("select-widget");
   }
-  protected dom = this.api.dom({
+
+  //protected dom_extend = <T extends { [key: string]: Function }>(
+  //  functions = {} as T,
+  //) => {
+  //  return { ...this._dom, ...functions } as typeof this._dom & T;
+  //};
+  protected base_dom = this.api.dom({
     add_option: (name: string, value = name) => {
-      const option = this.dom.make_element("option", name, `value=${value}`);
+      const option = this.base_dom.make_element(
+        "option",
+        name,
+        `value=${value}`,
+      );
       this.select.appendChild(option);
     },
     set_label: (name: string, label: string) => {
@@ -20,10 +30,16 @@ export class Select extends AppElement {
   protected set default_value(value: string) {
     this.select.value = value;
   }
-  private get label() {
+  protected get label() {
     return this.querySelector("label")!;
   }
-  private get select() {
+  protected get select() {
     return this.querySelector("select")!;
   }
+  //protected get dom() {
+  //  return this._dom as typeof this._dom;
+  //}
+  //protected set dom(dom: { [key: string]: Function }) {
+  //  this._dom = { ...this._dom, ...dom };
+  //}
 }

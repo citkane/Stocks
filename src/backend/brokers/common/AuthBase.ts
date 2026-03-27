@@ -15,7 +15,10 @@ export class AuthBase extends Global {
       if (this.auth.authorised) return resolve(true);
 
       const interval = setInterval(() => {
-        if (this.auth.authorised) this.clear(interval, () => resolve(true));
+        if (this.auth.authorised) {
+          clearInterval(interval);
+          resolve(true);
+        }
       }, this.fetch_rate);
 
       this.add_shutdown_fnc(() => clearInterval(interval));
@@ -24,42 +27,42 @@ export class AuthBase extends Global {
 
   public authorised = false;
 
-  private poll_for_auth = () =>
-    new Promise<void>((resolve) => {
-      if (this.authorised) return resolve();
+  private poll_for_auth = () => {
+    const interval = setInterval(() => {
+      this.auth.is_authorised().then(check);
+    }, this.fetch_rate);
 
-      const interval = setInterval(() => {
-        this.auth.is_authorised().then(check);
-      }, this.fetch_rate);
-
-      const check = (success: boolean) =>
-        (this.authorised = success) && this.clear(interval, authorised);
-
-      const authorised = () => {
+    const check = (success: boolean) => {
+      if (this.authorised) return clearInterval(interval);
+      if ((this.authorised = success)) {
+        clearInterval(interval);
         this.keep_auth_alive();
-        resolve();
-      };
+      }
+    };
 
-      this.add_shutdown_fnc(() => clearInterval(interval));
-    });
+    this.add_shutdown_fnc(() => clearInterval(interval));
+  };
 
   private keep_auth_alive = () => {
+    let count = 0;
     const interval = setInterval(() => {
+      console.info(`Keeping auth alive: ${this._broker}`, count);
+      count++;
       this.auth
         .is_authorised()
         .then(check)
         .catch(() => check(false));
     }, this.keep_alive_interval);
 
-    const check = (success: boolean) =>
-      (this.authorised = success) && this.clear(interval, this.poll_for_auth);
+    const check = (success: boolean) => {
+      if (!this.authorised) return clearInterval(interval);
+      if (!(this.authorised = success)) {
+        clearInterval(interval);
+        this.poll_for_auth();
+      }
+    };
 
     this.add_shutdown_fnc(() => clearInterval(interval));
-  };
-
-  private clear = (interval: interval_t, fnc: Function) => {
-    clearInterval(interval);
-    fnc();
   };
 
   private get auth() {

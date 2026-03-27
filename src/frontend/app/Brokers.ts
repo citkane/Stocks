@@ -35,7 +35,7 @@ export class Brokers extends Global {
     period: period_t,
     granularity: period_t,
   ) =>
-    this.request<stock_data_t>("chart_data", broker, [
+    this.request<chart_data_t[]>("chart_data", broker, [
       conid,
       period,
       granularity,
@@ -53,16 +53,18 @@ export class Brokers extends Global {
   static fx_pl(p: position_t) {
     const buy = this.buy_value(p);
     const buy_now = this.round_money(
-      p.position * p.price_buy * this.fx_round(p.fx_market),
+      p.amount * p.price_traded * this.fx_round(p.fx_market),
     );
 
     return buy_now - buy;
   }
   static buy_value(p: position_t) {
-    return this.round_money(p.position * p.price_buy * this.fx_round(p.fx_buy));
+    return this.round_money(
+      p.amount * p.price_traded * this.fx_round(p.fx_traded),
+    );
   }
   static market_value(p: position_t) {
-    return this.round_money(p.position * p.price_market * p.fx_market);
+    return this.round_money(p.amount * p.price_market * p.fx_market);
   }
   static round_money(amount: number) {
     return Math.round(amount * 100);

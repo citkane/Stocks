@@ -2,6 +2,7 @@ stock-chart {
   display: block;
   grid-column: 1/27;
   overflow-y: hidden;
+  padding: 0 !important;
   inner {
     display: block;
     width: 100%;

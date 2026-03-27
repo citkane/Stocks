@@ -1,7 +1,7 @@
 import { randomUUIDv7 } from "bun";
 import { AuthBase } from "@backend/brokers/common";
 
-const ping_auth_interval = 1190000;
+const ping_auth_interval = 300000;
 const { app_key, app_secret, url } = conf.saxo;
 const auth_string = btoa(`${app_key}:${app_secret}`);
 const token_file = Bun.file(".temp/saxo.token.json");
@@ -14,13 +14,13 @@ class Oauth extends AuthBase {
   public fetch_token = (code: string): Promise<boolean> => {
     const endpoint = this.endpoints.post.token(code, "authorization_code");
     return this.saxo
-      .fetch<saxo_t.auth_token_t>(endpoint.url, endpoint.params)
+      .fetch<b.s.auth_token_t>(endpoint.url, endpoint.params)
       .then(this._token.store);
   };
   public token = {
     access_token: "",
     refresh_token: "",
-  } as saxo_t.auth_token_t;
+  } as b.s.auth_token_t;
 
   protected endpoints = {
     post: {
@@ -50,7 +50,7 @@ class Oauth extends AuthBase {
   };
 
   protected _token = {
-    read: (): Promise<saxo_t.auth_token_t | false> =>
+    read: (): Promise<b.s.auth_token_t | false> =>
       token_file.json().catch(() => false),
 
     refresh: (refresh_token: string) => {
@@ -59,7 +59,7 @@ class Oauth extends AuthBase {
         "refresh_token",
       );
       return this.saxo
-        .fetch<saxo_t.auth_token_t>(endpoint.url, endpoint.params)
+        .fetch<b.s.auth_token_t>(endpoint.url, endpoint.params)
         .then(this._token.store)
         .catch((err) => this._token.remove(err).then(() => false));
     },
@@ -86,7 +86,7 @@ class Oauth extends AuthBase {
         },
       };
     },
-    store: (token: saxo_t.auth_token_t) => {
+    store: (token: b.s.auth_token_t) => {
       this.token = token;
       return token_file.write(JSON.stringify(token)).then(() => true);
     },

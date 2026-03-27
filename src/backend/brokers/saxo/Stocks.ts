@@ -1,16 +1,15 @@
 import { Global } from "backend";
 
 const bar_data_limit = 1200;
-const { red, green } = util.colours;
 
 export class Stocks extends Global {
   constructor() {
     super();
   }
-  public chart_data = (
+  public fetch_chart_data = (
     conid: string,
-    period: period_t = [3, "y"],
-    granularity: period_t = [1, "d"],
+    period: period_t,
+    granularity: period_t,
   ) => {
     const starts = period_to_starts(period, granularity, bar_data_limit);
     return Promise.all(
@@ -31,34 +30,30 @@ export class Stocks extends Global {
       }),
     )
       .then((data) => data.flat())
-      .then(this.map_bar_data);
+      .then((data) => this.map_bar_data(data, granularity));
   };
 
-  private map_bar_data = (data: saxo_t.bar_data_t["Data"]) =>
-    data.reduce(
-      (c, point) => {
-        const time = util.time.ms_day_end(point.Time, true);
-        c.bar.push({
-          open: point.Open,
-          close: point.Close,
-          high: point.High,
-          low: point.Low,
-          time,
-        });
-        c.volume.push({
-          color: point.Close > point.Open ? green : red,
-          value: point.Volume,
-          time,
-        });
-        c.price.push({
-          value: point.Close,
-          time,
-        });
+  private map_bar_data = (
+    data: b.s.bar_data_t["Data"],
+    granularity: period_t,
+  ) => {
+    return data.reduce((c, point) => {
+      const {
+        Open: open,
+        Close: close,
+        High: high,
+        Low: low,
+        Volume: volume,
+        Time,
+      } = point;
+      let time = util.time.ms_period_end(Time, granularity);
+      time = util.time.sec(time);
 
-        return c;
-      },
-      { bar: [], volume: [], price: [] } as stock_data_t,
-    );
+      c.push({ open, close, high, low, volume, time });
+
+      return c;
+    }, [] as chart_data_t[]);
+  };
 
   private get_bar_data(conid: string, from: string, granularity_min: number) {
     const asset_type = "Stock";
@@ -68,7 +63,7 @@ export class Stocks extends Global {
       from,
       granularity_min,
     );
-    return this.saxo.fetch<saxo_t.bar_data_t>(endpoint);
+    return this.saxo.fetch<b.s.bar_data_t>(endpoint);
   }
   private endpoints = {
     get: {

@@ -1,7 +1,5 @@
 import { Global } from "backend";
 
-const col = util.colours;
-
 export class Stocks extends Global {
   constructor() {
     super();
@@ -16,7 +14,7 @@ export class Stocks extends Global {
     },
     fetch_pair: (source: currency_t) => {
       const endpoint = this.endpoints.get.fx_rate(source, this.base_currency);
-      return this.ibkr.fetch<ibkr_t.fx_rate_t>(endpoint).then((rate) => {
+      return this.ibkr.fetch<b.i.fx_rate_t>(endpoint).then((rate) => {
         return { [source]: rate.rate } as fx_pair_t;
       });
     },
@@ -28,40 +26,27 @@ export class Stocks extends Global {
     },
   };
   private chart = {
-    fetch_data: (conid: string, period: period_t, bar: period_t) => {
+    fetch_data: (conid: string, period: period_t, granularity: period_t) => {
       const endpoint = this.endpoints.get.bar_data(
         conid,
         util.string.period(period),
-        util.string.period(bar),
+        util.string.period(granularity),
       );
       return this.ibkr
-        .fetch<ibkr_t.bar_data_t>(endpoint)
-        .then(this.chart.map_data);
+        .fetch<b.i.bar_data_t>(endpoint)
+        .then((data) => this.chart.map_data(data, granularity));
     },
-    map_data: (data: ibkr_t.bar_data_t) =>
-      data.data.reduce(
-        (c, point) => {
-          const time = util.time.ms_day_end(point.t, true);
-          c.bar.push({
-            open: point.o,
-            close: point.c,
-            high: point.h,
-            low: point.l,
-            time,
-          });
-          c.volume.push({
-            color: point.c > point.o ? col.green : col.red,
-            value: point.v,
-            time,
-          });
-          c.price.push({
-            value: point.c,
-            time,
-          });
-          return c;
-        },
-        { bar: [], volume: [], price: [] } as stock_data_t,
-      ),
+    map_data: (data: b.i.bar_data_t, granularity: period_t) => {
+      return data.data.reduce((c, point) => {
+        const { o: open, c: close, h: high, l: low, v: volume, t } = point;
+        let time = util.time.ms_period_end(t, granularity);
+        time = util.time.sec(time);
+
+        c.push({ open, close, high, low, volume, time });
+
+        return c;
+      }, [] as chart_data_t[]);
+    },
   };
 
   private endpoints = {

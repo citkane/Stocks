@@ -9,8 +9,8 @@ export class DateString extends AppElement {
   }
 
   private handlers = {
-    render: (old_value: string, new_value: string) => {
-      if (old_value === new_value) return;
+    render: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
       this.innerHTML = util.string.epoch_to_iso(this.value);
     },
   };

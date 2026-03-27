@@ -6,7 +6,7 @@ export class Accounts extends Global {
   }
   public update = () =>
     this.saxo
-      .fetch<saxo_t.accounts_t>(this.endpoints.accounts())
+      .fetch<b.s.accounts_t>(this.endpoints.accounts())
       .then((data) => data.Data);
 
   private endpoints = {
@@ -18,7 +18,7 @@ export class Accounts extends Global {
 }
 
 export class Account extends Global {
-  constructor(private account: saxo_t.account_t) {
+  constructor(private account: b.s.account_t) {
     super();
   }
 

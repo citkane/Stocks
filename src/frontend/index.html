@@ -33,7 +33,8 @@
 
   <!-- stock -->
   <template id="stocks-root">
-    <select-broker></select-broker>
+    <select-broker></select-broker> <select-account></select-account>
+
     <div class="grid">
       <div class="row header">
         <div name="description"><div class="cell">description</div></div>
@@ -59,14 +60,16 @@
       </div>
     </div>
   </template>
-  <template id="stock-row">
+  <template id="stock-row" class="row">
     <div name="description"></div>
-    <div name="ticker"><button></button></div>
+    <div name="ticker"><button name="ticker"></button></div>
     <money-string name="buy_value" currency="€"></money-string>
     <money-string name="market_value" currency="€"></money-string>
     <money-string name="pl" currency="€" pl></money-string>
     <money-string name="fx_pl" currency="€" pl></money-string>
-    <div name="positions" class="center"><button></button></div>
+    <div name="positions" class="center">
+      <button name="positions"></button>
+    </div>
     <positions-root></positions-root>
     <stock-chart></stock-chart>
   </template>
@@ -88,7 +91,7 @@
     </div>
   </template>
 
-  <template id="position-row">
+  <template id="position-row" class="row">
     <div name="exchange" class="center"></div>
     <date-string name="date"></date-string>
     <div name="position" class="center"></div>

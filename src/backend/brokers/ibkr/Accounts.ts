@@ -2,7 +2,7 @@ import { Global } from "backend";
 
 export class Accounts extends Global {
   public update = () =>
-    this.ibkr.fetch<ibkr_t.account_t[]>(this.endpoints.accounts());
+    this.ibkr.fetch<b.i.account_t[]>(this.endpoints.accounts());
 
   private endpoints = {
     accounts: () => `${this.api_url}/portfolio/accounts`,
@@ -13,7 +13,7 @@ export class Accounts extends Global {
 }
 
 export class Account extends Global {
-  constructor(private account: ibkr_t.account_t) {
+  constructor(private account: b.i.account_t) {
     super();
   }
   translate() {

@@ -1,37 +1,33 @@
 import { Sql } from "./Sql";
 
 export class Database extends Sql {
-  constructor(sql_file: string, drop_tables: db.table_n[] = []) {
-    super(sql_file);
-    this.drop_tables(drop_tables).then(this.create_tables);
-  }
-
   public select = {
     ibkr_transactions: (conid: number) => {
       return this.sql.select(
         "ibkr_transactions",
-        ["conid", "=", conid],
+        ["conid", conid],
         ["date", "ASC"],
-      ) as Promise<ibkr_t.transaction_t[]>;
+      ) as Promise<b.i.transaction_t[]>;
     },
     accounts: (broker: broker_t) => {
       return this.sql.select(
         "accounts",
-        ["broker", "=", broker],
+        ["broker", broker],
         ["alias", "ASC"],
       ) as Promise<account_t[]>;
     },
     positions: (broker: broker_t) => {
       return this.sql.select(
         "positions",
-        ["broker", "=", broker],
+        ["broker", broker],
         ["description", "ASC"],
       ) as Promise<position_t[]>;
     },
+    chart: (id: string) => this.sql.select_chart(id),
   };
 
   public insert = {
-    ibkr_transactions: (transactions: ibkr_t.transaction_t[]) => {
+    ibkr_transactions: (transactions: b.i.transaction_t[]) => {
       return this.sql.insert("ibkr_transactions", transactions);
     },
     accounts: (accounts: account_t[]) => {
@@ -42,11 +38,13 @@ export class Database extends Sql {
 
       return this.sql.insert("positions", positions);
     },
-  };
-  private drop_tables = (tables: db.table_n[]) => {
-    return Promise.all(tables.map(this.sql.drop));
-  };
-  private create_tables = () => {
-    return Promise.all(this.table_names.map(this.sql.create));
+    /**
+     * Inserts chart data to the database
+     * @param id concatenation of broker_id_granulaity
+     * @param data time series data
+     * @returns Promise of the inserted chart data
+     */
+    chart: (id: string, data: chart_data_t[]) =>
+      this.sql.insert_chart(id, data).then(() => data),
   };
 }

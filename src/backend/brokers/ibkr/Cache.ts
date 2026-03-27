@@ -35,16 +35,23 @@ export class Cache extends CacheBroker {
           return trans;
         });
   }
-  public set transactions(transactions: Promise<ibkr_t.transaction_t[]>) {
+  public set transactions(
+    transactions: Promise<b.i.positions_data_t["transactions"]>,
+  ) {
     transactions.then((transactions) => {
-      if (!transactions.length) return console.warn("No transactions");
-      this.db.insert.ibkr_transactions(transactions).then(() => {
-        transactions.forEach(this.set_transaction);
+      Object.keys(transactions).forEach((conid) => {
+        const key = conid as unknown as keyof typeof transactions;
+        if (!transactions[key]?.length)
+          return console.warn(`No transactions for ${conid}`);
+
+        this.db.insert.ibkr_transactions(transactions[key]).then(() => {
+          transactions[key]!.forEach(this.set_transaction);
+        });
       });
     });
   }
 
-  private set_transaction = (t: ibkr_t.transaction_t) => {
+  private set_transaction = (t: b.i.transaction_t) => {
     const { conid } = t;
     if (!this._transactions.has(conid))
       this._transactions.set(conid, new Set());
@@ -52,5 +59,5 @@ export class Cache extends CacheBroker {
     transactions_set.add(t);
   };
 
-  private _transactions = new Map<number, Set<ibkr_t.transaction_t>>();
+  private _transactions = new Map<number, Set<b.i.transaction_t>>();
 }

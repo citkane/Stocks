@@ -4,11 +4,7 @@ import { Transactions } from "./Transactions";
 const page_limit = 100;
 type transactions_data_t = {
   trans_instance: Transactions;
-  transactions: ibkr_t.transaction_t[];
-};
-type positions_data_t = {
-  transactions: ibkr_t.transaction_t[];
-  positions: position_t[];
+  transactions: b.i.transaction_t[];
 };
 
 /**
@@ -20,17 +16,19 @@ export class Positions extends Global {
       .then(this.position.accounts)
       .then(this.position.audit)
       .then(this.transaction.update)
-      .then(this.transaction.position_data)
-      .then((data) => {
-        const { transactions, positions } = data;
-        this.ibkr.cache.transactions = Promise.resolve(transactions);
-        return positions;
-      });
+      .then(this.transaction.position_data);
+  //.then((data) => {
+  //  const { transactions, positions } = data;
+  //  this.ibkr.cache.transactions = Promise.resolve(transactions);
+  //  return positions;
+  //});
 
   private transaction = {
-    update: (pos: ibkr_t.position_t[]) =>
-      Promise.all(pos.map(this.transaction._update)),
-    _update: (position: ibkr_t.position_t) => {
+    update: (pos: b.i.position_t[]) => {
+      this.transaction.accumulator.positions.broker = pos;
+      return Promise.all(pos.map(this.transaction._update));
+    },
+    _update: (position: b.i.position_t) => {
       const trans_instance = new Transactions(position);
       return trans_instance
         .update_transactions()
@@ -40,44 +38,54 @@ export class Positions extends Global {
         );
     },
     position_data: (data: transactions_data_t[]) => {
-      return data.reduce(
-        (c, data) => {
-          c.transactions = [...c.transactions, ...data.transactions];
-          c.positions = [...c.positions, ...data.trans_instance.positions];
-          return c;
-        },
-        { transactions: [], positions: [] } as positions_data_t,
-      );
+      return data.reduce((c, data) => {
+        data.transactions.forEach((transaction) => {
+          const { conid } = transaction;
+          const { transactions } = c;
+          if (!transactions[conid]) transactions[conid] = [];
+          transactions[conid].push(transaction);
+        });
+        c.positions.frontend = [
+          ...c.positions.frontend,
+          ...data.trans_instance.positions,
+        ];
+        return c;
+      }, this.transaction.accumulator);
     },
+    accumulator: {
+      transactions: {},
+      positions: { frontend: [], broker: [] },
+    } as b.i.positions_data_t,
   };
+
   private position = {
     accounts: (accounts: account_t[]) =>
       Promise.all(accounts.map(this.position._accounts)).then((positions) =>
         positions.flat(),
       ),
     _accounts: (account: account_t) => this.position.get(account),
-    get: (a: account_t, p = 0, pos: ibkr_t.position_t[] = []) =>
+    get: (a: account_t, p = 0, pos: b.i.position_t[] = []) =>
       this.ibkr
         .fetch<
-          ibkr_t.position_t[]
+          b.i.position_t[]
         >(this.endpoints.get.positions(a.a_id_original, p))
         .then((_pos) =>
           this.position.page(a, p, [...pos, ..._pos], _pos.length),
         ),
     _get: (account_id: string, conid: number) =>
-      this.ibkr.fetch<ibkr_t.position_t>(
+      this.ibkr.fetch<b.i.position_t>(
         this.endpoints.get.position(account_id, conid),
       ),
     page: (
       a: account_t,
       p = 0,
-      pos: ibkr_t.position_t[],
+      pos: b.i.position_t[],
       len: number,
-    ): Promise<ibkr_t.position_t[]> =>
+    ): Promise<b.i.position_t[]> =>
       len >= page_limit
         ? this.position.get(a, p++, pos)
         : this.position.audit(pos),
-    audit: (pos: ibkr_t.position_t[]) =>
+    audit: (pos: b.i.position_t[]) =>
       Promise.all(
         pos.map((p) => (!!p.name ? p : this.position._get(p.acctId!, p.conid))),
       ).then((p) => p.flat()),
@@ -105,7 +113,7 @@ export class Positions extends Global {
  */
 export class Position extends Global {
   constructor(
-    private position: ibkr_t.position_t,
+    private position: b.i.position_t,
     private index: number,
     private fx_buy: number,
     private date: number,
@@ -140,12 +148,12 @@ export class Position extends Global {
       ticker,
       currency,
       exchange,
-      position,
+      amount: position,
       fx_market: this.fx_rate(currency),
-      fx_buy,
+      fx_traded: fx_buy,
       date,
       price_market,
-      price_buy,
+      price_traded: price_buy,
     };
   }
 }

@@ -5,7 +5,7 @@ export class AccountsRoot extends AppElement {
 
   constructor() {
     super();
-    this.set_topic(this);
+    this.api.set_topic(this);
     this.dom.template_to_self("accounts-root");
 
     this.props.watch("ready", this.handlers.ready);
@@ -23,8 +23,8 @@ export class AccountsRoot extends AppElement {
       });
     },
 
-    ready: (old_value: any, new_value: any) => {
-      if (old_value === new_value) return;
+    ready: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
       this.handlers.render();
     },
   };

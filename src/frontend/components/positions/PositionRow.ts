@@ -2,25 +2,25 @@ import { AppElement } from "@frontend/components/AppElement.ts";
 import { Brokers } from "@frontend/app/Brokers";
 
 export class PositionRow extends AppElement {
-  static observedAttributes = ["broker"];
+  static observedAttributes = ["broker", "account"];
 
   constructor() {
     super();
-    this.set_topic(this);
+    this.api.set_topic(this);
     this.dom.template_to_self("position-row");
-    this.classList.add("row");
 
-    this.props.watch("broker", this.handlers.broker);
+    this.props.watch("broker", this.handlers.select);
+    this.props.watch("account", this.handlers.select);
+
+    this.api.connected_callback(this.handlers.render);
   }
-  connectedCallback() {
-    this.handlers.render();
-  }
+
   private handlers = {
     render: () => {
       const data = this.data;
       if (!data) return;
       const { market_value, buy_value, pl, fx_pl, position: _position } = data;
-      const { date, position, broker, exchange } = _position;
+      const { date, amount: position, broker, exchange } = _position;
       const { query_by_name } = this.props;
 
       query_by_name("date").setAttribute("value", date.toString());
@@ -37,20 +37,38 @@ export class PositionRow extends AppElement {
       this.setAttribute("pl", pl);
       this.setAttribute("fx_pl", fx_pl);
     },
-    broker: (old_value: string, new_value: string) => {
-      if (old_value === new_value) return;
-      if (new_value === "all") return this.props.show();
-      this.position?.broker === new_value
-        ? this.props.show()
-        : this.props.hide();
+
+    select: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
+
+      const { a_id, broker } = this.position;
+
+      if (this.broker && this.account)
+        return broker === this.broker && a_id === this.account
+          ? this.props.show()
+          : this.props.hide();
+      if (this.broker)
+        return broker === this.broker ? this.props.show() : this.props.hide();
+      if (this.account)
+        return a_id === this.account ? this.props.show() : this.props.hide();
+
+      this.props.show();
     },
   };
 
   private dom = this.api.dom({});
   private props = this.api.props({});
+
+  private get broker() {
+    return this.getAttribute("broker");
+  }
+  private get account() {
+    return this.getAttribute("account");
+  }
   private get position() {
     const p = this.cache.get.position(this.position_id);
-    return p ? p : undefined;
+    if (!p) throw Error("No position found");
+    return p;
   }
   private get data() {
     const position = this.position;

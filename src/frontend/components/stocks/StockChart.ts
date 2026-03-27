@@ -1,22 +1,13 @@
 import { AppElement } from "@frontend/components/AppElement";
-import {
-  BarSeries,
-  BaselineSeries,
-  CandlestickSeries,
-  createChart,
-  createSeriesMarkers,
-  HistogramSeries,
-  type DeepPartial,
-  type HistogramStyleOptions,
-  type IChartApi,
-  type ISeriesApi,
-  type SeriesMarker,
-  type SeriesOptionsCommon,
-  type Time,
-} from "lightweight-charts";
+import * as lwc from "lightweight-charts";
 
-type series_options_t = DeepPartial<
-  HistogramStyleOptions & SeriesOptionsCommon
+type mapped_data_t = {
+  bar: lwc.BarData<lwc.Time>[];
+  price: lwc.BaselineData<lwc.Time>[];
+  volume: lwc.HistogramData<lwc.Time>[];
+};
+type series_options_t = lwc.DeepPartial<
+  lwc.HistogramStyleOptions & lwc.SeriesOptionsCommon
 >;
 
 const height = "200px";
@@ -26,52 +17,76 @@ const chart_granularity: period_t = [1, "d"];
 const visibility_start: period_t = [1, "y"];
 
 export class StockChart extends AppElement {
-  static observedAttributes = ["state"];
+  static observedAttributes = ["ticker", "ready", "drawer"];
 
   constructor() {
     super();
     this.dom.template_to_self("stock-chart");
-    this.props.watch("state", this.handlers.render);
+    this.setAttribute("drawer", "closed");
+
+    this.props.watch("ticker", this.handlers.fetch_data);
+    this.props.watch("ready", this.handlers.render);
+    this.props.watch("drawer", this.handlers.drawer);
 
     this.inner.style.height = height;
     this.style.height = "0";
     this.style.transition = `${transition_sec}s`;
-
-    this.addEventListener("dblclick", this.dom.set_visible_range);
   }
 
   private handlers = {
-    render: async (old_value: string, new_value: string) => {
-      const stock = this.stock;
-      if (!stock || old_value === new_value) return;
-      if (new_value === "closed") {
-        this.style.height = "0";
-        this.chart?.remove();
-        return;
+    render: async (p: p.prop_callback) => {
+      if (p.old === p.new) return;
+
+      try {
+        const chart = this.dom.createChart();
+        this.addEventListener("dblclick", () =>
+          this.dom.set_visible_range(chart),
+        );
+
+        const baseline_chart = this.dom.add_baseline_series(chart);
+        const bar_chart = this.dom.add_bar_series(chart);
+        const volume_chart = this.dom.add_volume_series(chart);
+
+        const { bar, price, volume } = this.data;
+
+        bar_chart.setData(bar);
+        baseline_chart.setData(price);
+        volume_chart.setData(volume);
+        this.dom.create_buy_markers(baseline_chart);
+        this.dom.add_buy_lines(baseline_chart);
+        this.dom.set_visible_range(chart);
+      } catch (err) {
+        console.error(err);
       }
-      this.style.height = height;
-      this.chart = this.dom.createChart();
-      const baseline = this.dom.add_baseline_series();
-      const bar = this.dom.add_bar_series();
-      const volume = this.dom.add_volume_series();
+    },
+    fetch_data: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
 
-      const data = await this.data;
-      if (!data) return;
+      const { broker, con_id } = this.stock;
+      return this.brokers
+        .chart_data(broker, con_id, chart_span, chart_granularity)
+        .then((data) => this.map_chart_data(data))
+        .then((data) => {
+          this.chart_data = data;
+          this.setAttribute("ready", "true");
+        })
+        .catch((err) => console.error(err));
+    },
+    drawer: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
 
-      bar.setData(data.bar);
-      baseline.setData(data.price);
-      volume.setData(data.volume);
-      this.dom.create_buy_markers(baseline);
-      this.dom.add_buy_lines(baseline);
-
-      this.dom.set_visible_range();
+      if (p.new === "open") {
+        this.style.height = height;
+      } else {
+        this.style.height = "0";
+      }
     },
   };
   private props = this.api.props({});
   private dom = this.api.dom({
-    createChart: () => createChart(this.inner),
-    add_bar_series: () => {
-      const bar = this.chart!.addSeries(BarSeries, {
+    createChart: () => lwc.createChart(this.inner),
+    add_bar_series: (chart: lwc.IChartApi) => {
+      const bar = chart.addSeries(lwc.BarSeries, {
         baseValue: { type: "price", price: this.baseline },
         priceScaleId: "bar",
       } as series_options_t);
@@ -84,8 +99,8 @@ export class StockChart extends AppElement {
       });
       return bar;
     },
-    add_baseline_series: () => {
-      const baseline = this.chart!.addSeries(BaselineSeries, {
+    add_baseline_series: (chart: lwc.IChartApi) => {
+      const baseline = chart.addSeries(lwc.BaselineSeries, {
         baseValue: { type: "price", price: this.baseline },
         priceScaleId: "baseline",
       } as series_options_t);
@@ -98,8 +113,8 @@ export class StockChart extends AppElement {
       });
       return baseline;
     },
-    add_volume_series: () => {
-      const volume = this.chart!.addSeries(HistogramSeries, {
+    add_volume_series: (chart: lwc.IChartApi) => {
+      const volume = chart.addSeries(lwc.HistogramSeries, {
         priceFormat: {
           type: "volume",
         },
@@ -113,13 +128,13 @@ export class StockChart extends AppElement {
       });
       return volume;
     },
-    add_buy_lines: (series: ISeriesApi<"Baseline">) => {
+    add_buy_lines: (series: lwc.ISeriesApi<"Baseline">) => {
       const stock = this.stock;
       if (!stock) return;
 
       stock.positions.forEach((p) =>
         series.createPriceLine({
-          price: p.price_buy,
+          price: p.price_traded,
           color: util.colours.blue,
           //lineWidth: 2,
           //lineStyle: 2, // LineStyle.Dashed
@@ -128,31 +143,34 @@ export class StockChart extends AppElement {
         }),
       );
     },
-    create_buy_markers: (series: ISeriesApi<"Baseline">) => {
+    create_buy_markers: (series: lwc.ISeriesApi<"Baseline">) => {
       const stock = this.stock;
       if (!stock) return;
 
       const markers = [...stock.positions].map((p) => {
         const time = Math.floor(Number(p.date) / 1000); //Math.floor(Number(p.date) / 1000) as Time;
         return {
-          price: p.price_buy,
+          price: p.price_traded,
           color: util.colours.blue,
           position: "atPriceMiddle",
           shape: "circle",
-          text: `buy ${p.position}`,
+          text: `buy ${p.amount}`,
           size: 1.2,
           time,
-        } as SeriesMarker<Time>;
+        } as lwc.SeriesMarker<lwc.Time>;
       });
-      return createSeriesMarkers(series, markers);
+      return lwc.createSeriesMarkers(series, markers);
     },
-    set_visible_range: () => {
-      this.chart?.timeScale().setVisibleRange(this.visible_range);
+    set_visible_range: (chart: lwc.IChartApi) => {
+      chart.timeScale().setVisibleRange(this.visible_range);
     },
   });
 
+  private get data() {
+    return this.chart_data!;
+  }
   private get stock() {
-    return this.cache.get.stock(this.ticker);
+    return this.cache.get.stock(this.ticker)!;
   }
   private get ticker() {
     return this.getAttribute("ticker")!;
@@ -168,7 +186,7 @@ export class StockChart extends AppElement {
     const buy = [...this.stock.positions].reduce(
       (c, p) => {
         const [value, position] = c;
-        c = [value! + p.price_buy * p.position, position! + p.position];
+        c = [value! + p.price_traded * p.amount, position! + p.amount];
         return c;
       },
       [0, 0],
@@ -176,27 +194,46 @@ export class StockChart extends AppElement {
     const [value, position] = buy;
     return Math.round((value! * 100) / position!) / 100;
   }
-  private get data() {
-    const stock = this.stock;
-    if (!stock) return Promise.resolve();
 
-    return this.chart_data
-      ? Promise.resolve(this.chart_data)
-      : this.brokers
-          .chart_data(stock.broker, stock.con_id, chart_span, chart_granularity)
-          .then((data) => (this.chart_data = data))
-          .catch((err) => {
-            console.error(err);
-            return Promise.resolve();
-          });
-  }
   private get visible_range() {
+    const from = util.time.epoch_ago(visibility_start) / 1000;
+    const now = util.time.ms_now() / 1000;
     return {
-      from: util.time.epoch_ago<Time>(visibility_start, true),
-      to: util.time.ms_now<Time>(true),
+      from: Math.floor(from) as lwc.Time,
+      to: Math.floor(now) as lwc.Time,
     };
   }
+  private get currency() {
+    const { positions } = this.stock;
+    const { currency } = [...positions.values()][0]!;
+    return currency;
+  }
+  private get broker() {
+    return this.stock.broker;
+  }
 
-  private chart?: IChartApi;
-  private chart_data?: stock_data_t;
+  private map_chart_data = (data: chart_data_t[]) => {
+    const { broker, currency } = this;
+    return data.reduce(
+      (c, point) => {
+        let { open, close, high, low, time, volume } = point;
+        // SAXO is fucking up ZAR rounding...
+        if (broker === "saxo" && currency === "ZAR") {
+          open = open / 100;
+          close = close / 100;
+          high = high / 100;
+          low = low / 100;
+        }
+        const color = open > close ? util.colours.red : util.colours.green;
+        const value = Math.round((high * 100 + low * 100) / 2) / 100;
+        c.bar.push({ close, open, high, low, time });
+        c.volume.push({ time, color, value: volume });
+        c.price.push({ time, value });
+        return c;
+      },
+      { bar: [], volume: [], price: [] } as mapped_data_t,
+    );
+  };
+
+  private chart_data?: mapped_data_t;
 }

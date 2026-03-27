@@ -1,42 +1,41 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class PositionsRoot extends AppElement {
-  static observedAttributes = ["ticker", "state", "broker"];
+  static observedAttributes = ["ticker", "drawer", "broker", "account"];
 
   constructor() {
     super();
-    this.set_topic(this);
+    this.api.set_topic(this);
     this.dom.template_to_self("position-root");
-    this.setAttribute("broker", "all");
+    this.setAttribute("drawer", "closed");
 
     this.props.watch("ticker", this.handlers.render);
-    this.props.watch("state", this.handlers.open_close);
-    this.props.watch("broker", this.handlers.change_broker);
+    this.props.watch("drawer", this.handlers.drawer);
+    this.props.watch("broker", this.handlers.select);
+    this.props.watch("account", this.handlers.select);
   }
 
   private handlers = {
-    render: (old_value: string, new_value: string) => {
-      if (old_value === new_value) return;
+    render: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
 
       let positions = this.cache.get.stock(this.ticker)?.positions;
       if (!positions) return;
 
       this.dom.append_position_rows(positions);
       this.data.refresh();
-
-      this.setAttribute("state", "closed");
     },
-    change_broker: (old_value: string, new_value: string) => {
-      if (old_value === new_value) return;
+    select: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
 
-      this.position_rows.forEach((p) => p.setAttribute("broker", new_value));
+      this.position_rows.forEach((row) => row.setAttribute(p.name, p.new));
       this.data.refresh();
 
       this.displayed_position_count > 0 ? this.props.show() : this.props.hide();
     },
-    open_close: (old_value: string, new_value: string) => {
-      if (old_value === new_value) return;
-      this.setAttribute("state", new_value);
+    drawer: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
+      this.setAttribute("drawer", p.new);
     },
   };
 

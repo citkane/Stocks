@@ -34,7 +34,7 @@ class Transaction extends Global {
       (this._transfers = this.transactions.filter((t) => t.type === "Transfer"))
     );
   }
-  protected transactions: ibkr_t.transaction_t[] = [];
+  protected transactions: b.i.transaction_t[] = [];
 
   private async fetch_transactions() {
     const accounts = await this.ibkr.cache.account_ids;
@@ -45,7 +45,7 @@ class Transaction extends Global {
       this.last_transaction_days_ago,
     );
     return this.ibkr
-      .fetch<ibkr_t.transactions_t>(url, params)
+      .fetch<b.i.transactions_t>(url, params)
       .then((transactions) => transactions.transactions)
       .then(this.id.dedupe)
       .then(this.id.add);
@@ -88,7 +88,7 @@ class Transaction extends Global {
    * do not create duplicates.
    */
   private id = {
-    dedupe: (transactions: ibkr_t.transaction_t[]) => {
+    dedupe: (transactions: b.i.transaction_t[]) => {
       if (!this.transactions.length) return transactions;
       const last_day = this.transactions[this.transactions.length - 1]?.date!;
       const last_committed = this.transactions.filter(
@@ -102,8 +102,8 @@ class Transaction extends Global {
           return c;
         },
         {
-          same_day: [] as ibkr_t.transaction_t[],
-          later: [] as ibkr_t.transaction_t[],
+          same_day: [] as b.i.transaction_t[],
+          later: [] as b.i.transaction_t[],
         },
       );
       const i = last_committed.length - 1;
@@ -116,11 +116,11 @@ class Transaction extends Global {
      * @param transactions
      * @returns Mutated transactions
      */
-    add: (transactions: ibkr_t.transaction_t[]) => {
+    add: (transactions: b.i.transaction_t[]) => {
       return transactions.map((transaction) => this.id._add(transaction));
     },
 
-    _add: (transaction: ibkr_t.transaction_t) => {
+    _add: (transaction: b.i.transaction_t) => {
       (transaction as any).id = this.id.make(transaction);
       return transaction;
     },
@@ -130,7 +130,7 @@ class Transaction extends Global {
      * @param count
      * @returns
      */
-    make: (transaction: ibkr_t.transaction_t) => {
+    make: (transaction: b.i.transaction_t) => {
       const { conid, rawDate, acctid, type, amt } = transaction;
       let id = `${conid}_${acctid}_${rawDate}_${type}_${amt}`;
       id = `${id}_${this.id.increment(id)}`;
@@ -146,7 +146,7 @@ class Transaction extends Global {
     return this._id_counts
       ? this._id_counts
       : (this._id_counts = this.transactions.reduce((c, transaction) => {
-          let id = (transaction as ibkr_t.transaction_t & { id: string }).id;
+          let id = (transaction as b.i.transaction_t & { id: string }).id;
           const id_array = id.split("_");
           const count = Number(id_array.pop()!);
           id = id_array.join("_");
@@ -155,8 +155,8 @@ class Transaction extends Global {
         }, {} as count_t));
   }
   private _id_counts?: count_t;
-  private _sells?: ibkr_t.transaction_t[];
-  private _transfers?: ibkr_t.transaction_t[];
+  private _sells?: b.i.transaction_t[];
+  private _transfers?: b.i.transaction_t[];
 }
 
 /**
@@ -166,7 +166,7 @@ class Transaction extends Global {
  * position lots from transactions.
  */
 export class Transactions extends Transaction {
-  constructor(private position: ibkr_t.position_t) {
+  constructor(private position: b.i.position_t) {
     super(position.conid);
   }
   public get positions() {
@@ -203,7 +203,7 @@ export class Transactions extends Transaction {
           .reduce((a, sell) => {
             const sell_buys = this.process_buys.narrow_for_sell(sell, _buys);
             return [...a, ...this.process_buys.subtract_sell(sell, sell_buys)];
-          }, [] as ibkr_t.transaction_t[]),
+          }, [] as b.i.transaction_t[]),
         ...this.process_buys.find_transfers(),
       ]);
     },
@@ -239,8 +239,8 @@ export class Transactions extends Transaction {
      * @returns Transactions that qualify as open buy lots
      */
     subtract_sell: (
-      sell: ibkr_t.transaction_t,
-      mutable_buys: ibkr_t.transaction_t[],
+      sell: b.i.transaction_t,
+      mutable_buys: b.i.transaction_t[],
     ) => {
       let sold = Math.abs(sell.qty!);
       return mutable_buys
@@ -261,10 +261,7 @@ export class Transactions extends Transaction {
      * @param buys
      * @returns Buy transactions that pre-date the sell and have position amounts remaining
      */
-    narrow_for_sell: (
-      sell: ibkr_t.transaction_t,
-      buys: ibkr_t.transaction_t[],
-    ) => {
+    narrow_for_sell: (sell: b.i.transaction_t, buys: b.i.transaction_t[]) => {
       const sell_date = util.time.ms(sell.date);
       return (
         buys?.filter((buy) => {
@@ -283,5 +280,5 @@ export class Transactions extends Transaction {
   private get buys() {
     return this._buys ? this._buys : this.process_buys.calc();
   }
-  private _buys?: ibkr_t.transaction_t[];
+  private _buys?: b.i.transaction_t[];
 }

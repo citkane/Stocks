@@ -14,7 +14,7 @@ export class Authorise extends AuthBase {
 
   private renew_auth = () =>
     this.ibkr
-      .fetch<ibkr_t.tickle_t>(this.endpoints.tickle())
+      .fetch<b.i.tickle_t>(this.endpoints.tickle())
       .then((tickle) => tickle.iserver.authStatus);
 
   private endpoints = {

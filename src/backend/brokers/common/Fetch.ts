@@ -7,6 +7,7 @@ export class Fetch extends Global {
   constructor(
     rate_limit: number,
     private params_factory: params_factory_t,
+    private tls?: { tls: { [key: string]: any } },
   ) {
     super();
     this.limiter = new RateLimiter(rate_limit);
@@ -21,21 +22,35 @@ export class Fetch extends Global {
     resolve: resolve_t,
     reject: reject_t,
   ) => {
-    const req = new Request(encodeURI(url));
-    params = { ...this.default_params, ...params };
+    params = deep_merge_params(this.default_params, params);
+
+    const req = new Request(encodeURI(url), params);
+
     this.limiter.queue(() =>
-      fetch(req, params)
-        .then((res) => this.response(res, resolve, reject))
+      fetch(req.clone(), this.tls)
+        .then((res) => this.response(res, req, resolve, reject))
         .catch((err) => reject(err)),
     );
   };
-  private response(res: Response, resolve: resolve_t, reject: reject_t) {
-    const { url, status, statusText, ok, headers } = res;
-    const type = headers.get("content-type");
 
-    if (!ok) {
-      return reject({ "Fetch error: ": { url, status, statusText } });
+  private async response(
+    res: Response,
+    req: Request,
+    resolve: resolve_t,
+    reject: reject_t,
+  ) {
+    let { url, status, statusText, headers } = res;
+
+    if (!res.ok) {
+      const { headers, method } = req;
+      const req_type = headers.get("content-type");
+      const body = req_type?.includes("application/json") ? "json" : "text";
+      return req[body]().then((body) =>
+        reject({ "Fetch error: ": { url, method, status, statusText, body } }),
+      );
     }
+    const type = headers.get("content-type");
+    req.text().then(() => null);
     type?.includes("application/json")
       ? res.json().then(resolve)
       : resolve(res);
@@ -62,4 +77,20 @@ class RateLimiter extends Global {
   };
 
   private req_queue: fetch_fnc_t[] = [];
+}
+
+function deep_merge_params(
+  default_params: { [key: string]: any },
+  target_params: { [key: string]: any },
+) {
+  const output = { ...default_params };
+  Object.keys(target_params).forEach((key) => {
+    output[key] = isObject(default_params[key])
+      ? deep_merge_params(output[key] || {}, target_params[key])
+      : target_params[key];
+  });
+  return output;
+}
+function isObject(item: any) {
+  return item && typeof item === "object" && !Array.isArray(item);
 }
