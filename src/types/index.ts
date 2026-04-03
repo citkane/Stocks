@@ -4,10 +4,8 @@ import type Logger_b from "@backend/Logger";
 
 import type Api_b from "@backend/Api";
 import type { Brokers as Brokers_b } from "@backend/brokers";
-import type {
-  Cache as Cache_b,
-  Database as Database_b,
-} from "@backend/database";
+import type { Database as Database_b } from "@backend/database";
+
 import type { ServerHttp, ServerWs } from "@backend/servers";
 
 import type App_f from "@frontend/App";
@@ -17,7 +15,7 @@ import type {
   ClientWs as Ws_f,
 } from "@frontend/app/servers";
 import type { Brokers as Brokers_f } from "@frontend/app/Brokers";
-import type { Cache as Cache_f } from "@frontend/app/Cache";
+import type { Cache as Cache_f } from "@frontend/Cache";
 import type { Events as Events_f } from "@frontend/app/Events";
 
 export type * as saxo_t from "./saxo_t";
@@ -29,7 +27,6 @@ declare global {
   namespace backend {
     type Logger_t = typeof Logger_b;
     type Brokers_t = Brokers_b;
-    type Cache_t = Cache_b;
     type Database_t = Database_b;
     type Http_t = ServerHttp;
     type Ws_t = ServerWs;

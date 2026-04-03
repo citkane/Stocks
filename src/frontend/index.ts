@@ -26,8 +26,8 @@ import {
   Saxo,
   Brokers,
   Events,
-  Cache,
 } from "@frontend/app/index.ts";
+import { Cache } from "./Cache";
 
 //export * from "@frontend/Api.ts";
 //export * from "@frontend/app/index.ts";

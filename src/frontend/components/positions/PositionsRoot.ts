@@ -1,7 +1,7 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class PositionsRoot extends AppElement {
-  static observedAttributes = ["ticker", "drawer", "broker", "account"];
+  static observedAttributes = ["data-stock", "drawer", "broker", "account"];
 
   constructor() {
     super();
@@ -9,7 +9,7 @@ export class PositionsRoot extends AppElement {
     this.dom.template_to_self("position-root");
     this.setAttribute("drawer", "closed");
 
-    this.props.watch("ticker", this.handlers.render);
+    this.props.watch("data-stock", this.handlers.render);
     this.props.watch("drawer", this.handlers.drawer);
     this.props.watch("broker", this.handlers.select);
     this.props.watch("account", this.handlers.select);
@@ -19,19 +19,15 @@ export class PositionsRoot extends AppElement {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      let positions = this.cache.get.stock(this.ticker)?.positions;
-      if (!positions) return;
-
-      this.dom.append_position_rows(positions);
+      this.dom.append_position_rows();
       this.data.refresh();
+      this.position_open ? this.props.show() : this.props.hide();
     },
     select: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
       this.position_rows.forEach((row) => row.setAttribute(p.name, p.new));
       this.data.refresh();
-
-      this.displayed_position_count > 0 ? this.props.show() : this.props.hide();
     },
     drawer: (p: p.prop_callback) => {
       if (p.old === p.new) return;
@@ -48,9 +44,14 @@ export class PositionsRoot extends AppElement {
   });
 
   private dom = this.api.dom({
-    append_position_rows: (p: Set<position_t>) => {
-      p.forEach((p) => {
-        const row = this.dom.make_element("position-row", "", `id=${p.p_id}`);
+    append_position_rows: () => {
+      const buys = util.money
+        .aggregate_position(this.stock.transactions)
+        .filter((t) => t.amount > 0);
+
+      buys.forEach((transaction) => {
+        const t = `data-transaction="${util.string.html_json(transaction)}"`;
+        const row = this.dom.make_element("position-row", "", `${t}`);
         this.grid.appendChild(row);
       });
     },
@@ -76,8 +77,13 @@ export class PositionsRoot extends AppElement {
       ),
   });
 
-  private get ticker() {
-    return this.getAttribute("ticker")!;
+  private get stock() {
+    if (!!this._stock) return this._stock;
+    const stock = this.dataset.stock!;
+    return (this._stock = JSON.parse(stock) as stock_t<transaction_t[]>);
+  }
+  private get position_open() {
+    return this.position_rows.length > 0 ? true : false;
   }
   private get position_rows(): NodeListOf<HTMLElement> {
     return this.querySelectorAll("position-row")!;
@@ -85,7 +91,6 @@ export class PositionsRoot extends AppElement {
   private get displayed_positions() {
     return [...this.querySelectorAll("position-row:not([display=none])")];
   }
-  private get displayed_position_count() {
-    return Number(this.getAttribute("position_count")!);
-  }
+
+  private _stock?: stock_t<transaction_t[]>;
 }

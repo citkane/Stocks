@@ -35,11 +35,13 @@ export default class Api extends Global implements Api_t {
 
   private res = {
     accounts: async (p: req_t) => {
+      await this.brokers.await_cache();
       const accounts = await this.cache.accounts;
       p.messenger.response(p.req_uid, accounts);
     },
     positions: async (p: req_t) => {
-      const positions = await this.cache.positions;
+      await this.brokers.await_cache();
+      const positions = await this.cache.transactions;
       p.messenger.response(p.req_uid, positions);
     },
 
@@ -48,7 +50,7 @@ export default class Api extends Global implements Api_t {
     },
     wait_for_ready: (p: req_t, broker: broker_t) => {
       this.brokers[broker]
-        .await_ready()
+        .await_auth()
         .then(() => p.messenger.response(p.req_uid))
         .catch((err) => server_error(p, err));
     },

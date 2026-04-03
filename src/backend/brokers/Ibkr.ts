@@ -3,6 +3,7 @@ import {
   Accounts,
   Authorise,
   Positions,
+  Transactions,
   Stocks,
   Cache,
   Account,
@@ -17,7 +18,7 @@ export class Ibkr extends Fetch {
   constructor() {
     super(fetch_rate_limit, default_fetch_params, tls);
   }
-  public await_ready = () =>
+  public await_auth = () =>
     this.authorise.authorised
       ? Promise.resolve()
       : this.ready_resolver || this.define_ready_resolver();
@@ -28,11 +29,7 @@ export class Ibkr extends Fetch {
   public update = {
     fx: () => this.stocks.update_fx().then(this._update.fx),
     accounts: () => this.accounts.update().then(this._update.accounts),
-    positions: () =>
-      this.positions
-        .update()
-        .then(this._update.positions)
-        .catch((err) => this._update.error(err, this.update.positions)),
+    positions: () => this._update.transactions(),
   };
 
   public get is_authorised() {
@@ -47,44 +44,36 @@ export class Ibkr extends Fetch {
 
   private _update = {
     fx: (rates: fx_rates_t) => {
-      logger.json("FX rates", rates);
       this.fx_rates = rates;
     },
     accounts: (accounts: b.i.account_t[]) => {
-      logger.json("IBKR accounts", accounts);
       const _accounts = accounts.map((a) => new Account(a).translate());
       this.cache.accounts = Promise.resolve(_accounts);
       console.info("IBKR accounts updated");
     },
-    positions: (data: b.i.positions_data_t) => {
-      const { transactions, positions: _positions } = data;
-      const positions = _positions.frontend;
-      const broker_positions = _positions.broker;
+    transactions: async () => {
+      const accounts = await this.cache.accounts;
+      const acc_ids = accounts.map((a) => a.a_id_original);
+      const positions = await this.positions.update(acc_ids);
 
-      logger.json("IBKR transactions", transactions);
-      logger.json("IBKR positions cached", positions);
-      logger.json("IBKR positions", broker_positions);
+      const con_ids = positions.map((p) => p.conid);
 
-      this.cache.positions = Promise.resolve(positions);
-      this.cache.transactions = Promise.resolve(transactions);
-      console.info("IBKR positions updated");
-    },
-    error: (err: any, fnc: Function, retry = 0) => {
-      err = err["Fetch error: "];
-      if (err && err.status === 500 && retry <= 3) {
-        err.retry = retry;
-        console.warn(err);
-        return new Promise((resolve) => {
-          retry++;
-          setTimeout(() => {
-            fnc()
-              .then(resolve)
-              .catch((err: any) => this._update.error(err, fnc, retry));
-          }, 1000);
-        });
-      } else {
-        throw err;
-      }
+      const market_view = this.positions.market_view(con_ids);
+      this.cache.market_view = market_view;
+      await market_view;
+
+      const { is_init, days } = await this.transactions.update_schedule();
+      const transactions = this.transactions.update(acc_ids, con_ids, days);
+
+      this.brokers.cache.transactions_part = transactions;
+      return transactions
+        .then(() =>
+          is_init
+            ? this.db.insert.transactions_updated("ibkr", util.time.ms_now())
+            : this.db.update.transactions_updated("ibkr", util.time.ms_now()),
+        )
+        .then(() => console.info("IBKR positions updated"))
+        .catch((err) => console.error(err));
     },
   };
   private define_ready_resolver = () =>
@@ -93,6 +82,7 @@ export class Ibkr extends Fetch {
       .then(() => console.info("IBKR is ready")));
 
   private positions = new Positions();
+  private transactions = new Transactions();
   private stocks = new Stocks();
   private accounts = new Accounts();
   private authorise = new Authorise(fetch_rate_limit);

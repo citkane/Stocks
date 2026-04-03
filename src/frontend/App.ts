@@ -14,7 +14,7 @@ export default class App extends Global {
       console.info("App awaiting cache");
       const [accounts, positions] = await this.brokers.request_cache();
       this.cache.accounts = accounts;
-      this.cache.positions = positions;
+      this.cache.transactions = positions;
 
       console.info("App ready");
       this.init_components();

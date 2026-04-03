@@ -3,7 +3,6 @@ import {
   Account,
   Accounts,
   Authorise,
-  Position,
   Positions,
   Transactions,
   Stocks,
@@ -18,7 +17,7 @@ export class Saxo extends Fetch {
     default_fetch_params.bind(this);
   }
 
-  public await_ready = () =>
+  public await_auth = () =>
     this.authorise.authorised
       ? Promise.resolve()
       : this.ready_resolver || this.define_ready_resolver();
@@ -31,9 +30,7 @@ export class Saxo extends Fetch {
 
   public update = {
     accounts: () => this.accounts.update().then(this._update.accounts),
-    positions: () => this.positions.update().then(this._update.positions),
-    transactions: () =>
-      this.transactions.update().then(this.transactions.transform),
+    positions: () => this._update.positions(),
   };
 
   public get auth_bearer() {
@@ -49,36 +46,27 @@ export class Saxo extends Fetch {
 
   private _update = {
     accounts: (accounts: b.s.account_t[]) => {
-      logger.json("SAXO accounts", accounts);
       const _accounts = accounts.map((a) => new Account(a).translate());
       this.cache.accounts = Promise.resolve(_accounts);
       console.info("SAXO accounts updated");
     },
-    positions: async (positions: b.s.position_t[]) => {
-      const _positions = await this.update.transactions();
+    positions: async () => {
+      //await this.positions.info(207913);
+      const positions = await this.positions.update();
+      this.cache.market_view = this.positions.market_view(positions);
 
-      logger.json("SAXO positions", positions);
-      const positions_cache = positions.map((p) => {
-        const position = new Position(p).translate();
-        const _position = _positions.find((_p) => _p.p_id === position.p_id);
-        if (!_position) {
-          console.log(position);
-          return position;
-        }
-        _position.fx_market = position.fx_market;
-        _position.price_market = position.price_market;
-        //let { p_id } = position;
-        //p_id = p_id.split("_")[1]!;
-        //const fx_buy = partial_positions[p_id];
-        //console.log(fx_buy || position);
-        //
-        //position.fx_buy = fx_buy?.fx_buy || position.fx_buy;
-        return _position;
-      });
-      this.cache.positions = Promise.resolve(positions_cache);
-      logger.json("SAXO positions cached", positions_cache);
+      const { is_init, date } = await this.transactions.update_schedule();
+      const transactions = this.transactions.update(date);
 
-      console.info("SAXO positions updated");
+      this.brokers.cache.transactions_part = transactions;
+      return transactions
+        .then(() =>
+          is_init
+            ? this.db.insert.transactions_updated("saxo", util.time.ms_now())
+            : this.db.update.transactions_updated("saxo", util.time.ms_now()),
+        )
+        .then(() => console.info("SAXO positions updated"))
+        .catch((err) => console.error(err));
     },
   };
   private define_ready_resolver = () =>

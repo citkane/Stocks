@@ -1,18 +1,11 @@
 import { CacheBroker } from "@backend/brokers";
 
 export class Cache extends CacheBroker {
-  public override get positions() {
-    return super.positions.then((positions) =>
-      positions.length
-        ? positions
-        : this.db.select
-            .positions("saxo")
-            .then((pos) => pos.forEach(this.setter.position))
-            .then(() => super.positions),
-    );
+  public get market_view() {
+    return Promise.resolve(this._market_view);
   }
-  public override set positions(positions: Promise<position_t[]>) {
-    super.positions = positions;
+  public set market_view(view: Promise<b.market_view_map_t>) {
+    view.then((view) => (this._market_view = view));
   }
   public override get accounts() {
     return super.accounts.then((accounts) =>
@@ -24,7 +17,10 @@ export class Cache extends CacheBroker {
             .then(() => super.accounts),
     );
   }
+
   public override set accounts(accounts: Promise<account_t[]>) {
     super.accounts = accounts;
   }
+
+  private _market_view = new Map<string, {}>() as b.market_view_map_t;
 }

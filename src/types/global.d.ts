@@ -12,49 +12,28 @@ type res_error_t = {
   statusText: string;
 };
 
-//type position_t = {
-//  p_id: string;
-//  con_id: string;
-//  broker: broker_t;
-//  a_id: string;
-//  description: string;
-//  ticker: string;
-//  currency: currency_t;
-//  exchange: string;
-//  position: number;
-//  fx_traded: number;
-//  price_traded: number;
-//  date: string | number;
-//  kind: "buy" | "sell" | "dividend";
-//};
+type position_t = { [key in `${transaction_t["kind"]}s`]: transaction_t[] };
 
-type position_t = {
+type transaction_t = {
+  id: string;
   p_id: string;
   con_id: string;
-  broker: broker_t;
   a_id: string;
+  broker: broker_t;
   description: string;
   ticker: string;
   currency: currency_t;
-  exchange: string;
+  exchange?: string;
   amount: number;
-  fx_market: number;
-  fx_traded: number;
+  fx_market?: number;
+  fx_traded?: number;
   date: number;
-  price_market: number;
-  price_traded: number;
+  price_market?: number;
+  price_traded?: number;
   kind: "buy" | "sell" | "dividend";
+  state?: "open" | "closed";
 };
-type transaction_t = {
-  position: number;
-  account_id: string;
-  description: string;
-  fx_buy: number;
-  date: number | string;
-  price_buy: number;
-  open: boolean;
-  external_transfer: boolean;
-};
+
 type account_t = {
   a_id: string;
   a_id_original: string;
@@ -62,12 +41,12 @@ type account_t = {
   alias?: string;
   currency: currency_t;
 };
-type stock_t = {
+type stock_t<T = Set<transaction_t> | transaction_t[]> = {
   con_id: string;
   broker: broker_t;
   ticker: string;
   description: string;
-  positions: Set<position_t>;
+  transactions: { [key in keyof position_t]: T };
 };
 type fx_pair_t = {
   currency_t: number;
@@ -93,6 +72,18 @@ type chart_data_t = {
 };
 
 type interval_t = ReturnType<typeof setInterval>;
+
+namespace b {
+  type market_view_t = {
+    price_market: number;
+    ticker?: string;
+    exchange?: exchanges_t;
+    description?: string;
+    industry?: string;
+    category?: string;
+  };
+  type market_view_map_t = Map<string | number, b.market_view_t>;
+}
 
 /**
  * Function parameter types

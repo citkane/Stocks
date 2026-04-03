@@ -1,47 +1,46 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Brokers } from "@frontend/app/Brokers";
 
 export class PositionRow extends AppElement {
-  static observedAttributes = ["broker", "account"];
+  static observedAttributes = ["broker", "account", "data-transaction"];
 
   constructor() {
     super();
     this.api.set_topic(this);
     this.dom.template_to_self("position-row");
 
+    this.props.watch("data-transaction", this.handlers.render);
     this.props.watch("broker", this.handlers.select);
     this.props.watch("account", this.handlers.select);
-
-    this.api.connected_callback(this.handlers.render);
   }
 
   private handlers = {
-    render: () => {
-      const data = this.data;
-      if (!data) return;
-      const { market_value, buy_value, pl, fx_pl, position: _position } = data;
-      const { date, amount: position, broker, exchange } = _position;
-      const { query_by_name } = this.props;
+    render: (p: p.prop_callback) => {
+      if (p.old === p.new) return;
 
-      query_by_name("date").setAttribute("value", date.toString());
-      query_by_name("position").innerHTML = position.toString();
-      query_by_name("buy_value").setAttribute("value", buy_value);
-      query_by_name("market_value").setAttribute("value", market_value);
-      query_by_name("pl").setAttribute("value", pl);
-      query_by_name("fx_pl").setAttribute("value", fx_pl);
-      query_by_name("broker").innerHTML = broker;
-      query_by_name("exchange").innerHTML = exchange;
+      delete this._transaction;
+      const { market_value, traded_value, pl, fx_pl } = this.values;
+      const { date, amount, broker, exchange } = this.transaction;
 
-      this.setAttribute("market_value", market_value);
-      this.setAttribute("buy_value", buy_value);
-      this.setAttribute("pl", pl);
-      this.setAttribute("fx_pl", fx_pl);
+      this.date_element.setAttribute("value", String(date));
+      this.traded_value_element.setAttribute("value", String(traded_value));
+      this.market_value_element.setAttribute("value", String(market_value));
+      this.pl_element.setAttribute("value", String(pl));
+      this.fx_pl_element.setAttribute("value", String(fx_pl));
+
+      this.position_element.innerHTML = String(amount);
+      this.broker_element.innerHTML = broker;
+      this.exchange_element.innerHTML = exchange;
+
+      this.setAttribute("market_value", String(market_value));
+      this.setAttribute("buy_value", String(traded_value));
+      this.setAttribute("pl", String(pl));
+      this.setAttribute("fx_pl", String(fx_pl));
     },
 
     select: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      const { a_id, broker } = this.position;
+      const { a_id, broker } = this.transaction;
 
       if (this.broker && this.account)
         return broker === this.broker && a_id === this.account
@@ -58,34 +57,65 @@ export class PositionRow extends AppElement {
 
   private dom = this.api.dom({});
   private props = this.api.props({});
+  private _transaction?: transaction_t;
 
+  private get values() {
+    const transaction = this.transaction;
+    const { amount, price_traded, price_market, fx_traded, fx_market } =
+      transaction;
+    const fx_pl = util.money.fx_pl_base_whole(transaction);
+    const pl = util.money.pl_base_whole(transaction);
+    const market_value = util.money.base_money_whole(
+      amount,
+      price_market,
+      fx_market,
+    );
+    const traded_value = util.money.base_money_whole(
+      amount,
+      price_traded,
+      fx_traded,
+    );
+
+    return {
+      market_value,
+      traded_value,
+      fx_pl,
+      pl,
+    };
+  }
+  private get transaction() {
+    if (!!this._transaction) return this._transaction;
+    const transaction = this.dataset.transaction!;
+    return (this._transaction = JSON.parse(transaction)) as transaction_t;
+  }
   private get broker() {
     return this.getAttribute("broker");
   }
   private get account() {
     return this.getAttribute("account");
   }
-  private get position() {
-    const p = this.cache.get.position(this.position_id);
-    if (!p) throw Error("No position found");
-    return p;
+  private get date_element() {
+    return this.props.query_by_name("date");
   }
-  private get data() {
-    const position = this.position;
-    if (!position) return;
-    const market_value = Brokers.market_value(position);
-    const fx_pl = Brokers.fx_pl(position);
-    const buy_value = Brokers.buy_value(position);
-    const pl = (market_value * 100 - buy_value * 100) / 100;
-    return {
-      position,
-      market_value: market_value.toString(),
-      fx_pl: fx_pl.toString(),
-      buy_value: buy_value.toString(),
-      pl: pl.toString(),
-    };
+  private get traded_value_element() {
+    return this.props.query_by_name("buy_value");
   }
-  private get position_id() {
-    return this.getAttribute("id")!;
+  private get market_value_element() {
+    return this.props.query_by_name("market_value");
+  }
+  private get pl_element() {
+    return this.props.query_by_name("pl");
+  }
+  private get fx_pl_element() {
+    return this.props.query_by_name("fx_pl");
+  }
+  private get position_element() {
+    return this.props.query_by_name("position");
+  }
+  private get broker_element() {
+    return this.props.query_by_name("broker");
+  }
+  private get exchange_element() {
+    return this.props.query_by_name("exchange");
   }
 }

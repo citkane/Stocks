@@ -98,7 +98,6 @@ declare global {
         isUS: boolean;
         isEventContract: boolean;
         pageSize: number;
-        transactions: transaction_t[];
       };
 
       type fx_rate_t = { rate: number };
@@ -109,6 +108,7 @@ declare global {
         | "Transfer"
         | "Dividend Payment";
       type transaction_t = {
+        uid?: string;
         cur: currency_t;
         date: string;
         rawDate: string;
@@ -192,7 +192,7 @@ declare global {
       type positions_data_t = {
         transactions: { [key: number]: b.i.transaction_t[] };
         positions: {
-          frontend: globalThis.position_t[];
+          frontend: globalThis.transaction_t[];
           broker: b.i.position_t[];
         };
       };

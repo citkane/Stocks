@@ -1,11 +1,13 @@
 import { Global } from "backend";
 
 export class Accounts extends Global {
-  public update = () =>
-    this.ibkr.fetch<b.i.account_t[]>(this.endpoints.accounts());
+  public update = async () =>
+    this.ibkr.fetch<b.i.account_t[]>(this.endpoints.get.accounts());
 
   private endpoints = {
-    accounts: () => `${this.api_url}/portfolio/accounts`,
+    get: {
+      accounts: () => `${this.api_url}/portfolio/accounts`,
+    },
   };
   private get api_url() {
     return util.url.ibkr.api;

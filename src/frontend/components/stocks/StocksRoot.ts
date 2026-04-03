@@ -1,7 +1,6 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class StocksRoot extends AppElement {
-  static money_value_keys = ["market_value", "buy_value", "pl", "fx_pl"];
   static observedAttributes = ["ready", "account", "broker"];
 
   constructor() {
@@ -21,6 +20,7 @@ export class StocksRoot extends AppElement {
   private handlers = {
     ready: (p: p.prop_callback) => {
       if (p.old === p.new) return;
+
       this.dom.render();
       this.dom.set_sort_actions();
     },
@@ -42,8 +42,20 @@ export class StocksRoot extends AppElement {
         });
       this.props.set_money_totals();
     },
-    make_stock_row: (s: stock_t) =>
-      this.dom.make_element("stock-row", "", `ticker="${s.ticker}"`),
+    make_stock_row: (stock: stock_t) => {
+      const s = `data-stock="${stock_json()}"`;
+      return this.dom.make_element("stock-row", "", `${s}`);
+
+      function stock_json() {
+        const s = structuredClone(stock);
+        Object.keys(s.transactions).forEach((key) => {
+          const k = key as keyof typeof s.transactions;
+          (s.transactions[k] as Object) = [...s.transactions[k]];
+        });
+
+        return util.string.html_json(s);
+      }
+    },
     set_sort_actions: () => {
       [...this.header.children].forEach((child) => {
         const name = child.getAttribute("name")!;
@@ -133,5 +145,3 @@ export class StocksRoot extends AppElement {
 
   private sort_registry: { [key: string]: "up" | "dn" } = {};
 }
-
-const sort_dir = [...StocksRoot.money_value_keys];

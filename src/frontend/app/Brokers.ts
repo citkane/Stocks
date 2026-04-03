@@ -26,7 +26,7 @@ export class Brokers extends Global {
   request_cache = () =>
     Promise.all([
       this.request<account_t[]>("accounts"),
-      this.request<position_t[]>("positions"),
+      this.request<transaction_t[]>("positions"),
     ]);
 
   chart_data = (
@@ -50,34 +50,34 @@ export class Brokers extends Global {
   //  return login_window;
   //}
 
-  static fx_pl(p: position_t) {
-    const buy = this.buy_value(p);
-    const buy_now = this.round_money(
-      p.amount * p.price_traded * this.fx_round(p.fx_market),
-    );
-
-    return buy_now - buy;
-  }
-  static buy_value(p: position_t) {
-    return this.round_money(
-      p.amount * p.price_traded * this.fx_round(p.fx_traded),
-    );
-  }
-  static market_value(p: position_t) {
-    return this.round_money(p.amount * p.price_market * p.fx_market);
-  }
-  static round_money(amount: number) {
-    return Math.round(amount * 100);
-  }
-
-  static to_money_string(value: number) {
-    if (value === 0) return "0.00";
-    let [whole, fraction] = (value / 100).toString().split(".");
-    fraction = (fraction || "").padEnd(2, "0");
-    return `${whole || "0"}.${fraction}`;
-  }
-  private static fx_round(rate: number) {
-    const rounding = 1000000;
-    return Math.round(rate * rounding) / rounding;
-  }
+  //static fx_pl(p: transaction_t) {
+  //  const buy = this.buy_value(p);
+  //  const buy_now = this.round_money(
+  //    p.amount * p.price_traded * this.fx_round(p.fx_market),
+  //  );
+  //
+  //  return buy_now - buy;
+  //}
+  //static buy_value(p: transaction_t) {
+  //  return this.round_money(
+  //    p.amount * p.price_traded * this.fx_round(p.fx_traded),
+  //  );
+  //}
+  //static market_value(p: transaction_t) {
+  //  return this.round_money(p.amount * p.price_market * p.fx_market);
+  //}
+  //static round_money(amount: number) {
+  //  return Math.round(amount * 100);
+  //}
+  //
+  //static to_money_string(value: number) {
+  //  if (value === 0) return "0.00";
+  //  let [whole, fraction] = (value / 100).toString().split(".");
+  //  fraction = (fraction || "").padEnd(2, "0");
+  //  return `${whole || "0"}.${fraction}`;
+  //}
+  //private static fx_round(rate: number) {
+  //  const rounding = 1000000;
+  //  return Math.round(rate * rounding) / rounding;
+  //}
 }

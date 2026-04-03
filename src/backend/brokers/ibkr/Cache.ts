@@ -1,19 +1,13 @@
-import { CacheBroker, CacheBrokers } from "@backend/brokers";
+import { CacheBroker } from "@backend/brokers";
 
 export class Cache extends CacheBroker {
-  public override get positions() {
-    return super.positions.then((positions) =>
-      positions.length
-        ? positions
-        : this.db.select
-            .positions("ibkr")
-            .then((pos) => pos.forEach(this.setter.position))
-            .then(() => super.positions),
-    );
+  public set market_view(views: Promise<Map<string, b.market_view_t>>) {
+    views.then((view) => (this._market_view = view));
   }
-  public override set positions(positions: Promise<position_t[]>) {
-    super.positions = positions;
+  public get market_view() {
+    return Promise.resolve(this._market_view);
   }
+
   public override get accounts() {
     return super.accounts.then((accounts) =>
       accounts.length
@@ -27,37 +21,6 @@ export class Cache extends CacheBroker {
   public override set accounts(accounts: Promise<account_t[]>) {
     super.accounts = accounts;
   }
-  public get_transactions(conid: number) {
-    return this._transactions.has(conid)
-      ? Promise.resolve([...this._transactions.get(conid)!.values()])
-      : this.db.select.ibkr_transactions(conid).then((trans) => {
-          trans.forEach(this.set_transaction);
-          return trans;
-        });
-  }
-  public set transactions(
-    transactions: Promise<b.i.positions_data_t["transactions"]>,
-  ) {
-    transactions.then((transactions) => {
-      Object.keys(transactions).forEach((conid) => {
-        const key = conid as unknown as keyof typeof transactions;
-        if (!transactions[key]?.length)
-          return console.warn(`No transactions for ${conid}`);
 
-        this.db.insert.ibkr_transactions(transactions[key]).then(() => {
-          transactions[key]!.forEach(this.set_transaction);
-        });
-      });
-    });
-  }
-
-  private set_transaction = (t: b.i.transaction_t) => {
-    const { conid } = t;
-    if (!this._transactions.has(conid))
-      this._transactions.set(conid, new Set());
-    const transactions_set = this._transactions.get(conid)!;
-    transactions_set.add(t);
-  };
-
-  private _transactions = new Map<number, Set<b.i.transaction_t>>();
+  private _market_view = new Map<string, {}>() as Map<string, b.market_view_t>;
 }

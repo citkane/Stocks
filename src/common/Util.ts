@@ -4,6 +4,8 @@ type time_t = keyof typeof period_to_ms;
 declare global {
   type period_t = [number, time_t];
 }
+const money_round = 100;
+const fx_round = 1000000;
 
 export class Util {
   static get url() {
@@ -13,6 +15,7 @@ export class Util {
         auth: `${conf.saxo.url.auth}`,
         chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
         history: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.history}`,
+        ref: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.ref}`,
         redirect: {
           code: `${conf.saxo.url.redirect.code}`,
           token: `${conf.saxo.url.redirect.token}`,
@@ -85,6 +88,23 @@ export class Util {
       description = this.string.title_case(description);
       return { exchange, ticker, description };
     },
+    money: (value: number) => {
+      if (value === 0) return "0.00";
+      let [whole, fraction] = (value / 100).toString().split(".");
+      fraction = (fraction || "").padEnd(2, "0");
+      return `${whole || "0"}.${fraction}`;
+    },
+    html_escape: (str: string) => {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    },
+    html_json: (data: Object) => {
+      return this.string.html_escape(JSON.stringify(data));
+    },
   };
   static time = {
     /**
@@ -92,8 +112,9 @@ export class Util {
      * @param start_date
      * @returns
      */
-    aging_days: (start_date: string) => {
-      const date = this.time.ms(start_date);
+    aging_days: (start_date: string | number) => {
+      const date =
+        typeof start_date === "number" ? start_date : this.time.ms(start_date);
       const now = this.time.ms_now();
       return Math.floor((now - date) / (24 * 60 * 60 * 1000));
     },
@@ -171,6 +192,101 @@ export class Util {
      */
     period_to_ms: (period: period_t) => {
       return period_to_ms[period[1]](period[0]);
+    },
+  };
+  static money = {
+    /**
+     * Calculates total Profit/Loss
+     * @param transaction
+     * @returns Total P/L in base currency whole number
+     */
+    pl_base_whole: (transaction: transaction_t) => {
+      let { amount, price_traded, price_market, fx_traded, fx_market } =
+        transaction;
+      if (!amount || !price_traded || !fx_market || !price_market || !fx_traded)
+        return 0;
+
+      price_market = this.money.whole_money(price_market);
+      price_traded = this.money.whole_money(price_traded);
+      const price_diff = price_market - price_traded;
+
+      return this.money.base_money_whole(amount, price_diff / 100, fx_market);
+    },
+    /**
+     * Calculates fx Profit/Loss
+     * @param transaction
+     * @returns Fx P/L in base currency whole number
+     */
+    fx_pl_base_whole: (transaction: transaction_t) => {
+      const { amount, price_traded, price_market, fx_traded, fx_market } =
+        transaction;
+      if (!amount || !price_traded || !fx_market || !price_market || !fx_traded)
+        return 0;
+
+      const traded_base_value = this.money.base_money_whole(
+        amount,
+        price_traded,
+        fx_traded,
+      );
+      const market_base_value = this.money.base_money_whole(
+        amount,
+        price_traded,
+        fx_market,
+      );
+
+      return market_base_value - traded_base_value;
+    },
+    /**
+     * Convert money by exchange rate
+     * @param amount
+     * @param price
+     * @param fx_rate
+     * @returns Money value in whole number
+     */
+    base_money_whole: (amount?: number, price?: number, fx_rate?: number) => {
+      if (!amount || !price || !fx_rate) return 0;
+      price = this.money.whole_money(price);
+      fx_rate = this.money.round_fx(fx_rate);
+      return Math.round(amount * price * fx_rate);
+    },
+    /**
+     * Money value in whole number
+     * @param value
+     * @returns
+     */
+    whole_money: (value: number) => {
+      return Math.round(value * money_round);
+    },
+    round_fx: (rate: number) => {
+      return Math.round(rate * fx_round) / fx_round;
+    },
+    aggregate_position: (position: position_t) => {
+      let { buys, sells } = structuredClone(position);
+      if (!sells.length) return [...buys];
+
+      const tctns = [...buys, ...sells].sort((a, b) => a.date - b.date);
+      let sold = 0;
+
+      return tctns.reduce((c, transaction) => {
+        const { kind, amount } = transaction;
+
+        if (kind === "sell") {
+          sold += Math.abs(amount);
+          const match = tctns.find((t) => t.kind === "buy" && t.amount > 0)!;
+          const bought = match.amount;
+          if (bought >= sold) {
+            match.amount -= sold;
+            sold = 0;
+          } else {
+            match.amount = 0;
+            sold -= bought;
+          }
+        } else {
+          c.push(transaction);
+        }
+
+        return c;
+      }, [] as transaction_t[]);
     },
   };
   static resolver = {

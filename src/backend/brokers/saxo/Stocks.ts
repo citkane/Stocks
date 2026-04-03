@@ -17,10 +17,7 @@ export class Stocks extends Global {
         const from = util.string.epoch_to_utc(start);
         const _granularity = util.time.period_to_min(granularity);
         return this.get_bar_data(conid, from, _granularity)
-          .then((data) => {
-            logger.json("SAXO raw stock data", data);
-            return data.Data;
-          })
+          .then((data) => data.Data)
           .then((data) =>
             data.filter((p) => {
               if (!starts[i + 1]) return true;

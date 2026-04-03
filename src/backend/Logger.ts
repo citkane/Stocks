@@ -22,10 +22,17 @@ export default class Logger {
     err_writer.unref();
   }
 
-  static json(name: string, object: object) {
-    const json = JSON.stringify(object, null, 4);
+  static json<T>(name: string, data: T) {
+    const json = JSON.stringify(
+      data,
+      (_key, value) =>
+        value instanceof Map ? Object.fromEntries(value) : value,
+      4,
+    );
+    //const json = JSON.stringify(object, null, 4);
     name = name.replaceAll(" ", "_");
     const json_file = Bun.file(`${log_dir}/${name}.json`);
     json_file.write(json);
+    return data;
   }
 }

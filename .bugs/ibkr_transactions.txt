@@ -1,0 +1,86 @@
+Given the two example requests below (through both the Standard and Beta Client Portal API Gateway) to the "https://localhost:5000/v1/api/pa/transactions" endpoint,
+it is illustrated that the response only includes transactions for the first listed `conid`.
+
+This makes it impractical to fetch all transactions efficiently, and unworkable for the published endpoint rate limit to fetch each of many `conid`s individually.
+
+
+
+----------------------------------------------------- Request 1 for [490791425,3884601] returns only [490791425]
+
+req: {
+  url: "https://localhost:5000/v1/api/pa/transactions",
+  params: {
+    method: "POST",
+    headers: [Object ...],
+    body: "{\"acctIds\":[\"U22612428\"],\"conids\":[490791425,3884601],\"currency\":\"EUR\",\"days\":182}",
+  },
+}
+
+
+res: {
+  nd: 163,
+  rpnl: {
+    data: [],
+    amt: "0.0",
+  },
+  currency: "EUR",
+  from: 1761004800000,
+  id: "getTransactions",
+  to: 1775001600000,
+  transactions: [
+    {
+      cur: "HKD",
+      date: "Tue Jan 27 00:00:00 EST 2026",
+      rawDate: "20260127",
+      fxRate: 0.10648,
+      pr: 1.92,
+      qty: 2000,
+      acctid: "U22612428",
+      amt: -408.8832,
+      conid: 490791425,
+      type: "Buy",
+      desc: "NEW HOPE SERVICE HOLDINGS LT",
+    }
+  ],
+}
+
+
+----------------------------------------------------- Request 2 for [3884601,490791425] returns only [3884601]
+
+
+
+req: {
+  url: "https://localhost:5000/v1/api/pa/transactions",
+  params: {
+    method: "POST",
+    headers: [Object ...],
+    body: "{\"acctIds\":[\"U22612428\"],\"conids\":[3884601,490791425],\"currency\":\"EUR\",\"days\":182}",
+  },
+}
+
+res: {
+  nd: 163,
+  rpnl: {
+    data: [],
+    amt: "0.0",
+  },
+  currency: "EUR",
+  from: 1761004800000,
+  id: "getTransactions",
+  to: 1775001600000,
+  transactions: [
+    {
+      cur: "HKD",
+      date: "Tue Jan 27 00:00:00 EST 2026",
+      rawDate: "20260127",
+      fxRate: 0.10648,
+      pr: 6.38,
+      qty: 2000,
+      acctid: "U22612428",
+      amt: -1358.6848,
+      conid: 3884601,
+      type: "Buy",
+      desc: "COSCO SHIPPING INTERNATIONAL",
+    }
+  ],
+}

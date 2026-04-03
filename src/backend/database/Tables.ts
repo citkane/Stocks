@@ -1,6 +1,11 @@
 declare global {
   namespace db {
-    type data_t = b.i.transaction_t | account_t | position_t | fx_rates_t;
+    type data_t =
+      | b.i.transaction_t
+      | account_t
+      | transaction_t
+      | fx_rates_t
+      | { broker: broker_t; time: number };
     type tables_t = (typeof Tables)["tables"];
     type table_n = keyof tables_t;
     type table_t<T extends table_n> = tables_t[T];
@@ -15,19 +20,39 @@ declare global {
 export class Tables {
   static get tables() {
     return {
-      ibkr_transactions: [
-        ["id", "VARCHAR PRIMARY KEY"],
-        ["conid", "INT"],
-        ["cur", "CHAR(3) NOT NULL"],
+      //ibkr_transactions: [
+      //  ["id", "VARCHAR PRIMARY KEY"],
+      //  ["conid", "INT"],
+      //  ["cur", "CHAR(3) NOT NULL"],
+      //  ["date", "DATETIME NOT NULL"],
+      //  ["rawDate", "VARCHAR NOT NULL"],
+      //  ["fxRate", "DECIMAL(38,5) NOT NULL"],
+      //  ["pr", "DECIMAL(38,2)"],
+      //  ["qty", "SMALLINT"],
+      //  ["acctid", "VARCHAR NOT NULL"],
+      //  ["amt", "DECIMAL(38,5) NOT NULL"],
+      //  ["type", "VARCHAR NOT NULL"],
+      //  ["desc", "VARCHAR NOT NULL"],
+      //],
+      transactions: [
+        ["id", "VARCHAR PRIMARY KEY NOT NULL"],
+        ["p_id", "VARCHAR NOT NULL"],
+        ["con_id", "VARCHAR NOT NULL"],
+        ["a_id", "VARCHAR NOT NULL"],
+        ["broker", "CHAR(4) NOT NULL"],
+        ["description", "VARCHAR NOT NULL"],
+        ["ticker", "VARCHAR NOT NULL"],
+        ["currency", "CHAR(3) NOT NULL"],
+        ["exchange", "VARCHAR NOT NULL"],
+        ["amount", "SMALLINT"],
+        ["fx_traded", "DECIMAL(38,5)"],
+        ["price_traded", "DECIMAL(38,2)"],
         ["date", "DATETIME NOT NULL"],
-        ["rawDate", "VARCHAR NOT NULL"],
-        ["fxRate", "DECIMAL(38,5) NOT NULL"],
-        ["pr", "DECIMAL(38,2)"],
-        ["qty", "SMALLINT"],
-        ["acctid", "VARCHAR NOT NULL"],
-        ["amt", "DECIMAL(38,5) NOT NULL"],
-        ["type", "VARCHAR NOT NULL"],
-        ["desc", "VARCHAR NOT NULL"],
+        ["kind", "VARCHAR NOT NULL"],
+      ],
+      transactions_updated: [
+        ["broker", "VARCHAR PRIMARY KEY"],
+        ["time", "DATETIME NOT NULL"],
       ],
       accounts: [
         ["a_id", "VARCHAR PRIMARY KEY"],
@@ -36,23 +61,23 @@ export class Tables {
         ["alias", "VARCHAR"],
         ["currency", "CHAR(3) NOT NULL"],
       ],
-      positions: [
-        ["p_id", "VARCHAR PRIMARY KEY"],
-        ["con_id", "VARCHAR NOT NULL"],
-        ["broker", "CHAR(4) NOT NULL"],
-        ["a_id", "VARCHAR NOT NULL"],
-        ["description", "VARCHAR NOT NULL"],
-        ["ticker", "VARCHAR NOT NULL"],
-        ["currency", "CHAR(3) NOT NULL"],
-        ["exchange", "VARCHAR NOT NULL"],
-        ["amount", "SMALLINT"],
-        ["fx_market", "DECIMAL(38,8) NOT NULL"],
-        ["fx_traded", "DECIMAL(38,8) NOT NULL"],
-        ["date", "INT NOT NULL"],
-        ["price_market", "DECIMAL(38,8) NOT NULL"],
-        ["price_traded", "DECIMAL(38,8) NOT NULL"],
-        ["kind", "CHAR(8)"],
-      ],
+      //positions: [
+      //  ["p_id", "VARCHAR PRIMARY KEY"],
+      //  ["con_id", "VARCHAR NOT NULL"],
+      //  ["broker", "CHAR(4) NOT NULL"],
+      //  ["a_id", "VARCHAR NOT NULL"],
+      //  ["description", "VARCHAR NOT NULL"],
+      //  ["ticker", "VARCHAR NOT NULL"],
+      //  ["currency", "CHAR(3) NOT NULL"],
+      //  ["exchange", "VARCHAR NOT NULL"],
+      //  ["amount", "SMALLINT"],
+      //  ["fx_market", "DECIMAL(38,8) NOT NULL"],
+      //  ["fx_traded", "DECIMAL(38,8) NOT NULL"],
+      //  ["date", "INT NOT NULL"],
+      //  ["price_market", "DECIMAL(38,8) NOT NULL"],
+      //  ["price_traded", "DECIMAL(38,8) NOT NULL"],
+      //  ["kind", "CHAR(8) NOT NULL"],
+      //],
       charts_: [
         ["time", "DATETIME PRIMARY KEY"],
         ["open", "NUMERIC NOT NULL"],

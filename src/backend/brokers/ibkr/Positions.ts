@@ -1,159 +1,134 @@
 import { Global } from "backend";
-import { Transactions } from "./Transactions";
 
 const page_limit = 100;
-type transactions_data_t = {
-  trans_instance: Transactions;
-  transactions: b.i.transaction_t[];
-};
+const max_batch = 100;
 
-/**
- * Fetches and extrapolates positions from the IBKR API
- */
+const { ibkr: url } = util.url;
+
 export class Positions extends Global {
-  public update = () =>
-    this.ibkr.cache.accounts
-      .then(this.position.accounts)
-      .then(this.position.audit)
-      .then(this.transaction.update)
-      .then(this.transaction.position_data);
-  //.then((data) => {
-  //  const { transactions, positions } = data;
-  //  this.ibkr.cache.transactions = Promise.resolve(transactions);
-  //  return positions;
-  //});
+  public update = (acc_ids: string[]) =>
+    this.positions
+      .fetch(acc_ids)
+      .then((p) => logger.json("IBKR positions raw", p));
+  public market_view = (con_ids: number[]) =>
+    this.market
+      .fetch(con_ids)
+      .then((m) => logger.json("IBKR market raw", m))
+      .then(this.market.reduce.batches)
+      .then((m) => logger.json("IBKR market view", m));
 
-  private transaction = {
-    update: (pos: b.i.position_t[]) => {
-      this.transaction.accumulator.positions.broker = pos;
-      return Promise.all(pos.map(this.transaction._update));
+  private market = {
+    fetch: (con_ids: number[]) => {
+      const uri_accounts_preflight = this.endpoints.get.preflight_accounts();
+      const batches = this.market.batch(con_ids);
+      return this.ibkr
+        .fetch(uri_accounts_preflight)
+        .then(() => this.market.fetch_batches(batches));
     },
-    _update: (position: b.i.position_t) => {
-      const trans_instance = new Transactions(position);
-      return trans_instance
-        .update_transactions()
-        .then(
-          (transactions) =>
-            ({ trans_instance, transactions }) as transactions_data_t,
-        );
+    fetch_batches: (batches: number[][]) => {
+      return Promise.all(
+        batches.map((batch) => this.market.fetch_batch(batch)),
+      );
     },
-    position_data: (data: transactions_data_t[]) => {
-      return data.reduce((c, data) => {
-        data.transactions.forEach((transaction) => {
-          const { conid } = transaction;
-          const { transactions } = c;
-          if (!transactions[conid]) transactions[conid] = [];
-          transactions[conid].push(transaction);
-        });
-        c.positions.frontend = [
-          ...c.positions.frontend,
-          ...data.trans_instance.positions,
-        ];
-        return c;
-      }, this.transaction.accumulator);
+    fetch_batch: (con_ids: number[]) => {
+      const uri_market = this.endpoints.get.market(con_ids);
+
+      return this.ibkr
+        .fetch<b.i.market_data_t[]>(uri_market)
+        .then(this.market.reduce.data);
     },
-    accumulator: {
-      transactions: {},
-      positions: { frontend: [], broker: [] },
-    } as b.i.positions_data_t,
+    batch: (con_ids: number[], batches = [] as number[][]): number[][] => {
+      con_ids = structuredClone(con_ids);
+      const batch = con_ids.splice(0, max_batch - 1);
+      batches.push(batch);
+
+      return con_ids.length ? this.market.batch(con_ids, batches) : batches;
+    },
+    reduce: {
+      batches: (views: Map<string, b.market_view_t>[]) => {
+        return views.reduce((c, view) => {
+          view.entries().forEach((entry) => c.set(entry[0], entry[1]));
+          return c;
+        }, new Map<string, b.market_view_t>());
+      },
+      data: (data: b.i.market_data_t[]) => {
+        return data.reduce((c, data) => {
+          const { conid } = data;
+          const view = this.market.reduce.fields(data);
+
+          c.set(`ibkr_${conid}`, view);
+          return c;
+        }, new Map<string, b.market_view_t>());
+      },
+      fields: (data: b.i.market_data_t) => {
+        return Object.keys(market_fields).reduce((c, key) => {
+          const field = market_fields[key]!;
+          let value = data[key as keyof b.i.market_data_t];
+          if (field === "price_market") {
+            value = Number((value as string).replace("C", "").replace("H", ""));
+          }
+
+          c = { ...c, ...{ [field]: value } };
+          return c;
+        }, {} as b.market_view_t);
+      },
+    },
   };
-
-  private position = {
-    accounts: (accounts: account_t[]) =>
-      Promise.all(accounts.map(this.position._accounts)).then((positions) =>
-        positions.flat(),
-      ),
-    _accounts: (account: account_t) => this.position.get(account),
-    get: (a: account_t, p = 0, pos: b.i.position_t[] = []) =>
+  private positions = {
+    fetch: (acc_ids: string[]) => {
+      return Promise.all(acc_ids.map((a_id) => this.positions.get(a_id))).then(
+        (positions) => positions.flat(),
+      );
+    },
+    get: (a_id: string, page = 0, pos: b.i.position_t[] = []) =>
       this.ibkr
-        .fetch<
-          b.i.position_t[]
-        >(this.endpoints.get.positions(a.a_id_original, p))
-        .then((_pos) =>
-          this.position.page(a, p, [...pos, ..._pos], _pos.length),
-        ),
-    _get: (account_id: string, conid: number) =>
-      this.ibkr.fetch<b.i.position_t>(
-        this.endpoints.get.position(account_id, conid),
-      ),
+        .fetch<b.i.position_t[]>(this.endpoints.get.positions(a_id, page))
+        .then((_pos) => this.positions.page(a_id, page, [...pos, ..._pos])),
     page: (
-      a: account_t,
-      p = 0,
+      a_id: string,
+      page = 0,
       pos: b.i.position_t[],
-      len: number,
     ): Promise<b.i.position_t[]> =>
-      len >= page_limit
-        ? this.position.get(a, p++, pos)
-        : this.position.audit(pos),
-    audit: (pos: b.i.position_t[]) =>
-      Promise.all(
-        pos.map((p) => (!!p.name ? p : this.position._get(p.acctId!, p.conid))),
-      ).then((p) => p.flat()),
+      pos.length >= page_limit
+        ? this.positions.get(a_id, page++, pos)
+        : Promise.resolve(pos),
   };
-
   private endpoints = {
     get: {
-      positions: (account_id: string, page: number) =>
-        `${this.api_url}/portfolio/${account_id}/positions/${page}`,
-      position: (account_id: string, con_id: number) =>
-        `${this.api_url}/portfolio/${account_id}/position/${con_id}`,
-    },
-    post: {
-      positions_invalidate_cache: (account_id: string) =>
-        `${this.api_url}/portfolio/${account_id}/positions/invalidate`,
+      positions: (a_id: string, page: number) => {
+        return `${url.api}/portfolio/${a_id}/positions/${page}`;
+      },
+      market: (con_ids: number[]) => {
+        const fields = Object.keys(market_fields);
+        const _url = `${url.api}/iserver/marketdata/snapshot`;
+        const params = `?conids=${con_ids.join(",")}&fields=${fields.join(",")}`;
+        return `${_url}${params}`;
+      },
+      preflight_accounts: () => {
+        return `${url.api}/iserver/accounts`;
+      },
     },
   };
-  private get api_url() {
-    return util.url.ibkr.api;
-  }
 }
 
-/**
- * Normalises a IBKR position into a frontend position
- */
-export class Position extends Global {
-  constructor(
-    private position: b.i.position_t,
-    private index: number,
-    private fx_buy: number,
-    private date: number,
-    private price_buy: number,
-  ) {
-    super();
-  }
-  translate(): position_t {
-    const p = this.position;
-    const { exchange, ticker, description } = util.string.format_ticker(
-      p.listingExchange,
-      p.ticker,
-      p.name,
-    );
+const market_fields: { [key: string]: keyof b.market_view_t } = {
+  "55": "ticker",
+  "31": "price_market",
+  "7221": "exchange",
+  "7051": "description",
+  "7280": "industry",
+  "7281": "category",
+} as const;
 
-    const {
-      conid,
-      currency,
-      acctId: a_id,
-      position,
-      mktPrice: price_market,
-    } = p;
-
-    const { index, fx_buy, date, price_buy } = this;
-
-    return {
-      p_id: `ibkr_${conid}_${index}`,
-      con_id: conid.toString(),
-      broker: "ibkr",
-      a_id,
-      description,
-      ticker,
-      currency,
-      exchange,
-      amount: position,
-      fx_market: this.fx_rate(currency),
-      fx_traded: fx_buy,
-      date,
-      price_market,
-      price_traded: price_buy,
-    };
+declare global {
+  namespace b {
+    namespace i {
+      type market_data_t = {
+        conidEx: string;
+        conid: number;
+        _updated: number;
+        server_id: string;
+      } & { [key: string]: keyof typeof market_fields };
+    }
   }
 }

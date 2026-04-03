@@ -1,5 +1,4 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Brokers } from "@frontend/app/Brokers";
 
 export class MoneyString extends AppElement {
   static observedAttributes = ["value"];
@@ -11,7 +10,7 @@ export class MoneyString extends AppElement {
   private handlers = {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-      this.innerHTML = `${this.currency}${Brokers.to_money_string(this.value)}`;
+      this.innerHTML = `${this.currency}${util.string.money(this.value)}`;
       if (this.is_pl) this.classList.add("pl");
       this.is_loss ? this.classList.add("loss") : this.classList.remove("loss");
     },

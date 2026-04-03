@@ -59,14 +59,14 @@ export class Sql extends Global {
       _sql`SELECT name FROM sqlite_master WHERE type='table' AND name=${_sql(id)}`.then(
         (res) => (!!res[0] ? true : false),
       ),
-    insert_chart: (id: string, data: chart_data_t[]) =>
-      this.sql.exists(id, sql_c).then((exists) =>
+    insert_chart: (table: string, values: chart_data_t[]) =>
+      this.sql.exists(table, sql_c).then((exists) =>
         exists
-          ? sql_c`INSERT INTO ${sql_c(id)} ${sql_c(data)} ON CONFLICT (${sql_c("time")}) DO NOTHING`
+          ? sql_c`INSERT INTO ${sql_c(table)} ${sql_c(values)} ON CONFLICT (${sql_c("time")}) DO NOTHING`
           : this.sql
               .create("charts_", sql_c)
-              .then(() => this.sql.rename("charts_", id, sql_c))
-              .then(() => sql_c`INSERT INTO ${sql_c(id)} ${sql_c(data)}`),
+              .then(() => this.sql.rename("charts_", table, sql_c))
+              .then(() => sql_c`INSERT INTO ${sql_c(table)} ${sql_c(values)}`),
       ),
     select_chart: (id: string) =>
       this.sql
@@ -83,8 +83,7 @@ export class Sql extends Global {
     sort_sql: (sort?: db.sort_t<any>) => {
       if (!sort) return sql``;
       const [column, dir] = sort;
-      const sort_string = `${column} ${dir}`;
-      return sql`ORDER BY ${sql(sort_string)}`;
+      return sql.unsafe(`ORDER BY ${column} ${dir}`);
     },
     condition_sql: (condition?: db.condition_t<any>) => {
       if (!condition) return sql(``);

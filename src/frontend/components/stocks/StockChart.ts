@@ -52,7 +52,7 @@ export class StockChart extends AppElement {
         bar_chart.setData(bar);
         baseline_chart.setData(price);
         volume_chart.setData(volume);
-        this.dom.create_buy_markers(baseline_chart);
+        this.dom.create_trade_markers(baseline_chart);
         this.dom.add_buy_lines(baseline_chart);
         this.dom.set_visible_range(chart);
       } catch (err) {
@@ -129,12 +129,9 @@ export class StockChart extends AppElement {
       return volume;
     },
     add_buy_lines: (series: lwc.ISeriesApi<"Baseline">) => {
-      const stock = this.stock;
-      if (!stock) return;
-
-      stock.positions.forEach((p) =>
+      this.buys.forEach((p) =>
         series.createPriceLine({
-          price: p.price_traded,
+          price: p.price_traded!,
           color: util.colours.blue,
           //lineWidth: 2,
           //lineStyle: 2, // LineStyle.Dashed
@@ -143,18 +140,19 @@ export class StockChart extends AppElement {
         }),
       );
     },
-    create_buy_markers: (series: lwc.ISeriesApi<"Baseline">) => {
-      const stock = this.stock;
-      if (!stock) return;
+    create_trade_markers: (series: lwc.ISeriesApi<"Baseline">) => {
+      const { buys, sells } = this.stock.transactions;
 
-      const markers = [...stock.positions].map((p) => {
-        const time = Math.floor(Number(p.date) / 1000); //Math.floor(Number(p.date) / 1000) as Time;
+      const markers = [...buys, ...sells].map((t) => {
+        const time = Math.floor(Number(t.date) / 1000); //Math.floor(Number(p.date) / 1000) as Time;
+        const color = t.kind === "buy" ? util.colours.blue : util.colours.red;
+
         return {
-          price: p.price_traded,
-          color: util.colours.blue,
+          price: t.price_traded,
+          color,
           position: "atPriceMiddle",
           shape: "circle",
-          text: `buy ${p.amount}`,
+          text: `${t.kind} ${t.amount}`,
           size: 1.2,
           time,
         } as lwc.SeriesMarker<lwc.Time>;
@@ -170,29 +168,34 @@ export class StockChart extends AppElement {
     return this.chart_data!;
   }
   private get stock() {
-    return this.cache.get.stock(this.ticker)!;
+    if (this._stock) return this._stock;
+    const stock = this.parentElement!.dataset.stock!;
+    return (this._stock = JSON.parse(stock)) as stock_t<transaction_t[]>;
   }
-  private get ticker() {
-    return this.getAttribute("ticker")!;
+  private get buys() {
+    const { transactions } = this.stock;
+
+    return util.money
+      .aggregate_position(transactions)
+      .filter((t) => t.amount > 0);
   }
+
   private get inner() {
     return this.querySelector("inner")! as HTMLElement;
   }
 
   private get baseline() {
-    const stock = this.stock;
-    if (!stock) return;
-
-    const buy = [...this.stock.positions].reduce(
-      (c, p) => {
-        const [value, position] = c;
-        c = [value! + p.price_traded * p.amount, position! + p.amount];
+    const buys = this.buys;
+    const vals = buys.reduce(
+      (c, transaction) => {
+        const { price_traded, amount } = transaction;
+        c.value += price_traded! * amount;
+        c.amount += amount;
         return c;
       },
-      [0, 0],
+      { value: 0, amount: 0 },
     );
-    const [value, position] = buy;
-    return Math.round((value! * 100) / position!) / 100;
+    return Math.round((vals.value * 100) / vals.amount) / 100;
   }
 
   private get visible_range() {
@@ -204,8 +207,8 @@ export class StockChart extends AppElement {
     };
   }
   private get currency() {
-    const { positions } = this.stock;
-    const { currency } = [...positions.values()][0]!;
+    const { buys } = this.stock.transactions;
+    const { currency } = buys[0]!;
     return currency;
   }
   private get broker() {
@@ -236,4 +239,5 @@ export class StockChart extends AppElement {
   };
 
   private chart_data?: mapped_data_t;
+  private _stock?: stock_t<transaction_t[]>;
 }
