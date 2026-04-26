@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 ibkr_pid_file="$temp_dir/ibkr.pid"
-#ibkr_portal="clientportal.beta.gw"
-ibkr_portal="clientportal.gw"
+ibkr_portal="clientportal.beta.gw"
+#ibkr_portal="clientportal.gw"
 
 ibkr_download=https://download2.interactivebrokers.com/portal/${ibkr_portal}.zip
 

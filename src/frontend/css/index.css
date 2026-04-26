@@ -3,21 +3,41 @@
 @import "./widgets.css";
 @import "./app/app-root.css";
 @import "./accounts/accounts-root.css";
-@import "./stocks/index.css";
+@import "./instruments/index.css";
 @import "./positions/positions-root.css";
 
 :root {
+  --h: 0;
+  --s: 0%;
+  --text: var(--h), var(--s);
+
   --padding-app: 2em;
   --padding-cell: 5px;
   --col-pos: green;
   --col-neg: red;
+  --col-text: hsl(var(--text), 0%);
+  --col-text-feint: hsl(var(--text), 40%);
   --col-background-light: white;
   --col-grid-background: rgb(232, 235, 235);
   --col-border-light: gray;
-  --font-size-small: 0.85em;
+  --font-size-small: 14px;
   --border-light: 1px solid var(--col-border-light);
 
-  --grid-columns: repeat(8, 1fr) 80px repeat(16, 1fr) 80px;
+  --grid-columns: repeat(6, 72px) repeat(21, 1fr); /*repeat(6, 1fr) 80px 80px 80px repeat(20, 1fr);*/
+  --grid-col-all: 1/28;
+  --grid-col-1-1: 1/3;
+  --grid-col-1-2: 3/4;
+  --grid-col-1-3: 4/5;
+  --grid-col-1: 1/5;
+  --grid-col-2: 5/6;
+  --grid-col-3: 6/7;
+  --grid-col-4: 7/10;
+  --grid-col-5: 10/13;
+  --grid-col-6: 13/16;
+  --grid-col-7: 16/19;
+  --grid-col-8: 19/22;
+  --grid-col-9: 22/25;
+  --grid-col-10: 25/28;
 }
 
 * {
@@ -31,6 +51,7 @@ body {
   overflow-y: scroll;
   position: relative;
   font-family: sans-serif;
+  color: var(--col-text);
   h1 {
     font-size: 1.5em;
     font-weight: bold;
@@ -44,69 +65,57 @@ body {
   position: relative;
 }
 
-/*
-table,
-thead,
-tbody,
-tr {
-  width: 100%;
-}
+.grid {
+  grid-template-columns: var(--grid-columns);
 
-table {
-  td,
-  th {
-    padding: 0.75em;
-    text-align: left;
+  [name="description"] {
+    grid-column: var(--grid-col-1);
+  }
+  [name="ticker"] {
+    grid-column: var(--grid-col-2);
+  }
+  [name="positions"] {
+    grid-column: var(--grid-col-3);
+  }
+  [name="traded_value"] {
+    grid-column: var(--grid-col-4);
+  }
+  [name="market_value"] {
+    grid-column: var(--grid-col-5);
+  }
+  [name="r_pl"] {
+    grid-column: var(--grid-col-6);
+  }
+  [name="pl"] {
+    grid-column: var(--grid-col-7);
+  }
+  [name="percent_pl"] {
+    grid-column: var(--grid-col-8);
   }
 
-  thead {
-    color: rgb(83, 83, 83);
-    font-weight: bold;
+  [name="fx_pl"] {
+    grid-column: var(--grid-col-9);
+  }
+  [name="dividend"] {
+    grid-column: var(--grid-col-10);
   }
 }
-*/
-
-/*
-stocks-root {
-  > table {
-    > tbody {
-      > tr {
-        border: 1px solid;
-        border-bottom: none;
-        border-collapse: collapse;
-        background-color: lightgray;
-
-        &:last-of-type {
-          border-bottom: 1px solid;
-        }
-      }
-
-      td[name="positions"] {
-        display: block;
-        text-align: center;
-
-        button {
-          padding: 1em;
-          cursor: pointer;
-        }
-      }
+positions-root {
+  .grid {
+    [name="date"] {
+      grid-column: var(--grid-col-1-1);
     }
-
-    > thead {
-      th[name="positions"] {
-        text-align: center;
-      }
-
-      th {
-        background-color: white;
-
-        border: 1px solid;
-        border-collapse: collapse;
-        position: sticky;
-        z-index: 100;
-        top: 0;
-      }
+    [name="exchange"] {
+      grid-column: var(--grid-col-1-2);
+    }
+    [name="broker"] {
+      grid-column: var(--grid-col-1-3);
+    }
+    [name="closed"] {
+      grid-column: var(--grid-col-2);
+    }
+    [name="amount"] {
+      grid-column: var(--grid-col-3);
     }
   }
 }
-  */

@@ -14,10 +14,10 @@ export class AccountsRoot extends AppElement {
   private handlers = {
     render: () => {
       this.cache.accounts.forEach((a) => {
-        const account_row = this.dom.make_element(
+        const account_row = this.dom.make_el(
           "account-row",
           "",
-          `id="${a.a_id}"`,
+          util.string.json_prop("data-account", a),
         );
         this.grid.appendChild(account_row);
       });

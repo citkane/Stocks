@@ -1,20 +1,16 @@
 import { Global } from "backend";
 
+const { saxo: url } = util.url;
+
 export class Accounts extends Global {
-  constructor() {
-    super();
-  }
   public update = () =>
     this.saxo
       .fetch<b.s.accounts_t>(this.endpoints.accounts())
       .then((data) => data.Data);
 
   private endpoints = {
-    accounts: () => `${this.api_url}/accounts`,
+    accounts: () => `${url.api}/accounts`,
   };
-  private get api_url() {
-    return util.url.saxo.api;
-  }
 }
 
 export class Account extends Global {

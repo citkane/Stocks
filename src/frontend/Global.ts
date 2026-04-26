@@ -35,6 +35,9 @@ export class Global {
   protected get send() {
     return this.messenger.send;
   }
+  protected get root_app() {
+    return document.querySelector("app-root")!;
+  }
 
   protected add_shutdown_task = (fn: Function) => {
     this.app.add_shutdown_task(fn);

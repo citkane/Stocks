@@ -9,8 +9,8 @@
   <app-root>
     <h1>Accounts</h1>
     <accounts-root> </accounts-root>
-    <h1>Stocks</h1>
-    <stocks-root> </stocks-root>
+    <h1>Instruments</h1>
+    <instrmnts-root> </instrmnts-root>
   </app-root>
 
   <!-- account -->
@@ -24,90 +24,118 @@
       </div>
     </div>
   </template>
-  <template id="account-row">
+  <template id="account-row" class="row">
     <div name="broker"></div>
     <div name="alias"></div>
     <div name="currency"></div>
     <div name="id"></div>
   </template>
 
-  <!-- stock -->
-  <template id="stocks-root">
-    <select-broker></select-broker> <select-account></select-account>
-
-    <div class="grid">
-      <div class="row header">
-        <div name="description"><div class="cell">description</div></div>
-        <div name="ticker"><div class="cell">ticker</div></div>
-        <div name="buy_value">buy</div>
-        <div name="market_value">market</div>
-        <div name="pl">p/l</div>
-        <div name="fx_pl">fx p/l</div>
-        <div name="positions">positions</div>
-      </div>
-      <div class="row money">
-        <div name="description"></div>
-        <div name="ticker"></div>
-        <money-string
-          name="buy_value"
-          currency="€"
-          class="first"
-        ></money-string>
-        <money-string name="market_value" currency="€"></money-string>
-        <money-string name="pl" currency="€" pl></money-string>
-        <money-string name="fx_pl" currency="€" pl class="last"></money-string>
-        <div name="positions"></div>
+  <!-- instruments -->
+  <template id="instrmnts-root">
+    <div class="select wrapper">
+      <select-broker></select-broker>
+      <select-account></select-account>
+      <select-sector></select-sector>
+      <select-industry></select-industry>
+    </div>
+    <div class="grid instrmnts">
+      <div class="header_wrap grid">
+        <div class="row header">
+          <div name="description"><div class="cell">description</div></div>
+          <div name="ticker"><div class="cell">ticker</div></div>
+          <div name="positions" number>positions</div>
+          <div name="traded_value" number>traded value</div>
+          <div name="market_value" number>market value</div>
+          <div name="r_pl" number>realised p/l</div>
+          <div name="pl" number>unrealised p/l</div>
+          <div name="percent_pl" number>% unr p/l</div>
+          <div name="fx_pl" number>fx p/l (inc)</div>
+          <div name="dividend" number>dividend (exc)</div>
+        </div>
+        <div class="row money">
+          <div name="description"></div>
+          <div name="ticker"></div>
+          <div name="positions"></div>
+          <money-str name="traded_value" currency="€" class="first"></money-str>
+          <money-str name="market_value" currency="€"></money-str>
+          <money-str name="r_pl" currency="€" pl></money-str>
+          <money-str name="pl" currency="€" pl></money-str>
+          <money-str name="percent_pl" currency="%" pl></money-str>
+          <money-str name="fx_pl" currency="€" pl></money-str>
+          <money-str name="dividend" currency="€" class="last"></money-str>
+        </div>
       </div>
     </div>
   </template>
-  <template id="stock-row" class="row">
+  <template id="instrmnt-row" class="row instrmnt">
     <div name="description"></div>
     <div name="ticker"><button name="ticker"></button></div>
-    <money-string name="buy_value" currency="€"></money-string>
-    <money-string name="market_value" currency="€"></money-string>
-    <money-string name="pl" currency="€" pl></money-string>
-    <money-string name="fx_pl" currency="€" pl></money-string>
-    <div name="positions" class="center">
-      <button name="positions"></button>
-    </div>
-    <positions-root></positions-root>
-    <stock-chart></stock-chart>
+    <div name="positions"><button name="positions"></button></div>
+    <money-str name="traded_value" currency="€"></money-str>
+    <money-str name="market_value" currency="€"></money-str>
+    <money-str name="r_pl" currency="€" pl></money-str>
+    <money-str name="pl" currency="€" pl></money-str>
+    <money-str name="percent_pl" currency="%" pl></money-str>
+    <money-str name="fx_pl" currency="€" pl></money-str>
+    <money-str name="dividend" currency="€" class="last"></money-str>
+
+    <expanding-drawer name="positions_drawer"
+      ><positions-root></positions-root
+    ></expanding-drawer>
+    <expanding-drawer name="info_drawer">
+      <div name="breadcrumb"></div>
+      <instrmnt-chart></instrmnt-chart>
+      <div name="about_company"></div>
+      <div name="live_data"></div>
+    </expanding-drawer>
   </template>
-  <template id="stock-chart"><inner></inner></template>
+  <template id="instrmnt-chart"><inner></inner></template>
 
   <!-- position -->
   <template id="position-root">
-    <div class="grid">
+    <div class="grid positions">
       <div class="header row">
-        <div name="exchange">exch.</div>
         <div name="date">date</div>
-        <div name="position">position</div>
-        <div name="buy_value">buy</div>
-        <div name="market_value">market</div>
-        <div name="pl">p/l</div>
-        <div name="fx_pl">fx p/l</div>
+        <div name="exchange">exch.</div>
         <div name="broker">broker</div>
+        <div name="closed"></div>
+        <div name="amount">pos</div>
+        <div name="traded_value"></div>
+        <div name="market_value"></div>
+        <money-str name="r_pl" currency="€"></money-str>
+        <div name="pl"></div>
+        <div name="percent_pl"></div>
+        <div name="fx_pl"></div>
+        <div name="dividend"></div>
       </div>
     </div>
   </template>
 
-  <template id="position-row" class="row">
-    <div name="exchange" class="center"></div>
-    <date-string name="date"></date-string>
-    <div name="position" class="center"></div>
-    <money-string name="buy_value" currency="€"></money-string>
-    <money-string name="market_value" currency="€"></money-string>
-    <money-string name="pl" currency="€" pl></money-string>
-    <money-string name="fx_pl" currency="€" pl></money-string>
-    <div name="broker" class="center"></div>
+  <template id="position-row" class="row position">
+    <date-str name="date"></date-str>
+    <any-str name="exchange"></any-str>
+    <any-str name="broker"></any-str>
+    <any-str name="sales"></any-str>
+    <any-str name="amount"></any-str>
+    <money-str name="traded_value" currency="€"></money-str>
+    <money-str name="market_value" currency="€"></money-str>
+    <money-str name="r_pl" currency="€" pl></money-str>
+    <money-str name="pl" currency="€" pl></money-str>
+    <div name="percent_pl"></div>
+    <money-str name="fx_pl" currency="€" pl></money-str>
+    <money-str name="dividend" currency="€" class="last"></money-str>
+  </template>
+
+  <!-- widgets -->
+  <template id="select-widget">
+    <span>
+      <label></label>
+      <select></select>
+    </span>
+  </template>
+
+  <template id="expanding-drawer">
+    <div class="inner"></div>
   </template>
 </body>
-
-<!-- widgets -->
-
-<template id="select-widget">
-  <span>
-    <label></label>
-    <select></select>
-  </span>
-</template>

@@ -19,21 +19,13 @@ export class Ws {
     if (is_response) return this.resolve_response(requests, mssg);
     if (is_request) this.respond(mssg, { messenger, req_uid }, api);
   };
-  //private respond = (mssg: message_t, p: req_t, api: api_t) =>
-  //  this.responder(api, p, mssg);
   private respond(mssg: message_t, p: req_t, api: Api_t) {
     const { topic } = mssg;
     const params = get_params(mssg);
     const key = topic as keyof api_t["requests"];
     const fnc = api.requests[key] as Function;
+    this.logger.debug("WS response cache:", Object.keys(api.requests).length);
     fnc(p, ...params);
-
-    //try {
-    //  fnc(p, ...params);
-    //} catch (err) {
-    //  console.error(mssg);
-    //  console.error(err);
-    //}
   }
 
   private action = (api: Api_t, mssg: message_t) => {
@@ -41,21 +33,22 @@ export class Ws {
     const params = get_params(mssg);
     const key = topic as keyof api_t["setter"];
     const fnc = api.setter[key] as Function;
-    fnc(...params);
+    this.logger.debug("WS setter cache:", Object.keys(api.setter).length);
 
-    //try {
-    //  fnc(...params);
-    //} catch (err) {
-    //  console.error(mssg);
-    //  console.error(err);
-    //}
+    fnc(...params);
   };
 
   private resolve_response(requests: requests_t, mssg: message_t) {
     const { res_uid } = mssg;
     const resolver = requests.get(res_uid!)!;
     requests.delete(mssg.res_uid!);
+    this.logger.debug("WS requests queue:", requests.size);
+
     mssg.error ? resolver.reject(mssg) : resolver.resolve(mssg.data);
+  }
+
+  private get logger() {
+    return typeof logger === "undefined" ? console : logger;
   }
 }
 

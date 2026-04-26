@@ -40,21 +40,17 @@ export class Global {
   protected get base_currency() {
     return base_currency as currency_t;
   }
-  protected fx_rate(currency: currency_t) {
-    if (!this.ibkr.fx_rates) throw Error("No fx rates found.");
-    return this.ibkr.fx_rates[currency];
-  }
 
-  protected add_shutdown_fnc = (fnc: Function) => {
-    this.shutdown_fns.push(fnc);
+  protected add_shutdown_fncs = (...fncs: Function[]) => {
+    fncs.forEach((fnc) => this.shutdown_fns.push(fnc));
   };
   protected shutdown = (code: any) => {
     console.info("");
-    console.info(code, "App is shutting down...");
+    logger.info(code, "App is shutting down...");
     Promise.all(this.shutdown_fns.map((fnc) => fnc()))
       .then(() => {
         setTimeout(() => {
-          console.info("process ended");
+          logger.info("process ended");
           process.exit(0);
         }, 10);
       })
@@ -63,5 +59,6 @@ export class Global {
         //process.exit(1);
       });
   };
+
   private shutdown_fns: Function[] = [];
 }

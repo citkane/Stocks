@@ -7,43 +7,55 @@ export class Transactions extends _Transactions {
   constructor() {
     super("ibkr");
   }
-  public async update(acc_ids: string[], con_ids: number[], days = start_days) {
+  public async update(acc_ids: string[], con_ids: string[], days = start_days) {
     const curr = this.base_currency;
     const p = { acc_ids, con_ids, curr, days };
 
-    return (
-      this.transactions
-        .fetch(p)
-        //.then((t) => logger.json("IBKR transactions raw", t))
-        .then(this.transactions.categorise)
-        //.then((t) => logger.json("IBKR transactions categorised", t))
-        .then(this.transactions.transform)
-    );
-    //.then((t) => logger.json("IBKR transactions transformed", t));
+    return this.transactions
+      .fetch(p)
+      .then((t) => logger.json("IBKR transactions raw", t))
+      .then(this.transactions.categorise)
+      .then(this.transactions.transform);
   }
 
   private transactions = {
     fetch: (p: transactions_p) => {
-      return Promise.all(
-        p.con_ids.reduce(
-          (c, conid) => {
-            const _p = { ...p, ...{ con_ids: [conid] } };
-            const { url, params } = this.endpoints.post.transactions(_p);
-            const fn = () => this.ibkr.fetch<b.i.transactions_t>(url, params);
+      fetch_fn.bind(this);
+      const promises = p.con_ids.reduce(
+        (c, conid) => {
+          const try_fetch = fetch_fn.bind(this)(conid);
+          const transactions = try_fetch()
+            .catch(() => {
+              const err_mess = `Failed to fetch IBKR transactions for ${conid}`;
+              return this.ibkr.retry_fetch<b.i.transactions_t>(
+                try_fetch,
+                err_mess,
+              );
+            })
+            .then((data) => (data.transactions ? data.transactions : []));
 
-            const transactions = this.fetcher<b.i.transactions_t>(fn).then(
-              (data) => (data.transactions ? data.transactions : []),
-            );
-            c.push(transactions);
-            return c;
-          },
-          [] as Promise<b.i.transaction_t[]>[],
-        ),
-      ).then((transactions) => transactions.flat());
+          c.push(transactions);
+          return c;
+        },
+        [] as Promise<b.i.transaction_t[]>[],
+      );
+
+      return Promise.all(promises).then((transactions) => transactions.flat());
+
+      function fetch_fn(this: Transactions, conid: string) {
+        const _p = { ...p, ...{ con_ids: [conid] } };
+        let { url, params } = this.endpoints.post.transactions(_p);
+        return () => {
+          const fetch = this.ibkr.fetch<b.i.transactions_t>(url, params);
+          _p.days++;
+          params = this.endpoints.post.transactions(_p).params;
+          return fetch;
+        };
+      }
     },
     /**
      * Reduce an array of transactions into categorised arrays,
-     * keyed by conid and then by Buy / Sell / Transfer
+     * keyed by conid and then by type
      */
     categorise: (transactions: b.i.transaction_t[]) => {
       return transactions.reduce((c, transaction) => {
@@ -56,62 +68,86 @@ export class Transactions extends _Transactions {
         return c;
       }, {} as categorise_t);
     },
-    /** Transforms IBKR transactions to the normalised transaction type.*/
+    /**
+     * Transforms IBKR transactions to the normalised frontend transaction type.
+     */
     transform: async (transactions: categorise_t) => {
-      const market_view = await this.ibkr.cache.market_view;
-
       return Object.keys(transactions).reduce((c, conid) => {
         const categorised = transactions[conid as any]!;
-        const { Buy, Sell } = this.transactions.transfer(categorised);
+        const {
+          Buy,
+          Sell,
+          "Dividend Payment": dividends,
+        } = this.transactions.transfer(categorised);
 
-        [...(Buy || []), ...(Sell || [])].forEach((transaction) => {
-          const {
-            conid,
-            acctid: a_id,
-            cur: currency,
-            qty: amount,
-            pr: price_traded,
-            fxRate: fx_traded,
-            date: date_string,
-            type,
-          } = transaction;
-
-          const view = market_view.get(`ibkr_${conid}`);
-          const id = this.transactions.uid(transaction);
-          const date = util.time.ms(date_string);
-          const kind = type === "Buy" ? "buy" : "sell";
-
-          if (!view) {
-            console.error("No market view found for transaction", transaction);
-            return;
-          }
-
-          const { ticker: ti, exchange: ex, description: desc } = view;
-          const params = [ex!, ti!, desc!] as const;
-          const { format_ticker } = util.string;
-          const { exchange, ticker, description } = format_ticker(...params);
-
-          const _transaction = {
-            id,
-            con_id: String(conid),
-            p_id: `ibkr_${conid}`,
-            a_id,
-            broker: "ibkr",
-            description,
-            ticker,
-            currency,
-            exchange,
-            amount,
-            fx_traded,
-            price_traded,
-            date,
-            kind,
-          } as transaction_t;
-
-          c.push(_transaction);
-        });
+        [...(Buy || []), ...(Sell || []), ...(dividends || [])].forEach(
+          (tr) => {
+            let transaction = this.transactions.format(tr);
+            c.push(transaction);
+          },
+        );
         return c;
-      }, [] as transaction_t[]);
+      }, [] as transctn_t[]);
+    },
+    format: (transaction: b.i.transaction_t): transctn_t => {
+      let {
+        conid,
+        acctid: a_id,
+        cur: currency,
+        qty: amount,
+        pr: price_traded,
+        fxRate: fx_traded,
+        date: date_string,
+        amt,
+        type,
+      } = transaction;
+      let positn = this.ibkr.cache.position(conid);
+      if (!positn) {
+        logger.error("No position found for transaction", "ibkr", transaction);
+        positn = {
+          exchange: undefined,
+          ticker: undefined,
+        } as unknown as b.positn_t;
+      }
+      const { exchange, ticker } = positn;
+      const date = util.time.ms(date_string);
+      const id = this.transactions.uid(transaction);
+      const broker = "ibkr";
+      const p_id: p_id_t = `${broker}_${conid}`;
+      let kind: transctn_t["kind"];
+      switch (type) {
+        case "Buy":
+          kind = "buy";
+          break;
+        case "Transfer":
+          kind = "buy";
+          break;
+        case "Sell":
+          kind = "sell";
+          break;
+        case "Dividend Payment":
+          kind = "dividend";
+      }
+
+      if (kind === "dividend") {
+        amount = 1;
+        price_traded = amt / fx_traded;
+      }
+
+      return {
+        id,
+        p_id,
+        a_id,
+        broker,
+        currency,
+        amount: amount!,
+        price_traded: price_traded!,
+        fx_traded,
+        date,
+        kind,
+        exchange,
+        ticker,
+      };
     },
     /** Create a unque id for the given transactions */
     uid: (transaction: b.i.transaction_t) => {
@@ -122,7 +158,7 @@ export class Transactions extends _Transactions {
       hasher.update(string);
       return hasher.digest("hex");
     },
-    /** Identifies external transfers in and coverts them to buy.
+    /** Identifies external transfers in and converts them to buy.
      *  Maps transfer account ids to buys.*/
     transfer: (view: view_t) => {
       let { Transfer, Buy } = view;
@@ -173,24 +209,7 @@ export class Transactions extends _Transactions {
       return view;
     },
   };
-  /**
-   * Fetch with error retry iterator
-   * @param fetcher callback fetch function
-   */
-  private fetcher = <T>(fetcher: () => Promise<T>, retry = 0) => {
-    return fetcher().catch((err) => {
-      if (retry > 3) {
-        throw err;
-      }
-      console.warn(`Failed to fetch IBKR transactions, retry: ${retry}`);
-      return new Promise<T>((res, rej) =>
-        setTimeout(() => {
-          retry++;
-          this.fetcher(fetcher, retry).then(res).catch(rej);
-        }, 1000),
-      );
-    });
-  };
+
   private endpoints = {
     post: {
       transactions: (p: transactions_p) => {
@@ -219,7 +238,7 @@ type categorise_t = {
 };
 type transactions_p = {
   acc_ids: string[];
-  con_ids: number[];
+  con_ids: string[];
   curr: currency_t;
   days: number;
 };

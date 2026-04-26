@@ -1,12 +1,14 @@
+import { Select } from "@frontend/components";
+
 type watch_fnc_t = (prop: p.prop_callback) => void;
 
-const money_value_keys = ["market_value", "buy_value", "pl", "fx_pl"];
+//const money_value_keys = ["market_value", "traded_value", "pl", "fx_pl"];
 const info = {
   exchange: "Exchange where dive position was purchased",
   date: "Purchase date",
   position: "Amount of stocks",
   broker: "Broker where position resides",
-  buy_value: "Total cost at purchase in base currency",
+  traded_value: "Total cost at purchase in base currency",
   market_value: "Current market value in base currency",
   pl: "Unrealised total profit/loss over position lifetime in base currency",
   fx_pl: "Profit/Loss as result of fx fluctuation in base currency",
@@ -16,13 +18,14 @@ export class AppElement extends HTMLElement {
   constructor() {
     super();
   }
-  connectedCallback() {
+
+  public connectedCallback() {
     this.connected_callbacks.forEach((callback) => callback());
   }
-  disconnectedCallback() {
+  public disconnectedCallback() {
     this.disconnected_callbacks.forEach((callback) => callback());
   }
-  attributeChangedCallback(
+  public attributeChangedCallback(
     name: (typeof this.attribute_keys)[number],
     old_value: string,
     new_value: string,
@@ -33,7 +36,7 @@ export class AppElement extends HTMLElement {
         throw Error(`Could not find function for ${name} on ${this.topic}`);
       fnc({ name, old: old_value, new: new_value });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   }
 
@@ -61,6 +64,85 @@ export class AppElement extends HTMLElement {
     },
   };
 
+  private api_def = {
+    props: {
+      watch: (topic: string, fnc: watch_fnc_t) => {
+        this.attribute_changed.set(topic, fnc);
+      },
+
+      set_info: (el: Element, ..._p: any[]) => {
+        const name = el.getAttribute("name") as keyof typeof info;
+        if (!name || !info[name]) return;
+        el?.setAttribute("info", info[name]);
+      },
+      show: () => {
+        this.style.display = "";
+        this.setAttribute("display", "show");
+      },
+      hide: () => {
+        this.style.display = "none";
+        this.setAttribute("display", "none");
+      },
+    },
+    dom: {
+      template_to_self: (id: string, deep = true) => {
+        const template = document.getElementById(id)! as HTMLTemplateElement;
+        template.classList.forEach((c) => this.classList.add(c));
+        this.appendChild(document.importNode(template.content, deep));
+      },
+
+      make_el: <T extends HTMLElement>(
+        kind: string,
+        inner_html: string,
+        ...properties: string[]
+      ) => {
+        return parse_html(
+          `<${kind} ${properties.join(" ")}>${inner_html}</${kind}>`,
+        ) as T;
+      },
+      named_el: (name: string) => {
+        const child = this.querySelector(`*[name="${name}"]`);
+        if (!child) throw Error(`No direct child named "${name}" found.`);
+        return child;
+      },
+    },
+    data: {
+      money_totals: (rows: Element[]) => {
+        const totals = rows.reduce((a, child) => {
+          this.money_keys.forEach((key) => {
+            let val = Number(child.getAttribute(key));
+            if (isNaN(val)) val = 0;
+            a[key]! += val;
+          });
+          return a;
+        }, this.money.collector());
+
+        const { market_value, traded_value } = totals;
+        const percent_pl = util.money.percent_pl(traded_value!, market_value!);
+        totals.percent_pl = percent_pl;
+
+        return totals;
+      },
+    },
+  };
+
+  private money = {
+    collector: () =>
+      this.money_keys.reduce(
+        (c, key) => {
+          return (c = { ...c, [key]: 0 });
+        },
+        {} as { [key: string]: number },
+      ),
+  };
+
+  protected get money_keys() {
+    if (this._money_keys) return this._money_keys;
+    const header = this.root_instrmnts.querySelector(".header_wrap .money");
+    return [...header!.querySelectorAll("money-str")].map(
+      (el) => el.getAttribute("name")!,
+    );
+  }
   protected get app() {
     return frontend.app;
   }
@@ -88,76 +170,47 @@ export class AppElement extends HTMLElement {
   protected get messenger() {
     return this.ws.messenger;
   }
+  protected get select() {
+    return Select;
+  }
+  protected get selectors() {
+    return Select.selectors;
+  }
 
   protected get grid() {
     return this.querySelector(".grid")!;
   }
-  private get app_root() {
+  protected get root_app() {
     return document.querySelector("app-root")!;
   }
-  private get stocks_root() {
-    return this.app_root.querySelector("stocks-root")!;
+  protected get root_instrmnts() {
+    return this.root_app.querySelector("instrmnts-root")!;
   }
-  private get account_selector() {
-    return this.app_root.querySelector("select-account")!;
+  protected get root_accounts() {
+    return this.root_app.querySelector("accounts-root")!;
+  }
+  protected get select_account() {
+    return this.root_app.querySelector("select-account")!;
+  }
+  protected get select_broker() {
+    return this.root_app.querySelector("select-broker")!;
+  }
+  protected get select_sector() {
+    return this.root_app.querySelector("select-sector")!;
+  }
+  protected get select_industry() {
+    return this.root_app.querySelector("select-industry")!;
   }
 
   private get attribute_keys() {
     return [...this.attribute_changed.keys()] as const;
   }
 
-  private api_def = {
-    props: {
-      watch: (topic: string, fnc: watch_fnc_t) => {
-        this.attribute_changed.set(topic, fnc);
-      },
-      query_by_name: (name: string) => {
-        const child = this.querySelector(`*[name="${name}"]`);
-        if (!child) throw Error(`No direct child named "${name}" found.`);
-        return child;
-      },
-
-      set_info: (el: Element, ..._p: any[]) => {
-        const name = el.getAttribute("name") as keyof typeof info;
-        if (!name || !info[name]) return;
-        el?.setAttribute("info", info[name]);
-      },
-      show: () => {
-        this.style.display = "";
-        this.setAttribute("display", "");
-      },
-      hide: () => {
-        this.style.display = "none";
-        this.setAttribute("display", "none");
-      },
-    },
-    dom: {
-      stocks_root: this.stocks_root,
-      account_selector: this.account_selector,
-      template_to_self: (id: string, deep = true) => {
-        const template = document.getElementById(id)! as HTMLTemplateElement;
-        template.classList.forEach((c) => this.classList.add(c));
-        this.appendChild(document.importNode(template.content, deep));
-      },
-
-      make_element: <T = HTMLElement>(
-        kind: string,
-        inner_html: string,
-        ...properties: string[]
-      ) =>
-        parse_html(
-          `<${kind} ${properties.join(" ")}>${inner_html}</${kind}>`,
-        ) as T,
-    },
-    data: {
-      money_totals: (rows: Element[]) => sum_values(rows),
-    },
-  };
-
   protected topic?: component_key_t;
   private attribute_changed = new Map<string, watch_fnc_t>();
   private connected_callbacks = [] as Function[];
   private disconnected_callbacks = [] as Function[];
+  private _money_keys?: string[];
 }
 
 function parse_html(html: string) {
@@ -166,19 +219,3 @@ function parse_html(html: string) {
   const clone = document.importNode(template.content, true);
   return clone.firstChild!;
 }
-
-function sum_values(children: Element[]) {
-  return children.reduce((a, child) => {
-    money_value_keys.forEach((key) => {
-      a[key]! += Number(child.getAttribute(key));
-    });
-    return a;
-  }, structuredClone(value_collector));
-}
-
-const value_collector = money_value_keys.reduce(
-  (c, key) => {
-    return (c = { ...c, [key]: 0 });
-  },
-  {} as { [key: string]: number },
-);

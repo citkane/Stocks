@@ -19,7 +19,12 @@ declare global {
         refresh_token: string;
       };
 
-      type Data_t<T> = { Data: T };
+      type data_envelope_t<T> = {
+        __next?: string;
+        __count: number;
+        Data: T[];
+        MaxRows?: number;
+      };
       type account_t = {
         AccountGroupKey: string;
         AccountId: string;
@@ -54,7 +59,7 @@ declare global {
         UseCashPositionsAsMarginCollateral: boolean;
       };
 
-      type position_t = {
+      type positn_t = {
         DisplayAndFormat: {
           Currency: currency_t;
           Decimals: number;
@@ -64,7 +69,7 @@ declare global {
         };
         Exchange: {
           Description: string;
-          ExchangeId: exchanges_t;
+          ExchangeId: string;
           IsOpen: boolean;
           TimeZoneId: string;
         };
@@ -120,13 +125,95 @@ declare global {
           TradeCostsTotalInBaseCurrency: number;
         };
       };
+
+      type instrument_t = {
+        AffiliateInfoRequired: boolean;
+        AmountDecimals: number;
+        AssetType: string;
+        CurrencyCode: currency_t;
+        DefaultAmount: number;
+        DefaultSlippage: number;
+        DefaultSlippageType: string;
+        Description: string;
+        Exchange: {
+          CountryCode: string;
+          ExchangeId: string;
+          Name: string;
+          TimeZoneId: string;
+        };
+        Format: {
+          Decimals: number;
+          OrderDecimals: number;
+        };
+        FractionalMinimumLotSize: number;
+        GroupId: number;
+        IncrementSize: number;
+        IsBarrierEqualsStrike: boolean;
+        IsComplex: boolean;
+        IsExtendedTradingHoursEnabled: boolean;
+        IsOcoOrderSupported: boolean;
+        IsPEAEligible: boolean;
+        IsPEASMEEligible: boolean;
+        IsRedemptionByAmounts: boolean;
+        IsSwitchBySameCurrency: boolean;
+        IsSystematicInternaliser: boolean;
+        IsTradable: boolean;
+        LotSize: number;
+        LotSizeType: string;
+        MinimumLotSize: number;
+        MinimumTradeSize: number;
+        NonTradableReason: string;
+        OrderDistances: {
+          EntryDefaultDistance: number;
+          EntryDefaultDistanceType: string;
+          LimitDefaultDistance: number;
+          LimitDefaultDistanceType: string;
+          StopLimitDefaultDistance: number;
+          StopLimitDefaultDistanceType: string;
+          StopLossDefaultDistance: number;
+          StopLossDefaultDistanceType: string;
+          StopLossDefaultEnabled: boolean;
+          StopLossDefaultOrderType: string;
+          TakeProfitDefaultDistance: number;
+          TakeProfitDefaultDistanceType: string;
+          TakeProfitDefaultEnabled: boolean;
+        };
+        PriceCurrency: string;
+        PriceToContractFactor: number;
+        PrimaryListing: number;
+        RelatedInstruments: {
+          AssetType: string;
+          Uic: number;
+        }[];
+
+        StandardAmounts: number[];
+        SupportedOrderTriggerPriceTypes: string[];
+        SupportedOrderTypes: string[];
+        SupportedStrategies: string[];
+        Symbol: string;
+        TickSizeScheme: {
+          DefaultTickSize: number;
+          Elements: {
+            HighPrice: number;
+            TickSize: number;
+          }[];
+        };
+        TradableAs: string[];
+        TradableOn: string[];
+        TradingSignals: string;
+        TradingStatus: string;
+        Uic: number;
+        UnderlyingTypeCategory: string;
+      };
+
       type accounts_t = {
         Data: account_t[];
         __next?: string;
       };
-      type positions_t = {
-        Data: position_t[];
+      type data_t<T> = {
+        Data: T[];
         __count: number;
+        __next?: string;
       };
 
       type transaction_t = {
@@ -251,6 +338,26 @@ declare global {
           Time: string;
           Volume: number;
         }[];
+      };
+
+      type exchg_t = {
+        AllDay: boolean;
+        CountryCode: string;
+        Currency: string;
+        ExchangeId: string;
+        ExchangeSessions: {
+          EndTime: string;
+          StartTime: string;
+          State: string;
+        }[];
+        IsoMic?: string;
+        Mic: string;
+        Name: string;
+        OperatingMic: string;
+        PriceSourceName: string;
+        TimeZone: number;
+        TimeZoneAbbreviation: string;
+        TimeZoneOffset: string;
       };
     }
   }

@@ -9,6 +9,7 @@ declare global {
   namespace backend {}
   namespace frontend {}
 }
+
 (globalThis as any).conf = conf_json;
 (globalThis as any).util = Util;
 (globalThis as any).messenger = Messenger;

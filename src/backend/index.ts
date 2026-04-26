@@ -3,7 +3,6 @@ import Logger from "./Logger.ts";
 export { Global } from "./Global.ts";
 
 declare global {
-  var logger: backend.Logger_t;
   namespace backend {
     namespace app {
       var api: Api_t;

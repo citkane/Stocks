@@ -1,6 +1,5 @@
 import type { Messenger } from "@common/Messenger";
-
-import type Logger_b from "@backend/Logger";
+import type Logger from "@common/Logger";
 
 import type Api_b from "@backend/Api";
 import type { Brokers as Brokers_b } from "@backend/brokers";
@@ -23,9 +22,10 @@ export type * as ibkr_t from "./ibkr_t";
 
 declare global {
   type Messenger_t = typeof Messenger;
+  type Logger_t = typeof Logger;
+  var logger: Logger_t;
 
   namespace backend {
-    type Logger_t = typeof Logger_b;
     type Brokers_t = Brokers_b;
     type Database_t = Database_b;
     type Http_t = ServerHttp;

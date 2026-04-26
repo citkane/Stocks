@@ -10,11 +10,9 @@ export class Transactions extends _Transactions {
   public update = (start_date = conf.saxo.start_date) =>
     this.transactions
       .fetch(start_date)
-      //.then((t) => logger.json("SAXO transactions raw", t))
+      .then((t) => logger.json("SAXO transactions raw", t))
       .then(this.transactions.categorise)
-      //.then((t) => logger.json("SAXO transactions categorised", t))
       .then(this.transactions.transform);
-  //.then((t) => logger.json("SAXO transactions transformed", t));
 
   private transactions = {
     fetch: async (
@@ -44,63 +42,97 @@ export class Transactions extends _Transactions {
       }, {} as categorised_t);
       return this.transactions.reduce.transfers(categorised);
     },
-    transform: (transactions: categorised_t) => {
+    format: (transaction: b.s.transaction_t): transctn_t => {
+      let {
+        Event,
+        ConversionRate: fx_traded,
+        PositionId: con_id,
+        AccountId: a_id,
+        TradeId: id,
+        Bookings,
+        BookedAmount,
+        RelatedTradeId,
+        Instrument,
+        Trades,
+        Date,
+      } = transaction;
+      let { Symbol, Uic, Currency: currency } = Instrument;
+
+      const trade = this.transactions.reduce.trades(Trades);
+      let kind = "" as transctn_t["kind"],
+        price_traded = 0,
+        amount = 0,
+        date = 0;
+
+      switch (Event) {
+        case "Buy":
+          kind = "buy";
+          price_traded = trade.price;
+          amount = trade.amount;
+          date = trade.time;
+          break;
+        case "Final Maturity":
+          kind = "sell";
+          price_traded = trade.price;
+          amount = trade.amount;
+          date = trade.time;
+          fx_traded = this.transactions.fx.final_maturity(transaction);
+          id = `${RelatedTradeId}_close`;
+          break;
+        case "Sell":
+          kind = "sell";
+          price_traded = trade.price;
+          amount = trade.amount;
+          date = trade.time;
+          break;
+        case "Cash Dividend":
+          const booking = Bookings.find((b) => b.AmountTypeId === "56")!;
+          const { ConversionRate, BookingId } = booking;
+          kind = "dividend";
+          id = `d_${BookingId}`;
+          con_id = BookingId;
+          date = util.time.ms(Date);
+          amount = 1;
+          fx_traded = ConversionRate;
+          price_traded = (BookedAmount * 100) / fx_traded / 100;
+          break;
+      }
+      let positn = this.saxo.cache.position(Uic);
+      if (!positn) {
+        logger.warn("No position found for transaction", "saxo", transaction);
+        let [ticker, exchange] = Symbol.split(":");
+        exchange = exchange!.toUpperCase();
+        exchange = this.saxo.exchgs.tv(exchange);
+        positn = {
+          exchange,
+          ticker,
+        } as unknown as b.positn_t;
+      }
+
+      const { ticker, exchange } = positn;
+      const broker = "saxo";
+      const p_id: p_id_t = `${broker}_${Uic}`;
+      return {
+        id: id!,
+        p_id,
+        a_id,
+        price_traded,
+        amount,
+        fx_traded,
+        currency,
+        date,
+        ticker,
+        exchange,
+        kind,
+        broker,
+      };
+    },
+    transform: (transactions: categorised_t): transctn_t[] => {
       return this.transactions.reduce
         .transform(transactions)
-        .map((transaction) => {
-          let {
-            Event,
-            ConversionRate: fx_traded,
-            PositionId: p_id,
-            AccountId: a_id,
-            TradeId: id,
-            RelatedTradeId,
-            Instrument,
-          } = transaction;
-          const { Symbol, Uic, Description, Currency: currency } = Instrument;
-
-          let kind = "buy";
-          switch (Event) {
-            case "Final Maturity":
-              kind = "sell";
-              fx_traded = this.transactions.fx.final_maturity(transaction);
-              id = `${RelatedTradeId}_close`;
-              break;
-            case "Sell":
-              kind = "sell";
-              break;
-          }
-
-          const {
-            price: price_traded,
-            amount,
-            time: date,
-          } = this.transactions.reduce.trades(transaction.Trades);
-          const [_ticker, _exchange] = Symbol.split(":");
-          const { ticker, exchange, description } = util.string.format_ticker(
-            _exchange as exchanges_t,
-            _ticker!,
-            Description,
-          );
-
-          return {
-            id,
-            p_id: `saxo_${p_id}`,
-            con_id: String(Uic),
-            a_id,
-            price_traded,
-            amount,
-            fx_traded,
-            currency,
-            date,
-            ticker,
-            exchange,
-            description,
-            kind: kind as transaction_t["kind"],
-            broker: "saxo",
-          } as transaction_t;
-        });
+        .map(this.transactions.format);
     },
+
     ids: {
       transfer: (buys?: b.s.transaction_t[]) => {
         if (!buys) return [] as b.s.transaction_t[];
@@ -192,6 +224,7 @@ export class Transactions extends _Transactions {
             Buy,
             Sell,
             "Final Maturity": final_maturity,
+            "Cash Dividend": dividends,
           } = transactions[Uic]!;
 
           return [
@@ -199,6 +232,7 @@ export class Transactions extends _Transactions {
             ...(Buy || []),
             ...(Sell || []),
             ...(final_maturity || []),
+            ...(dividends || []),
           ];
         }, [] as b.s.transaction_t[]);
       },

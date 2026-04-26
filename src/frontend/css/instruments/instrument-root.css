@@ -1,0 +1,67 @@
+instrmnts-root {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  .select.wrapper {
+    background: var(--col-background-light);
+    position: sticky;
+    top: -32;
+    z-index: 100;
+  }
+  > .grid {
+    > .header_wrap {
+      display: contents;
+      .header.row {
+        > * {
+          background: var(--col-background-light);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          border: var(--border-light);
+          border-left: none;
+          &:first-child {
+            border-left: var(--border-light);
+          }
+        }
+      }
+
+      > .money.row {
+        > * {
+          background: var(--col-background-light);
+          position: sticky;
+          top: 26;
+          z-index: 100;
+          &:first-child,
+          &:nth-child(2),
+          &:nth-child(3) {
+            background: none;
+          }
+        }
+        money-str {
+          font-size: var(--font-size-small);
+          border: var(--border-light);
+          border-bottom-width: 2px;
+
+          &.first {
+            box-shadow: -1px 0 0 var(--col-border-light);
+          }
+          &.last {
+            border-right-width: 2px;
+          }
+        }
+      }
+    }
+
+    [name="positions"] {
+      text-align: center;
+    }
+    .row.instrmnt:not(.header):not(.money),
+    .row.position:not(.header) {
+      > [name="percent_pl"],
+      > [name="fx_pl"] {
+        font-size: var(--font-size-small);
+        opacity: 0.7;
+      }
+    }
+  }
+}

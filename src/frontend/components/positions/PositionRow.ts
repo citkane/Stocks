@@ -1,7 +1,7 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class PositionRow extends AppElement {
-  static observedAttributes = ["broker", "account", "data-transaction"];
+  static observedAttributes = ["data-transaction", "filter"];
 
   constructor() {
     super();
@@ -9,8 +9,8 @@ export class PositionRow extends AppElement {
     this.dom.template_to_self("position-row");
 
     this.props.watch("data-transaction", this.handlers.render);
-    this.props.watch("broker", this.handlers.select);
-    this.props.watch("account", this.handlers.select);
+    this.props.watch("filter", this.handlers.filter);
+    this.props.show();
   }
 
   private handlers = {
@@ -18,104 +18,132 @@ export class PositionRow extends AppElement {
       if (p.old === p.new) return;
 
       delete this._transaction;
-      const { market_value, traded_value, pl, fx_pl } = this.values;
-      const { date, amount, broker, exchange } = this.transaction;
+      delete this._values;
 
-      this.date_element.setAttribute("value", String(date));
-      this.traded_value_element.setAttribute("value", String(traded_value));
-      this.market_value_element.setAttribute("value", String(market_value));
-      this.pl_element.setAttribute("value", String(pl));
-      this.fx_pl_element.setAttribute("value", String(fx_pl));
+      const { meta } = this.transaction;
 
-      this.position_element.innerHTML = String(amount);
-      this.broker_element.innerHTML = broker;
-      this.exchange_element.innerHTML = exchange;
+      Object.keys(this.values).forEach((key) => {
+        const k = key as keyof typeof this.values;
+        let value = String(this.values[k]);
 
-      this.setAttribute("market_value", String(market_value));
-      this.setAttribute("buy_value", String(traded_value));
-      this.setAttribute("pl", String(pl));
-      this.setAttribute("fx_pl", String(fx_pl));
+        const el = this.querySelector(`[name="${key}"]`);
+        this.setAttribute(key, value);
+        const _value = meta && meta[key];
+        if (!!_value) {
+          value = String(_value);
+          el?.classList.add("meta");
+        }
+        el?.setAttribute("value", value);
+      });
     },
 
-    select: (p: p.prop_callback) => {
+    filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      const { a_id, broker } = this.transaction;
-
-      if (this.broker && this.account)
-        return broker === this.broker && a_id === this.account
-          ? this.props.show()
-          : this.props.hide();
-      if (this.broker)
-        return broker === this.broker ? this.props.show() : this.props.hide();
-      if (this.account)
-        return a_id === this.account ? this.props.show() : this.props.hide();
-
-      this.props.show();
+      const hide = !!Object.keys(this.source_filter).find((key) => {
+        const k = key as f.filter_t;
+        const val = this.source_filter[k];
+        const _val = this.target_filter[k];
+        return _val !== "all" && _val !== val;
+      });
+      hide ? this.props.hide() : this.props.show();
     },
   };
 
+  private data = this.api.data({
+    values: () => {
+      const {
+        date,
+        //sales,
+        amount,
+        broker,
+        exchange,
+        price_traded,
+        price_market,
+        fx_traded,
+        fx_market,
+        kind,
+        dividend,
+        r_pl,
+      } = this.transaction;
+
+      if (kind === "dividend") {
+        return {
+          date,
+          broker,
+          exchange,
+          amount,
+          dividend,
+        };
+      }
+      if (kind === "sell") {
+        return {
+          date,
+          broker,
+          exchange,
+          //sales,
+          amount,
+          r_pl,
+          traded_value: 0,
+        };
+      }
+
+      const fx_pl = util.money.fx_pl_base_whole(this.transaction);
+      const pl = util.money.pl_base_whole(this.transaction);
+
+      const market_value = util.money.base_money_whole(
+        amount,
+        price_market,
+        fx_market,
+      );
+      const traded_value = util.money.base_money_whole(
+        amount,
+        price_traded,
+        fx_traded,
+      );
+
+      return {
+        date,
+        broker,
+        exchange,
+        //sales,
+        amount,
+        market_value,
+        traded_value,
+        fx_pl,
+        pl,
+        r_pl,
+      };
+    },
+  });
   private dom = this.api.dom({});
   private props = this.api.props({});
-  private _transaction?: transaction_t;
 
   private get values() {
-    const transaction = this.transaction;
-    const { amount, price_traded, price_market, fx_traded, fx_market } =
-      transaction;
-    const fx_pl = util.money.fx_pl_base_whole(transaction);
-    const pl = util.money.pl_base_whole(transaction);
-    const market_value = util.money.base_money_whole(
-      amount,
-      price_market,
-      fx_market,
-    );
-    const traded_value = util.money.base_money_whole(
-      amount,
-      price_traded,
-      fx_traded,
-    );
+    if (this._values) return this._values;
+    return (this._values = this.data.values());
+  }
+  private get source_filter() {
+    const { a_id, broker, ticker, exchange } = this.transaction;
+    const i_id: i_id_t = `${exchange}-${ticker}`;
+    const instrument = this.cache.get.instrument(i_id);
+    const { asset_sector, asset_industry } = instrument;
 
-    return {
-      market_value,
-      traded_value,
-      fx_pl,
-      pl,
+    return { a_id, broker, asset_sector, asset_industry } as {
+      [key in f.filter_t]: string;
     };
+  }
+  private get target_filter() {
+    return util.html.json_parse<typeof this.source_filter>(
+      this.getAttribute("filter")!,
+    );
   }
   private get transaction() {
     if (!!this._transaction) return this._transaction;
     const transaction = this.dataset.transaction!;
-    return (this._transaction = JSON.parse(transaction)) as transaction_t;
+    return (this._transaction = util.html.json_parse<transctn_t>(transaction));
   }
-  private get broker() {
-    return this.getAttribute("broker");
-  }
-  private get account() {
-    return this.getAttribute("account");
-  }
-  private get date_element() {
-    return this.props.query_by_name("date");
-  }
-  private get traded_value_element() {
-    return this.props.query_by_name("buy_value");
-  }
-  private get market_value_element() {
-    return this.props.query_by_name("market_value");
-  }
-  private get pl_element() {
-    return this.props.query_by_name("pl");
-  }
-  private get fx_pl_element() {
-    return this.props.query_by_name("fx_pl");
-  }
-  private get position_element() {
-    return this.props.query_by_name("position");
-  }
-  private get broker_element() {
-    return this.props.query_by_name("broker");
-  }
-  private get exchange_element() {
-    return this.props.query_by_name("exchange");
-  }
+
+  private _transaction?: transctn_t;
+  private _values?: ReturnType<typeof this.data.values>;
 }

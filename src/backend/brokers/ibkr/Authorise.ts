@@ -12,10 +12,18 @@ export class Authorise extends AuthBase {
       .then((status) => status.authenticated)
       .catch((_err) => false);
 
-  private renew_auth = () =>
-    this.ibkr
+  public session_token = () => {
+    return this.ibkr
+      .fetch<b.i.tickle_t>(this.endpoints.tickle())
+      .then((tickle) => tickle.session);
+  };
+  private renew_auth = () => {
+    logger.debug("Renew auth", "ibkr");
+
+    return this.ibkr
       .fetch<b.i.tickle_t>(this.endpoints.tickle())
       .then((tickle) => tickle.iserver.authStatus);
+  };
 
   private endpoints = {
     status: () => `${this.api_url}/iserver/auth/status`,

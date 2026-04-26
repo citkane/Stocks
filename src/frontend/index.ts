@@ -1,5 +1,3 @@
-import "..";
-
 export { Global } from "./Global";
 
 declare global {
@@ -16,7 +14,9 @@ declare global {
   }
 }
 
+import "../index";
 import "@frontend/components/index";
+import Logger from "./Logger";
 import App from "@frontend/App";
 import Api from "@frontend/Api";
 import {
@@ -29,10 +29,7 @@ import {
 } from "@frontend/app/index.ts";
 import { Cache } from "./Cache";
 
-//export * from "@frontend/Api.ts";
-//export * from "@frontend/app/index.ts";
-//export { App, Api };
-
+(window as any).logger = Logger;
 (window as any).frontend = {
   app: new App(),
 };
@@ -49,10 +46,10 @@ import { Cache } from "./Cache";
 
 try {
   await frontend.ws.connected();
-  console.info("WebSocket connected");
+  logger.info("WebSocket connected");
 } catch (err) {
-  console.info("WebSocket connection failed");
-  console.error(err);
+  logger.info("WebSocket connection failed");
+  logger.error(err);
 }
 
 new Router();

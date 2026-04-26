@@ -10,9 +10,11 @@ class Oauth extends AuthBase {
   constructor(fetch_rate: number) {
     super("saxo", ping_auth_interval, fetch_rate);
   }
-
+  public random_context = () => `${randomUUIDv7("base64url", Date.now())}`;
   public fetch_token = (code: string): Promise<boolean> => {
     const endpoint = this.endpoints.post.token(code, "authorization_code");
+    logger.debug("Fetch auth token", "saxo");
+
     return this.saxo
       .fetch<b.s.auth_token_t>(endpoint.url, endpoint.params)
       .then(this._token.store);
@@ -40,7 +42,7 @@ class Oauth extends AuthBase {
         const params = [
           "response_type=code",
           `client_id=${app_key}`,
-          `state=${randomUUIDv7("base64url", Date.now())}`,
+          `state=${this.random_context()}`,
           `redirect_uri=${redirect}`,
         ].join("&");
 
@@ -58,6 +60,7 @@ class Oauth extends AuthBase {
         refresh_token,
         "refresh_token",
       );
+      logger.debug("Refresh auth token", "saxo");
       return this.saxo
         .fetch<b.s.auth_token_t>(endpoint.url, endpoint.params)
         .then(this._token.store)
@@ -92,7 +95,7 @@ class Oauth extends AuthBase {
     },
 
     remove: (err: any) => {
-      console.warn("Failed to refresh SAXO auth token", { err });
+      logger.warn("Failed to refresh SAXO auth token", { err });
       return token_file.delete().catch(() => Promise.resolve());
     },
   };

@@ -1,31 +1,47 @@
 import { Global } from "backend";
-import { CacheBrokers } from "./CacheBrokers";
+import { Cache_Brokers, Instruments } from "@backend/brokers/common";
 
-declare global {
-  type broker_t = (typeof brokers)[number];
-}
 const brokers = ["saxo", "ibkr"] as const;
 
 export class Brokers extends Global {
-  public await_auth = () => {
-    return Promise.all([this.ibkr.await_auth(), this.saxo.await_auth()]);
+  public await_auth = async () => {
+    await Promise.all([this.ibkr.await_auth(), this.saxo.await_auth()]);
+    await this.request_cache();
   };
 
-  public await_cache = () => {
-    const { accounts, positions } = this.resolve;
+  public await_cache = async () => {
+    const { accounts, transctns, instrmnts, positions } = this.resolve;
     this.resolve.accounts = accounts ? accounts : this.update.accounts();
     this.resolve.positions = positions ? positions : this.update.positions();
-    return Promise.all([this.resolve.accounts, this.resolve.positions])
-      .then(() => this.cache.transactions)
-      .then((transactions) => logger.json("TRANSACTIONS", transactions));
+    this.resolve.instrmnts = instrmnts ? instrmnts : this.update.instruments();
+    this.resolve.transctns = transctns ? transctns : this.update.transactions();
+    return Promise.all([
+      this.resolve.accounts,
+      this.resolve.positions,
+      this.resolve.transctns,
+      this.resolve.instrmnts,
+    ]);
+  };
+  public request_cache = async () => {
+    try {
+      const instruments = await this.cache.instruments;
+      this.ws.publish("instruments", instruments);
+    } catch (_err) {}
+    try {
+      const transactions = await this.cache.transactions;
+      this.ws.publish("transactions", transactions);
+    } catch (_err) {}
+    try {
+      const live = await this.instruments.live_data();
+      this.ws.publish("live_data", live);
+    } catch (_err) {}
   };
 
   public chart = {
-    data: async (broker: broker_t, ...p: p.chart_data) => {
+    data: async (broker: broker_t, ...p: p.chart_period) => {
       const [conid, _period, granularity] = p;
       const [c, t] = granularity;
       const id = `${broker}_${conid}_${c}${t}`;
-
       const data = await this.db.select.chart(id);
 
       return !!data
@@ -39,7 +55,7 @@ export class Brokers extends Global {
       data: chart_data_t[],
       id: string,
       broker: broker_t,
-      ...p: p.chart_data
+      ...p: p.chart_period
     ) => {
       let [conid, period, granularity] = p;
       const end_last = data[data.length - 1]!.time;
@@ -57,21 +73,42 @@ export class Brokers extends Global {
       return data;
     },
   };
-  public cache = new CacheBrokers();
 
   private update = {
-    accounts: () =>
-      Promise.all(brokers.map((broker) => this[broker].update.accounts())),
-    positions: () =>
-      this.update
-        .fx()
-        .then(() =>
-          Promise.all(brokers.map((broker) => this[broker].update.positions())),
-        ),
-    fx: () => this.ibkr.update.fx(),
+    accounts: () => {
+      return Promise.all(
+        brokers.map((broker) => this[broker].update.accounts()),
+      );
+    },
+    positions: async () => {
+      await this.resolve.accounts;
+      return Promise.all(
+        brokers.map((broker) => this[broker].update.positions()),
+      );
+    },
+    instruments: async () => {
+      await this.resolve.positions;
+      return this.instruments.update();
+    },
+    transactions: async () => {
+      await this.resolve.positions;
+      return Promise.all(
+        brokers.map((broker) => this[broker].update.transactions()),
+      );
+    },
   };
+
   private resolve = {
     accounts: null as resolve_t,
     positions: null as resolve_t,
+    instrmnts: null as resolve_t,
+    transctns: null as resolve_t,
   };
+
+  public cache = new Cache_Brokers();
+  public instruments = new Instruments();
+}
+
+declare global {
+  type broker_t = (typeof brokers)[number];
 }

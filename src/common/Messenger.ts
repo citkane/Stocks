@@ -104,8 +104,8 @@ export class Messenger {
   response = (res_uid: string, data?: data_t): void => {
     this.send(undefined as any as send_topic_t, data, undefined, res_uid);
   };
-  error(uid: string, res: Response): void;
-  error(uid: string, status: number, statusText: any): void;
+  error(uid: string, res: Response): res_error_t;
+  error(uid: string, status: number, statusText: any): res_error_t;
   error(uid: string, res_status: Response | number, statusText?: string) {
     let error: res_error_t;
     if (!!statusText) {
@@ -118,10 +118,9 @@ export class Messenger {
           : statusText;
       error = { status, statusText };
     } else {
-      const { status, statusText } = res_status as Response;
-      error = { status, statusText };
+      const { status, statusText, url } = res_status as Response;
+      error = { status, statusText, url };
     }
-    //console.error(`Response ${uid}:`, error);
     this.send(
       undefined as any as send_topic_t,
       error,
@@ -130,7 +129,7 @@ export class Messenger {
       undefined,
       true,
     );
-    return;
+    return error;
   }
 
   public requests = new Map<string, resolver_t>();

@@ -15,13 +15,14 @@ export class AuthBase extends Global {
       if (this.auth.authorised) return resolve(true);
 
       const interval = setInterval(() => {
+        logger.debug("Await auth", this._broker);
         if (this.auth.authorised) {
           clearInterval(interval);
           resolve(true);
         }
       }, this.fetch_rate);
 
-      this.add_shutdown_fnc(() => clearInterval(interval));
+      this.add_shutdown_fncs(() => clearInterval(interval));
     });
   }
 
@@ -29,6 +30,7 @@ export class AuthBase extends Global {
 
   private poll_for_auth = () => {
     const interval = setInterval(() => {
+      logger.debug("Poll auth", this._broker);
       this.auth.is_authorised().then(check);
     }, this.fetch_rate);
 
@@ -40,13 +42,13 @@ export class AuthBase extends Global {
       }
     };
 
-    this.add_shutdown_fnc(() => clearInterval(interval));
+    this.add_shutdown_fncs(() => clearInterval(interval));
   };
 
   private keep_auth_alive = () => {
     let count = 0;
     const interval = setInterval(() => {
-      console.info(`Keeping auth alive: ${this._broker}`, count);
+      logger.log(`Keeping auth alive: ${this._broker}`, count);
       count++;
       this.auth
         .is_authorised()
@@ -62,7 +64,7 @@ export class AuthBase extends Global {
       }
     };
 
-    this.add_shutdown_fnc(() => clearInterval(interval));
+    this.add_shutdown_fncs(() => clearInterval(interval));
   };
 
   private get auth() {

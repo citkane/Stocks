@@ -1,5 +1,6 @@
 type window_t = ReturnType<typeof window.open>;
-
+type p_id_t = `${broker_t}_${string}`;
+type i_id_t = `${string}-${string}`;
 type resolve_t = Promise.resolve;
 type reject_t = Promise.reject;
 type resolver_t = {
@@ -10,30 +11,35 @@ type ws_t = Bun.ServerWebSocket | WebSocket;
 type res_error_t = {
   status: number;
   statusText: string;
+  url?: string;
 };
 
-type position_t = { [key in `${transaction_t["kind"]}s`]: transaction_t[] };
-
-type transaction_t = {
+type transctn_t = {
   id: string;
-  p_id: string;
-  con_id: string;
+  p_id: p_id_t;
   a_id: string;
   broker: broker_t;
-  description: string;
   ticker: string;
   currency: currency_t;
-  exchange?: string;
+  exchange: string;
   amount: number;
-  fx_market?: number;
-  fx_traded?: number;
   date: number;
-  price_market?: number;
-  price_traded?: number;
   kind: "buy" | "sell" | "dividend";
-  state?: "open" | "closed";
+  price_traded: number;
+  fx_traded: number;
+  price_market?: number;
+  fx_market?: number;
+  dividend?: number;
+  r_pl?: number;
+  meta?: { [key: string]: string | number | undefined };
+  //sales?: number;
+  //state?: "open" | "closed";
 };
-
+type live_data_t = {
+  i_id: i_id_t;
+  price_market: number;
+  fx_market: number;
+};
 type account_t = {
   a_id: string;
   a_id_original: string;
@@ -41,13 +47,7 @@ type account_t = {
   alias?: string;
   currency: currency_t;
 };
-type stock_t<T = Set<transaction_t> | transaction_t[]> = {
-  con_id: string;
-  broker: broker_t;
-  ticker: string;
-  description: string;
-  transactions: { [key in keyof position_t]: T };
-};
+
 type fx_pair_t = {
   currency_t: number;
 };
@@ -73,23 +73,46 @@ type chart_data_t = {
 
 type interval_t = ReturnType<typeof setInterval>;
 
+type instrmnt_t = {
+  i_id: i_id_t;
+  ticker: string;
+  exchange: string;
+  currency: currency_t;
+  description: string;
+  about_instrmnt?: string;
+  asset_class?: string;
+  asset_industry?: string;
+  asset_sector?: string;
+  isin?: string;
+  cfi?: string;
+  website?: string;
+  svg_string?: string;
+};
+
+namespace f {
+  type positn_t = { [key in `${transctn_t["kind"]}s`]: transctn_t[] };
+}
 namespace b {
-  type market_view_t = {
-    price_market: number;
-    ticker?: string;
-    exchange?: exchanges_t;
-    description?: string;
-    industry?: string;
-    category?: string;
+  type positn_t = {
+    p_ids: p_id_t[];
+    ticker: string;
+    exchange: string;
+    currency: currency_t;
+    description: string;
   };
-  type market_view_map_t = Map<string | number, b.market_view_t>;
+  type exchange_t = { tv: string | null; mic: string | null };
+  type exchg_map_t = {
+    [key in broker_t]: {
+      [key: string]: exchange_t;
+    };
+  };
 }
 
 /**
  * Function parameter types
  */
 namespace p {
-  type chart_data = [conid: string, period: period_t, granularity: period_t];
+  type chart_period = [conid: string, period: period_t, granularity: period_t];
   type req_broker = [p: req_t, broker: broker_t];
   type prop_callback = { name: string; old: string; new: string };
 }

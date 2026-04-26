@@ -11,7 +11,10 @@ export class DateString extends AppElement {
   private handlers = {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-      this.innerHTML = util.string.epoch_to_iso(this.value);
+      const _date = util.string.epoch_to_iso(this.value);
+      const [date, time] = _date.split("T");
+      const [h, m] = time!.split(":");
+      this.innerHTML = `${date} [${h}:${m}]`;
     },
   };
   private props = this.api.props({});

@@ -1,10 +1,12 @@
-stock-chart {
+instrmnt-chart {
   display: block;
-  grid-column: 1/27;
-  overflow-y: hidden;
+  grid-column: var(--grid-col-all);
   padding: 0 !important;
+  height: 200px;
+  /*
   inner {
     display: block;
     width: 100%;
   }
+    */
 }

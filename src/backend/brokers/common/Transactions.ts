@@ -5,8 +5,8 @@ export class Transactions extends Global {
     super();
   }
 
-  public update_schedule = async () => {
-    const last_date = await this.db.select.transactions_updated(this._broker);
+  public transctns_update_date = async () => {
+    const last_date = await this.db.select.transctns_update_date(this._broker);
     const is_init = !last_date;
     let days = is_init ? undefined : util.time.aging_days(last_date);
     const date = !!last_date

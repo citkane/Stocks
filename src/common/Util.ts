@@ -1,5 +1,3 @@
-import { exchanges } from ".";
-
 type time_t = keyof typeof period_to_ms;
 declare global {
   type period_t = [number, time_t];
@@ -16,6 +14,8 @@ export class Util {
         chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
         history: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.history}`,
         ref: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.ref}`,
+        trade: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.trade}`,
+
         redirect: {
           code: `${conf.saxo.url.redirect.code}`,
           token: `${conf.saxo.url.redirect.token}`,
@@ -77,33 +77,90 @@ export class Util {
       const date = new Date(date_time);
       return date.toUTCString();
     },
-    format_ticker: (
-      _exchange: exchanges_t,
-      ticker: string,
-      description: string,
-    ) => {
-      const exchange = exchanges[_exchange] || _exchange;
-      ticker = ticker.split(":")[0]!;
-      if (exchange === "hkse") ticker = pad_hkse_ticker(ticker!);
-      description = this.string.title_case(description);
-      return { exchange, ticker, description };
+    pad_hk_ticker: (ticker: string) => {
+      return ticker.length < 5 ? ticker!.padStart(5, "0") : ticker;
     },
-    money: (value: number) => {
-      if (value === 0) return "0.00";
-      let [whole, fraction] = (value / 100).toString().split(".");
-      fraction = (fraction || "").padEnd(2, "0");
-      return `${whole || "0"}.${fraction}`;
+    unpad_hk_ticker: (ticker: string) => {
+      return String(Number(ticker));
     },
-    html_escape: (str: string) => {
-      return str
+    money: (value: number, curr: string) => {
+      if (value === 0) return `${curr}0.00`;
+      const neg = value < 0 ? "-" : "";
+      value = Math.abs(value);
+      const str = String(value);
+      const len = str.length;
+      let frac = str.substring(len - 2);
+      if (frac.length === 1) frac = `0${frac}`;
+      const whole = str.substring(len - 5, len - 2);
+      const thou = str.substring(len - 8, len - 5);
+
+      if (!whole) return `${neg}${curr}0.${frac}`;
+      if (!thou) return `${neg}${curr}${whole}.${frac}`;
+      return `${neg}${curr}${thou},${whole}.${frac}`;
+    },
+
+    json_prop: (prop: string, data: Object) => {
+      return `${prop}='${this.html.json_stringify(data)}'`;
+    },
+    country: (code: string) => {
+      return code.toUpperCase().replace("GB", "UK");
+    },
+    clean_unicode: (text: string) => {
+      return text.replace(/ /g, " ").replace(/[‬,‪]/g, "").replace(/−/g, "-");
+    },
+    p_html: (text: string) => {
+      const replacements = [
+        ["Co.", "Co_"],
+        ["Ltd.", "Ltd_"],
+        ["Corp.", "Corp_"],
+        ["Inc.", "Inc_"],
+        [" etc.", " etc_"],
+      ];
+      replacements.forEach((r) => {
+        text = text.replaceAll(r[0]!, r[1]!);
+      });
+      text = text
+        .trim()
+        .replace(/\.$/, "")
+        .replace(/ ([A-Z])\.([A-Z])\./g, " $1_$2_")
+        .split(". ")
+        .map((line) => {
+          line = line.trim();
+          return `<p>${line}.</p>`;
+        })
+        .join("")
+        .replace(/ ([A-Z])_([A-Z])_/g, " $1.$2.");
+      replacements.forEach((r) => {
+        text = text.replaceAll(r[1]!, r[0]!);
+      });
+      return text;
+    },
+  };
+  static html = {
+    escape: (str: string, stringify?: boolean) => {
+      str = str
+        .trim()
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+      return stringify === false ? str : JSON.stringify(str);
     },
-    html_json: (data: Object) => {
-      return this.string.html_escape(JSON.stringify(data));
+    unescape: (str: string, _noop?: boolean) => {
+      return str
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+    },
+    json_stringify: (data: Object) => {
+      return JSON.stringify(this.escaped_json(data, this.html.escape));
+    },
+    json_parse: <T = Object>(json: string) => {
+      const data = JSON.parse(json);
+      return this.escaped_json(data, this.html.unescape) as T;
     },
   };
   static time = {
@@ -200,7 +257,7 @@ export class Util {
      * @param transaction
      * @returns Total P/L in base currency whole number
      */
-    pl_base_whole: (transaction: transaction_t) => {
+    pl_base_whole: (transaction: transctn_t) => {
       let { amount, price_traded, price_market, fx_traded, fx_market } =
         transaction;
       if (!amount || !price_traded || !fx_market || !price_market || !fx_traded)
@@ -212,12 +269,16 @@ export class Util {
 
       return this.money.base_money_whole(amount, price_diff / 100, fx_market);
     },
+    percent_pl: (traded: number, market: number) => {
+      if (!traded || !market) return 0;
+      return ((market - traded) / traded) * 100;
+    },
     /**
      * Calculates fx Profit/Loss
      * @param transaction
      * @returns Fx P/L in base currency whole number
      */
-    fx_pl_base_whole: (transaction: transaction_t) => {
+    fx_pl_base_whole: (transaction: transctn_t) => {
       const { amount, price_traded, price_market, fx_traded, fx_market } =
         transaction;
       if (!amount || !price_traded || !fx_market || !price_market || !fx_traded)
@@ -260,7 +321,17 @@ export class Util {
     round_fx: (rate: number) => {
       return Math.round(rate * fx_round) / fx_round;
     },
-    aggregate_position: (position: position_t) => {
+    position: (transactions: transctn_t[]) => {
+      return transactions.reduce(
+        (c, transaction) => {
+          const { kind } = transaction;
+          c[`${kind}s`].push(transaction);
+          return c;
+        },
+        { buys: [], sells: [], dividends: [] } as f.positn_t,
+      );
+    },
+    aggregate_position: (position: f.positn_t) => {
       let { buys, sells } = structuredClone(position);
       if (!sells.length) return [...buys];
 
@@ -286,7 +357,7 @@ export class Util {
         }
 
         return c;
-      }, [] as transaction_t[]);
+      }, [] as transctn_t[]);
     },
   };
   static resolver = {
@@ -299,6 +370,39 @@ export class Util {
     green: "#26a69a",
     blue: "#3179F5",
   };
+  static csv = {
+    to_data: (csv: string) => {
+      return csv
+        .trim()
+        .split("\n")
+        .map((l) => {
+          l = l
+            .trim()
+            .replace(/[^,]"[^,|$]/g, '\\"')
+            .replace(/,(?=,|$)/g, ',""');
+          return JSON.parse(`[${l}]`);
+        }) as string[][];
+    },
+  };
+
+  private static escaped_json = (
+    data: Object | string | number,
+    action: typeof this.html.escape | typeof this.html.unescape,
+  ): any => {
+    if (data === null) return undefined;
+    if (Array.isArray(data)) {
+      return data.map((val) => this.escaped_json(val, action));
+    }
+    if (typeof data === "object") {
+      return Object.keys(data).reduce((c, key) => {
+        const k = key as keyof typeof data;
+        c[k] = this.escaped_json(data[k], action);
+        return c;
+      }, {});
+    }
+    if (!isNaN(Number(data))) return data;
+    if (typeof data === "string") return action(data, false);
+  };
 }
 
 const period_to_ms = {
@@ -310,6 +414,3 @@ const period_to_ms = {
   m: (count: number) => count * period_to_ms.d(30.4375),
   y: (count: number) => count * period_to_ms.d(365.25),
 };
-function pad_hkse_ticker(ticker: string) {
-  return ticker.length < 4 ? ticker!.padStart(4, "0") : ticker;
-}

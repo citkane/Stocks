@@ -1,4 +1,4 @@
-money-string {
+money-str {
   display: block;
   text-align: right;
   &.pl {
@@ -16,4 +16,16 @@ select-broker {
   display: inline-block;
   margin: var(--padding-cell);
   margin-left: none;
+}
+
+expanding-drawer {
+  grid-column: var(--grid-col-all);
+  overflow-y: hidden;
+  padding: 0 !important;
+  .inner {
+    display: grid;
+    grid-template-columns: var(--grid-columns);
+
+    padding: var(--padding-cell);
+  }
 }

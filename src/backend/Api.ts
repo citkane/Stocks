@@ -1,4 +1,6 @@
 import { Global } from "backend";
+import { Trading_View as TV } from "@common/Trading_View";
+import { fe_ident } from "@common/Logger";
 
 type auth_code_t = b.s.auth_code_t;
 
@@ -7,8 +9,11 @@ export default class Api extends Global implements Api_t {
     accounts: (p: req_t) => {
       this.res.accounts(p);
     },
-    positions: (p: req_t) => {
-      this.res.positions(p);
+    transactions: (p: req_t) => {
+      this.res.transactions(p);
+    },
+    instruments: (p: req_t) => {
+      this.res.instruments(p);
     },
     is_authorised: (...pb: p.req_broker) => {
       this.res.is_authorised(...pb);
@@ -16,21 +21,30 @@ export default class Api extends Global implements Api_t {
     wait_for_auth: (...pb: p.req_broker) => {
       this.res.wait_for_ready(...pb);
     },
-    //wait_for_cache: (p: req_t) => {
-    //  this.res.wait_for_cache(p);
-    //},
     saxo_auth_url: (p: req_t) => {
       this.res.saxo_fetch_auth_url(p);
     },
-
-    chart_data: (...pbd: [...p.req_broker, ...p.chart_data]) => {
+    chart_data: (...pbd: [...p.req_broker, ...p.chart_period]) => {
       this.res.chart_data(...pbd);
     },
+    //save_instrument: (p: req_t, instrmnt: instrmnt_t) => {
+    //  this.res.save_instrument(p, instrmnt);
+    //},
+    //link_html: (p: req_t, link: string) => {
+    //  logger.log(link);
+    //  this.res.link_html(p, link);
+    //},
   };
   setter = {
+    request_cache: () => this.brokers.request_cache(),
     saxo_make_token: (code: auth_code_t) => {
       this.action.saxo_make_token(code);
     },
+    log_debug: (message: any[]) => this.action.log("debug", message),
+    log_info: (message: any[]) => this.action.log("info", message),
+    log_log: (message: any[]) => this.action.log("log", message),
+    log_warn: (message: any[]) => this.action.log("warn", message),
+    log_error: (message: any[]) => this.action.log("error", message),
   };
 
   private res = {
@@ -39,12 +53,16 @@ export default class Api extends Global implements Api_t {
       const accounts = await this.cache.accounts;
       p.messenger.response(p.req_uid, accounts);
     },
-    positions: async (p: req_t) => {
+    transactions: async (p: req_t) => {
       await this.brokers.await_cache();
-      const positions = await this.cache.transactions;
-      p.messenger.response(p.req_uid, positions);
+      const transactions = await this.cache.transactions;
+      p.messenger.response(p.req_uid, transactions);
     },
-
+    instruments: async (p: req_t) => {
+      await this.brokers.await_cache();
+      //const instruments = await this.cache.instruments;
+      //p.messenger.response(p.req_uid, instruments);
+    },
     is_authorised: (p: req_t, broker: broker_t) => {
       p.messenger.response(p.req_uid, this.brokers[broker].is_authorised);
     },
@@ -62,16 +80,34 @@ export default class Api extends Global implements Api_t {
         .catch((err) => server_error(p, err));
     },
 
-    chart_data: (p: req_t, broker: broker_t, ...pa: p.chart_data) => {
+    chart_data: (p: req_t, broker: broker_t, ...pa: p.chart_period) => {
       this.brokers.chart
         .data(broker, ...pa)
         .then((data) => p.messenger.response(p.req_uid, data || []))
         .catch((err) => server_error(p, err));
     },
+    //link_html: (p: req_t, link: string) => {
+    //  TV.fetch(link)
+    //    .then((html) => p.messenger.response(p.req_uid, html))
+    //    .catch((err) => server_error(p, err));
+    //},
+    //save_instrument: (p: req_t, instrmnt: instrmnt_t) => {
+    //  this.brokers.instrument
+    //    .save(instrmnt)
+    //    .then(() => p.messenger.response(p.req_uid));
+    //},
   };
   private action = {
     saxo_make_token: (code: auth_code_t) => {
       this.saxo.fetch_auth_token(code.code);
+    },
+    log: (level: level_t, message: any[]) => {
+      try {
+        logger[level](fe_ident, ...message);
+      } catch (err) {
+        logger.error(err);
+        logger.error(message);
+      }
     },
   };
 
@@ -81,6 +117,11 @@ export default class Api extends Global implements Api_t {
 }
 
 function server_error(p: req_t, err: any) {
-  console.error(err);
-  p.messenger.error(p.req_uid, 500, err);
+  let { status, statusText } = err as Response;
+  status = status ? status : 500;
+  statusText = statusText ? statusText : "Internal server error";
+  const error = p.messenger.error(p.req_uid, err);
+  logger.warn("API server error", error);
 }
+
+type level_t = "debug" | "info" | "log" | "warn" | "error";

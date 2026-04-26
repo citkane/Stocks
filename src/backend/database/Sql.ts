@@ -29,6 +29,7 @@ export class Sql extends Global {
       return sql`DROP TABLE IF EXISTS ${sql(table)};`;
     },
     insert: (table: db.table_n, values: db.data_t[]) => {
+      if (!values.length) return Promise.resolve([]);
       const conflict = this.fragment.primary_conflict_sql(table);
       const statement = sql`INSERT INTO ${sql(table)} ${sql(values)} ${conflict}`;
       return statement;

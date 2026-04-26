@@ -48,7 +48,7 @@ declare global {
         desc: string;
       };
 
-      type position_t = {
+      type positn_t = {
         acctId: string;
         conid: number;
         contractDesc: string;
@@ -84,7 +84,7 @@ declare global {
         time: number;
         chineseName: string;
         allExchanges: string;
-        listingExchange: exchanges_t;
+        listingExchange: string;
         countryCode: string;
         name: string;
         lastTradingDay: string;
@@ -192,9 +192,18 @@ declare global {
       type positions_data_t = {
         transactions: { [key: number]: b.i.transaction_t[] };
         positions: {
-          frontend: globalThis.transaction_t[];
-          broker: b.i.position_t[];
+          frontend: globalThis.transctn_t[];
+          broker: b.i.positn_t[];
         };
+      };
+
+      type exchg_t = {
+        id: string;
+        name: string;
+        country: string;
+        region: string;
+        assets: string;
+        country_code: string;
       };
     }
   }
