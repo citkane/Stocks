@@ -37,7 +37,8 @@ instrmnts-root {
             background: none;
           }
         }
-        money-str {
+        money-str,
+        percent-str {
           font-size: var(--font-size-small);
           border: var(--border-light);
           border-bottom-width: 2px;
@@ -58,7 +59,10 @@ instrmnts-root {
     .row.instrmnt:not(.header):not(.money),
     .row.position:not(.header) {
       > [name="percent_pl"],
-      > [name="fx_pl"] {
+      > [name="fx_pl"],
+      > [name="div_yield"],
+      > [name="dividend"],
+      > [name="div_est"] {
         font-size: var(--font-size-small);
         opacity: 0.7;
       }

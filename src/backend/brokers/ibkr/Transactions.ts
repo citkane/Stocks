@@ -19,7 +19,7 @@ export class Transactions extends _Transactions {
   }
 
   private transactions = {
-    fetch: (p: transactions_p) => {
+    fetch: async (p: transactions_p) => {
       fetch_fn.bind(this);
       const promises = p.con_ids.reduce(
         (c, conid) => {
@@ -40,7 +40,11 @@ export class Transactions extends _Transactions {
         [] as Promise<b.i.transaction_t[]>[],
       );
 
-      return Promise.all(promises).then((transactions) => transactions.flat());
+      const transctns = await Promise.all(promises).then((transactions) =>
+        transactions.flat(),
+      );
+      logger.json("IBKR transactions raw", transctns);
+      return transctns;
 
       function fetch_fn(this: Transactions, conid: string) {
         const _p = { ...p, ...{ con_ids: [conid] } };
@@ -103,13 +107,12 @@ export class Transactions extends _Transactions {
       } = transaction;
       let positn = this.ibkr.cache.position(conid);
       if (!positn) {
-        logger.error("No position found for transaction", "ibkr", transaction);
+        logger.error("No position found for transaction", "ibkr", conid);
         positn = {
-          exchange: undefined,
-          ticker: undefined,
+          i_id: `undefined-undefined`,
         } as unknown as b.positn_t;
       }
-      const { exchange, ticker } = positn;
+      const { i_id } = positn;
       const date = util.time.ms(date_string);
       const id = this.transactions.uid(transaction);
       const broker = "ibkr";
@@ -138,6 +141,7 @@ export class Transactions extends _Transactions {
         id,
         p_id,
         a_id,
+        i_id,
         broker,
         currency,
         amount: amount!,
@@ -145,8 +149,8 @@ export class Transactions extends _Transactions {
         fx_traded,
         date,
         kind,
-        exchange,
-        ticker,
+        //exchange,
+        //ticker,
       };
     },
     /** Create a unque id for the given transactions */

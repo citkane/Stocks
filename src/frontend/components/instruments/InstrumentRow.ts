@@ -1,7 +1,4 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
-import { Trading_View as TV } from "@common/index";
-
-const logo_size = 32;
 
 export class InstrumentRow extends AppElement {
   static observedAttributes = ["data-all", "filter", "state_info"];
@@ -20,32 +17,19 @@ export class InstrumentRow extends AppElement {
     render: async (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      delete this._data_all;
-      const transctns_string = util.html.json_stringify(this.transctns);
-      const instrmnt_string = util.html.json_stringify(this.instrmnt);
+      const transctns_id = util.hash_id(this.transctns);
+      this.positions_root.setAttribute("i_id", this.i_id);
+      this.positions_root.setAttribute("data-transctns", transctns_id);
+      this.pos_button.innerHTML = this.pos_count;
+      this.ticker_button.innerHTML = this.instrmnt.ticker;
+      this.props.set_values();
 
-      this.instrmnt_chart.setAttribute("data-instrmnt", instrmnt_string);
-      this.positions_root.setAttribute("data-transctns", transctns_string);
-      this.instrmnt_chart.setAttribute("data-transctns", transctns_string);
-
-      //const is_partial = this.data.needs_tv_static();
+      if (!!p.old) return;
 
       this.dom.make_description();
       this.dom.make_info();
-
-      this.pos_button.innerHTML = this.pos_count;
-      this.ticker_button.innerHTML = this.instrmnt.ticker;
       this.pos_button.addEventListener("click", this.handlers.drawer);
       this.pos_button.addEventListener("contextmenu", this.handlers.drawers);
-
-      this.props.set_money_values();
-      this.props.set_instrmnt_data();
-
-      //if (is_partial) {
-      //  this.data.update_tv_static();
-      //  this.ticker_button.setAttribute("disabled", "");
-      //  return;
-      //}
       this.ticker_button.removeAttribute("disabled");
       this.ticker_button.addEventListener("click", this.handlers.drawer);
       this.ticker_button.addEventListener("contextmenu", this.handlers.drawers);
@@ -54,7 +38,7 @@ export class InstrumentRow extends AppElement {
       if (p.old === p.new) return;
 
       this.positions_root.setAttribute("filter", p.new);
-      this.props.set_money_values();
+      this.props.set_values();
       this.pos_button.innerHTML = this.pos_count;
       Number(this.pos_count) ? this.props.show() : this.props.hide();
     },
@@ -65,9 +49,8 @@ export class InstrumentRow extends AppElement {
         case "ticker":
           state = this.info_drawer.getAttribute("state")!;
           state = state === "open" ? "closed" : "open";
-          this.instrmnt_chart.setAttribute("ticker", this.ticker);
+          this.instrmnt_chart.setAttribute("i_id", this.i_id);
           this.info_drawer.setAttribute("state", state);
-          //this.dom.make_live_data(state);
           break;
         case "positions":
           state = this.pos_drawer.getAttribute("state")!;
@@ -109,7 +92,7 @@ export class InstrumentRow extends AppElement {
       const state = this.info_drawer.getAttribute("state")!;
       if (state === p.new || this.ticker_button.disabled) return;
 
-      this.instrmnt_chart.setAttribute("ticker", this.ticker);
+      this.instrmnt_chart.setAttribute("i_id", this.i_id);
       this.info_drawer.setAttribute("state", p.new);
       if (p.new === "closed") return;
 
@@ -117,47 +100,50 @@ export class InstrumentRow extends AppElement {
     },
   };
   private props = this.api.props({
-    set_money_values: () => {
-      const values = this.money_keys.reduce(
+    set_values: () => {
+      let values: any = this.money.collect_keys.reduce(
         (c, key) => {
-          const value = this.positions_root.getAttribute(key)!;
-          this.setAttribute(key, value);
-          this.querySelector(`[name="${key}"]`)?.setAttribute("value", value);
+          const value = this.positions_root.getAttribute(key);
+          if (!value) return c;
           c[key] = Number(value);
           return c;
         },
         {} as { [key: string]: number },
       );
-      const { traded_value, market_value } = values;
-      const percent_pl = util.money.percent_pl(traded_value!, market_value!);
-
-      this.setAttribute("percent_pl", String(percent_pl));
-      this.querySelector(`[name="percent_pl"]`)?.setAttribute(
-        "value",
-        String(percent_pl),
+      values.div_yield = !values.market_value
+        ? 0
+        : this.instrmnt.div_yield || 0;
+      values.div_est = util.money.div_est(
+        values.market_value,
+        values.div_yield,
       );
-    },
-    set_instrmnt_data: () => {
-      Object.keys(this.instrmnt).forEach((key) => {
-        const k = key as keyof typeof this.instrmnt;
-        if (typeof this.instrmnt[k] === "object") return;
-        this.setAttribute(key, this.instrmnt[k] || "");
+      const { traded_value, market_value } = values;
+      values.percent_pl = util.money.percent_pl(traded_value!, market_value!);
+      values.positions = this.pos_count;
+      values = { ...this.instrmnt, ...values };
+      Object.keys(values).forEach((key) => {
+        const val = String(values[key]);
+        this.setAttribute(key, val);
+        const el = this.querySelector(`[name="${key}"]`);
+        el?.setAttribute("value", val);
       });
-      this.setAttribute("positions", this.pos_count);
     },
   });
   private dom = this.api.dom({
     make_description: () => {
-      const logo = !this.instrmnt.svg_string
+      const { svg_string, description } = this.instrmnt;
+      const url = this.tv_url;
+      const logo = !svg_string
         ? this.dom.make_el("span", "!", 'class="no_logo"')
-        : TV.to_svg_logo(this.instrmnt.svg_string!, logo_size);
+        : new DOMParser().parseFromString(svg_string, "image/svg+xml")
+            .documentElement;
 
       const desc_link = this.dom.make_el(
         "a",
-        this.instrmnt.description,
-        //!this.tv_url ? "" : `href="${this.tv_url}"`,
-        //!this.tv_url ? "" : `target="blank"`,
-        //!this.tv_url ? 'class="no_link"' : "",
+        description,
+        !url ? "" : `href="${url}"`,
+        !url ? "" : `target="blank"`,
+        !url ? 'class="no_link"' : "",
       );
 
       this.description_element.innerHTML = "";
@@ -165,106 +151,21 @@ export class InstrumentRow extends AppElement {
       this.description_element.appendChild(desc_link);
     },
     make_info: () => {
-      //if (is_partial) return;
-
-      const { about_company, asset_industry, asset_sector } = this.instrmnt;
-
+      const { about_instrmnt, asset_industry, asset_sector } = this.instrmnt;
       this.info_breadcrumb.innerHTML = `${asset_sector} | ${asset_industry}`;
-      const _about = util.string.p_html(about_company || "");
+      const _about = util.string.p_html(about_instrmnt || "");
       const about = this.dom.make_el("div", _about, 'class="about"');
       this.about_company.appendChild(about);
     },
-    //make_live_data: async (open: string) => {
-    //  if (open !== "open") return;
-    //
-    //  const data = await this.tv_dynamic;
-    //  const sections: HTMLElement[] = [];
-    //
-    //  Object.keys(data).forEach((key) => {
-    //    const vals = data[key as keyof typeof data];
-    //    if (!vals) return;
-    //
-    //    const section = this.dom.make_el("div", "", 'class="section"');
-    //    const _title = util.string.title_case(key.split("_").join(" "));
-    //    const title = this.dom.make_el("span", _title, 'class="title"');
-    //    section.appendChild(title);
-    //
-    //    this.live_data.innerHTML = "";
-    //    Object.keys(vals).forEach((_title) => {
-    //      const _fragments = vals[_title];
-    //      if (!_fragments || _title === "Sector" || _title === "Industry")
-    //        return;
-    //      const wrapper = this.dom.make_el("div", "", 'class="snippet"');
-    //      const snippt = this.dom.make_el("span", _title, 'class="title"');
-    //      wrapper.appendChild(snippt);
-    //
-    //      const _val = _fragments.join(" ");
-    //      const val = this.dom.make_el("span", _val, 'class="val"');
-    //      wrapper.appendChild(val);
-    //      section.appendChild(wrapper);
-    //    });
-    //    sections.push(section);
-    //  });
-    //  sections.forEach((child) => this.live_data.appendChild(child));
-    //  this.info_drawer.setAttribute("height", "update");
-    //},
   });
-  //private data = this.api.data({
-  //  fetch_html: (url: string) => {
-  //    return this.messenger
-  //      .request<string>("link_html", url)
-  //      .catch((err: message_t) => {
-  //        console.error(err.data);
-  //      });
-  //  },
-  //  needs_tv_static: () => {
-  //    const { asset_class, asset_industry, asset_sector, about_company } =
-  //      this.instrmnt;
-  //    return !asset_class || !asset_industry || !asset_sector || !about_company;
-  //  },
-  //  update_tv_static: async () => {
-  //    const tv = await this.tv;
-  //    if (!tv) return;
-  //
-  //    const svg_string = await this.data.fetch_html(tv.logo_url);
-  //    const { asset_class, asset_sector, asset_industry, about_company } = tv;
-  //    const static_data = {
-  //      asset_class,
-  //      asset_sector,
-  //      asset_industry,
-  //      about_company,
-  //    } as instrmnt_t;
-  //    if (!!svg_string) static_data.svg_string = svg_string;
-  //
-  //    const instrmnt = {
-  //      ...this.instrmnt,
-  //      ...static_data,
-  //    };
-  //    await this.messenger.request("save_instrument", instrmnt);
-  //    this.setAttribute(
-  //      "data-all",
-  //      util.string.html_json({
-  //        transactions: this.transctns,
-  //        instrument: instrmnt,
-  //      }),
-  //    );
-  //  },
-  //});
 
-  private get data_all() {
-    if (this._data_all) return this._data_all!;
-    const data = util.html.json_parse<data_all_t>(this.dataset.all!);
-    return (this._data_all = data);
-  }
   private get instrmnt() {
-    return this.data_all.instrument;
+    return this.cache.get.instrument(this.i_id);
   }
   private get transctns() {
-    return this.data_all.transactions;
+    return this.cache.get.transactions(this.i_id);
   }
-  private get ticker() {
-    return this.instrmnt.ticker;
-  }
+
   private get ticker_button() {
     return this.querySelector("button[name=ticker]")! as HTMLButtonElement;
   }
@@ -307,49 +208,12 @@ export class InstrumentRow extends AppElement {
   private get about_company() {
     return this.info_drawer.querySelector('[name="about_company"]')!;
   }
-  private get live_data() {
-    return this.info_drawer.querySelector('[name="live_data"]')!;
-  }
 
   private get description_element() {
     return this.dom.named_el("description");
   }
-  //private get tv_url() {
-  //  return TV.link(this.instrmnt);
-  //}
-  //private get tv() {
-  //  if (this._tv)
-  //    return Promise.resolve(
-  //      this._tv === "noop" ? undefined : (this._tv as TV),
-  //    );
-  //  return this.data
-  //    .fetch_html(this.tv_url)
-  //    .then((html) => {
-  //      if (!html) throw Error();
-  //      return (this._tv = new TV(html));
-  //    })
-  //    .catch((_err) => {
-  //      this._tv = "noop";
-  //      return undefined;
-  //    });
-  //}
-  //private get tv_dynamic() {
-  //  if (this._tv_dynamic) return Promise.resolve(this._tv_dynamic);
-  //  return this.tv.then((tv) => {
-  //    if (!tv) return {};
-  //    const { company_employees, company_info, earnings, key_stats } = tv;
-  //    return (this._tv_dynamic = {
-  //      company_employees,
-  //      company_info,
-  //      earnings,
-  //      key_stats,
-  //    });
-  //  });
-  //}
-
-  private _data_all?: data_all_t;
-  //private _tv?: TV | string;
-  //private _tv_dynamic?: { [key: string]: f.tv_list_t | undefined };
+  private get tv_url() {
+    if (!this.instrmnt.about_instrmnt) return undefined;
+    return `https://www.tradingview.com/symbols/${this.instrmnt.i_id}`;
+  }
 }
-
-type data_all_t = { instrument: instrmnt_t; transactions: transctn_t[] };

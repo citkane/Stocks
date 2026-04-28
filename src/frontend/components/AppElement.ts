@@ -109,7 +109,7 @@ export class AppElement extends HTMLElement {
     data: {
       money_totals: (rows: Element[]) => {
         const totals = rows.reduce((a, child) => {
-          this.money_keys.forEach((key) => {
+          this.money.collect_keys.forEach((key) => {
             let val = Number(child.getAttribute(key));
             if (isNaN(val)) val = 0;
             a[key]! += val;
@@ -126,23 +126,26 @@ export class AppElement extends HTMLElement {
     },
   };
 
-  private money = {
+  protected money = {
     collector: () =>
-      this.money_keys.reduce(
+      this.money.collect_keys.reduce(
         (c, key) => {
           return (c = { ...c, [key]: 0 });
         },
         {} as { [key: string]: number },
       ),
+    collect_keys: [
+      "traded_value",
+      "market_value",
+      "r_pl",
+      "pl",
+      "fx_pl",
+      "dividend",
+      "div_yield",
+      "div_est",
+    ],
   };
 
-  protected get money_keys() {
-    if (this._money_keys) return this._money_keys;
-    const header = this.root_instrmnts.querySelector(".header_wrap .money");
-    return [...header!.querySelectorAll("money-str")].map(
-      (el) => el.getAttribute("name")!,
-    );
-  }
   protected get app() {
     return frontend.app;
   }
@@ -200,6 +203,9 @@ export class AppElement extends HTMLElement {
   }
   protected get select_industry() {
     return this.root_app.querySelector("select-industry")!;
+  }
+  protected get i_id() {
+    return this.getAttribute("i_id") as i_id_t;
   }
 
   private get attribute_keys() {

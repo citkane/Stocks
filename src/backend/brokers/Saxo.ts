@@ -34,7 +34,7 @@ export class Saxo extends Broker {
   };
 
   public fetch_auth_url = () => this.authorise.fetch_code_url();
-  public fetch_auth_token = (code: string) => this.authorise.fetch_token(code);
+  public fetch_token = (code: string) => this.authorise.fetch_token(code);
   public fetch_exchanges = () => this.ref.exchanges();
 
   public get auth_bearer() {
@@ -70,14 +70,6 @@ export class Saxo extends Broker {
     },
   };
 
-  // SAXO fucks up ZAR price rounding
-  public fix_zar = (transaction: transctn_t) => {
-    const { broker, currency, price_market, price_traded } = transaction;
-    if (!(broker === "saxo" && currency === "ZAR")) return transaction;
-    transaction.price_market = price_market ? price_market / 100 : undefined;
-    transaction.price_traded = price_traded ? price_traded / 100 : undefined;
-    return transaction;
-  };
   private define_ready_resolver = () =>
     (this.ready_resolver = this.authorise
       .await_auth()

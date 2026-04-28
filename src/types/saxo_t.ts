@@ -126,6 +126,40 @@ declare global {
         };
       };
 
+      type positn_closed_t = {
+        AccountCurrency: currency_t;
+        AccountCurrencyDecimals: number;
+        AccountId: string;
+        Amount: number;
+        AmountClose: number;
+        AmountOpen: number;
+        AssetType: string;
+        ClientCurrency: currency_t;
+        ClosePositionId: string;
+        ClosePrice: number;
+        CloseType: string;
+        ExchangeDescription: string;
+        InstrumentCurrency: currency_t;
+        InstrumentDescription: string;
+        InstrumentSymbol: string;
+        OpenPositionId: string;
+        OpenPrice: number;
+        PnLAccountCurrency: number;
+        PnLClientCurrency: number;
+        PnLUSD: number;
+        TotalBookedOnClosingLegAccountCurrency: number;
+        TotalBookedOnClosingLegClientCurrency: number;
+        TotalBookedOnClosingLegUSD: number;
+        TotalBookedOnOpeningLegAccountCurrency: number;
+        TotalBookedOnOpeningLegClientCurrency: number;
+        TotalBookedOnOpeningLegUSD: number;
+        TradeDate: string;
+        TradeDateClose: string;
+        TradeDateOpen: string;
+        UnderlyingInstrumentDescription: string;
+        UnderlyingInstrumentSymbol: string;
+      };
+
       type instrument_t = {
         AffiliateInfoRequired: boolean;
         AmountDecimals: number;
@@ -204,6 +238,50 @@ declare global {
         TradingStatus: string;
         Uic: number;
         UnderlyingTypeCategory: string;
+      };
+
+      type trade_t = {
+        AccountCurrency: currency_t;
+        AccountCurrencyDecimals: number;
+        AccountId: string;
+        AdjustedTradeDate: string;
+        Amount: number;
+        AssetType: string;
+        BookedAmountAccountCurrency: number;
+        BookedAmountClientCurrency: number;
+        BookedAmountUSD: number;
+        ClientCurrency: currency_t;
+        Direction: string;
+        ExchangeDescription: string;
+        FinancingLevel: number;
+        InstrumentCategoryCode: string;
+        InstrumentCurrencyDecimal: number;
+        InstrumentDescription: string;
+        InstrumentSymbol: string;
+        IssuerName: string;
+        OrderId: string;
+        Price: number;
+        ResidualValue: number;
+        SpreadCostAccountCurrency: number;
+        SpreadCostClientCurrency: number;
+        SpreadCostUSD: number;
+        StopLoss: number;
+        Strike: number;
+        Strike2: number;
+        ToolId: string;
+        ToOpenOrClose: string;
+        TradeBarrierEventStatus: false;
+        TradeDate: string;
+        TradedValue: number;
+        TradeEventType: string;
+        TradeExecutionTime: string;
+        TradeId: string;
+        TradeType: string;
+        Uic: number;
+        UnderlyingInstrumentDescription: string;
+        UnderlyingInstrumentSymbol: string;
+        ValueDate: string;
+        Venue: string;
       };
 
       type accounts_t = {

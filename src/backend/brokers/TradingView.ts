@@ -22,17 +22,21 @@ export class TradingView {
     postns: b.positn_t[],
     fx: fx_rates_t,
   ): Promise<live_data_t[]> => {
-    const i_ids = postns.map((p) => `${p.exchange}-${p.ticker}` as i_id_t);
+    const i_ids = postns.map((p) => p.i_id);
     const data = await this.html.scrape(i_ids);
     return data
       .map((_data, i) => {
         const [i_id, data] = _data;
         if (!data) return;
+
+        logger.json(`${data.type}-${i_id}`, data);
+
         const postn = postns[i]!;
         const { currency } = postn;
         const fx_market = fx[currency];
         const { price: price_market } = data.trade;
-        return { i_id, price_market, fx_market };
+        const { dividends_yield: div_yield } = data;
+        return { i_id, price_market, fx_market, div_yield };
       })
       .filter((d) => !!d);
   };
@@ -84,12 +88,15 @@ export class TradingView {
   };
   private instrmnts = {
     scrape: async (i_ids: i_id_t[]) => {
-      const instrmnts: instrmnt_t[] = [];
+      const instrmnts: (instrmnt_t | i_id_t)[] = [];
       const _data = await this.html.scrape(i_ids);
       await this.tv_data.init_dom();
       for (let i = 0; i < _data.length; i++) {
         const [p_id, data, html] = _data[i]!;
-        if (!data || !html) continue;
+        if (!data || !html) {
+          instrmnts.push(i_ids[i]!);
+          continue;
+        }
         const instrmnt = await this.instrmnts.instrmnt(p_id, data, html);
         let svg = await fetch(instrmnt.svg_string!).then((svg) => svg.text());
         svg = svg.replace("<!-- by TradingView -->", "");
@@ -473,9 +480,9 @@ export class TradingView {
         svg_string,
         "image/svg+xml",
       ).documentElement;
-      logo.setAttribute("viewBox", "0 0 56 56");
-      logo.setAttribute("width", String(size));
-      logo.setAttribute("height", String(size));
+      logo.setAttribute("viewBox", "0 0 18 18");
+      //logo.setAttribute("width", String(size));
+      //logo.setAttribute("height", String(size));
       return logo.outerHTML;
     },
   };
@@ -574,6 +581,7 @@ type tv_data_t<T = "fund" | "stock"> = {
   pricescale: `${number}`;
   pointvalue: number;
   is_government_benchmark_bond: boolean;
+  dividends_yield?: number;
   minmov: number;
   fractional: boolean;
   has_intraday: boolean;

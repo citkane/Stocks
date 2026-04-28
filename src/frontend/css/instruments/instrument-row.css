@@ -29,6 +29,8 @@ instrmnt-row {
     .no_logo {
       border-radius: 8px;
       border: 1px solid gray;
+      width: 32px;
+      height: 32px;
       display: flex;
       flex: 0 0 auto;
     }
@@ -36,7 +38,6 @@ instrmnt-row {
       color: gray;
       width: 32px;
       height: 32px;
-
       align-items: center;
       justify-content: center;
     }

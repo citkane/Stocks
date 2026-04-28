@@ -18,10 +18,11 @@ type transctn_t = {
   id: string;
   p_id: p_id_t;
   a_id: string;
+  i_id: i_id_t;
   broker: broker_t;
-  ticker: string;
+  //ticker: string;
   currency: currency_t;
-  exchange: string;
+  //exchange: string;
   amount: number;
   date: number;
   kind: "buy" | "sell" | "dividend";
@@ -39,6 +40,7 @@ type live_data_t = {
   i_id: i_id_t;
   price_market: number;
   fx_market: number;
+  div_yield?: number;
 };
 type account_t = {
   a_id: string;
@@ -87,6 +89,16 @@ type instrmnt_t = {
   cfi?: string;
   website?: string;
   svg_string?: string;
+  div_yield?: number;
+  saxo_id?: number;
+  ibkr_id?: number;
+};
+
+type cache_t = {
+  accounts: account_t[];
+  instruments: { [i_id: i_id_t]: instrmnt_t };
+  transactions: { [i_id: i_id_t]: transctn_t[] };
+  live_data: live_data_t[];
 };
 
 namespace f {
@@ -94,9 +106,9 @@ namespace f {
 }
 namespace b {
   type positn_t = {
-    p_ids: p_id_t[];
-    ticker: string;
-    exchange: string;
+    saxo_id?: number;
+    ibkr_id?: number;
+    i_id: i_id_t;
     currency: currency_t;
     description: string;
   };

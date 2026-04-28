@@ -49,9 +49,11 @@
           <div name="market_value" number>market value</div>
           <div name="r_pl" number>realised p/l</div>
           <div name="pl" number>unrealised p/l</div>
-          <div name="percent_pl" number>% unr p/l</div>
+          <div name="percent_pl" number>unr p/l %</div>
           <div name="fx_pl" number>fx p/l (inc)</div>
-          <div name="dividend" number>dividend (exc)</div>
+          <div name="dividend" number>div (ytd)</div>
+          <div name="div_yield" number>yield</div>
+          <div name="div_est" number>div (yte est)</div>
         </div>
         <div class="row money">
           <div name="description"></div>
@@ -61,9 +63,11 @@
           <money-str name="market_value" currency="€"></money-str>
           <money-str name="r_pl" currency="€" pl></money-str>
           <money-str name="pl" currency="€" pl></money-str>
-          <money-str name="percent_pl" currency="%" pl></money-str>
+          <percent-str name="percent_pl" pl></percent-str>
           <money-str name="fx_pl" currency="€" pl></money-str>
-          <money-str name="dividend" currency="€" class="last"></money-str>
+          <money-str name="dividend" currency="€"></money-str>
+          <percent-str name="div_yield"></percent-str>
+          <money-str name="div_est" currency="€" class="last"></money-str>
         </div>
       </div>
     </div>
@@ -76,9 +80,11 @@
     <money-str name="market_value" currency="€"></money-str>
     <money-str name="r_pl" currency="€" pl></money-str>
     <money-str name="pl" currency="€" pl></money-str>
-    <money-str name="percent_pl" currency="%" pl></money-str>
+    <percent-str name="percent_pl" pl></percent-str>
     <money-str name="fx_pl" currency="€" pl></money-str>
-    <money-str name="dividend" currency="€" class="last"></money-str>
+    <money-str name="dividend" currency="€"></money-str>
+    <percent-str name="div_yield"></percent-str>
+    <money-str name="div_est" currency="€" class="last"></money-str>
 
     <expanding-drawer name="positions_drawer"
       ><positions-root></positions-root

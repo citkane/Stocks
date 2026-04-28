@@ -9,7 +9,7 @@ export default class App extends Global {
     this.open_browser();
     this.add_shutdown_fncs(this.close_clients, logger.shutdown);
 
-    this.brokers.await_auth().then(this.brokers.await_cache);
+    this.brokers.await_auth().then(this.brokers.push_cache);
 
     process.on("SIGINT", this.shutdown);
     process.on("SIGTERM", this.shutdown);

@@ -33,8 +33,8 @@ export class LiveData extends Global {
     fetch_data: (conid: string, period: period_t, granularity: period_t) => {
       const endpoint = this.endpoints.get.bar_data(
         conid,
-        util.string.period(period),
-        util.string.period(granularity),
+        util.time.period.to_string(period),
+        util.time.period.to_string(granularity),
       );
       return this.ibkr
         .fetch<b.i.bar_data_t>(endpoint)
@@ -43,7 +43,7 @@ export class LiveData extends Global {
     map_data: (data: b.i.bar_data_t, granularity: period_t) => {
       return data.data.reduce((c, point) => {
         const { o: open, c: close, h: high, l: low, v: volume, t } = point;
-        let time = util.time.ms_period_end(t, granularity);
+        let time = util.time.period.ms_end(t, granularity);
         time = util.time.sec(time);
 
         c.push({ open, close, high, low, volume, time });

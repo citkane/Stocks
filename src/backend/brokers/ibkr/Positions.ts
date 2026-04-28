@@ -10,17 +10,16 @@ export class Positions extends Global {
       const pos_array = positions.map((p) => this.format.to_data(p));
       return pos_array.reduce(
         (c, pos) => {
-          const { p_ids } = pos;
-          //const i_id: i_id_t = `${exchange}-${ticker}`;
-          c[p_ids[0]!] = pos;
+          const { i_id } = pos;
+          c[i_id] = pos;
           return c;
         },
-        {} as { [p_id: p_id_t]: b.positn_t },
+        {} as { [i_id: i_id_t]: b.positn_t },
       );
     },
     to_data: (position: b.i.positn_t): b.positn_t => {
       let {
-        conid,
+        conid: ibkr_id,
         ticker,
         name: description,
         listingExchange: exchange,
@@ -31,12 +30,12 @@ export class Positions extends Global {
       exchange = this.ibkr.exchgs.tv(exchange, countryCode);
       if (exchange === "HKEX") ticker = util.string.unpad_hk_ticker(ticker);
       description = util.string.title_case(description);
-      const p_id: p_id_t = `ibkr_${conid}`;
+      //const p_id: p_id_t = `ibkr_${conid}`;
+      const i_id: i_id_t = `${exchange}-${ticker}`;
 
       return {
-        p_ids: [p_id],
-        ticker,
-        exchange,
+        ibkr_id,
+        i_id,
         currency,
         description,
       };
@@ -44,10 +43,12 @@ export class Positions extends Global {
   };
 
   private positions = {
-    fetch: (acc_ids: string[]) => {
-      return Promise.all(acc_ids.map((a_id) => this.positions.get(a_id))).then(
-        (positions) => positions.flat(),
-      );
+    fetch: async (acc_ids: string[]) => {
+      const positns = await Promise.all(
+        acc_ids.map((a_id) => this.positions.get(a_id)),
+      ).then((positions) => positions.flat());
+      logger.json("IBKR positions raw", positns);
+      return positns;
     },
     get: async (a_id: string) => {
       const conids = await this.positions.get_conids(a_id);

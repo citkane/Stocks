@@ -20,17 +20,18 @@ export class InstrumentsRoot extends AppElement {
       if (p.old === p.new) return;
 
       this.props.init_selectors();
-
-      delete this._data_all;
-      this.instrmnts
+      Object.values(this.instrmnts)
         .sort((a, b) => a.description.localeCompare(b.description))
-        .forEach((instrument) => {
-          const instrmnt = this.dom.make_el("instrmnt-row", "");
-          const transactions = this.data.transactions(instrument.i_id);
-          const data = { instrument, transactions };
-          instrmnt.setAttribute("data-all", util.html.json_stringify(data));
+        .forEach((instrmnt) => {
+          const { i_id } = instrmnt;
+          const ex_el = this.querySelector(`instrmnt-row[i_id="${i_id}"]`);
+          const instrmnt_el =
+            ex_el || this.dom.make_el("instrmnt-row", "", `i_id="${i_id}"`);
+          const transactions = this.data.transactions(instrmnt.i_id);
+          const data = { instrument: instrmnt, transactions };
+          instrmnt_el.setAttribute("data-all", util.hash_id(data));
 
-          this.grid.appendChild(instrmnt);
+          if (!ex_el) this.grid.appendChild(instrmnt_el);
         });
 
       this.props.set_money_totals();
@@ -86,11 +87,14 @@ export class InstrumentsRoot extends AppElement {
 
   private props = this.api.props({
     set_money_totals: () => {
-      const values = this.data.money_totals(this.displayed_instrmnt_rows);
+      const rows = this.displayed_instrmnt_rows;
+      const values = this.data.money_totals(rows);
+      const { market_value, div_est } = values;
+      values.div_yield = (div_est! / market_value!) * 100;
       Object.keys(values).forEach((key) => {
         const value = values[key]!.toString();
-        const cell = this.money_row.querySelector(`[name=${key}]`)!;
-        cell.setAttribute("value", value);
+        const el = this.money_row.querySelector(`[name=${key}]`)!;
+        el.setAttribute("value", value);
       });
     },
     set_header_info: () => {
@@ -107,7 +111,6 @@ export class InstrumentsRoot extends AppElement {
       this.select_industry.setAttribute("asset_industry", "all");
     },
   });
-
   private data = this.api.data({
     init_sort_register: () => {
       this.sort_registry = [...this.header.children].reduce(
@@ -120,7 +123,7 @@ export class InstrumentsRoot extends AppElement {
       );
     },
     transactions: (i_id: i_id_t) => {
-      return this.transcts.filter((t) => `${t.exchange}-${t.ticker}` === i_id);
+      return this.transcts[i_id]; //.filter((t) => t.i_id === i_id);
     },
   });
 
@@ -136,20 +139,12 @@ export class InstrumentsRoot extends AppElement {
   private get header() {
     return this.querySelector(".header")!;
   }
-  private get data_all() {
-    if (!!this._data_all) return this._data_all;
-    const data = util.html.json_parse<data_all_t>(this.dataset.all!);
-    return (this._data_all = data);
-  }
   private get instrmnts() {
-    return this.data_all.instruments;
+    return this.cache.instruments;
   }
   private get transcts() {
-    return this.data_all.transactions;
+    return this.cache.transactions;
   }
 
   private sort_registry: { [key: string]: "up" | "dn" } = {};
-  private _data_all?: data_all_t;
 }
-
-type data_all_t = { instruments: instrmnt_t[]; transactions: transctn_t[] };

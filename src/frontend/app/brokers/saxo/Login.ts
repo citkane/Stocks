@@ -13,6 +13,6 @@ export class Login extends Popup {
   public send_token_code = () => {
     const url = new URL(window.location.href);
     const code = Object.fromEntries(url.searchParams) as b.s.auth_code_t;
-    this.send("saxo_make_token", code);
+    this.send("saxo_token", code);
   };
 }

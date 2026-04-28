@@ -24,7 +24,8 @@ positions-root {
       [name="closed"] {
         color: var(--col-text-feint);
       }
-      money-str {
+      money-str,
+      percent-str {
         text-align: right;
       }
     }

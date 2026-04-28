@@ -1,13 +1,14 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class AppRoot extends AppElement {
-  static observedAttributes = ["transactions", "instruments"];
+  static observedAttributes = ["transactions", "instruments", "accounts"];
 
   constructor() {
     super();
     this.api.set_topic(this);
     this.props.watch("transactions", this.handlers.transactions);
     this.props.watch("instruments", this.handlers.instruments);
+    this.props.watch("accounts", this.handlers.accounts);
 
     //this.api.connected_callback(() => this.ready().then(this.render));
   }
@@ -19,15 +20,22 @@ export class AppRoot extends AppElement {
     //},
     transactions: (p: p.prop_callback) => {
       if (p.new === p.old) return;
-      this.transactions = util.html.json_parse(p.new);
-      if (!this.instruments) return;
-      this.render();
+      this.transactions = p.new;
+      if (!this.instruments || !this.accounts) return;
+      this.render_instrmnts();
     },
     instruments: (p: p.prop_callback) => {
       if (p.new === p.old) return;
-      this.instruments = util.html.json_parse(p.new);
-      if (!this.transactions) return;
-      this.render();
+      this.instruments = p.new;
+      if (!this.transactions || !this.accounts) return;
+      this.render_instrmnts();
+    },
+    accounts: (p: p.prop_callback) => {
+      if (p.new === p.old) return;
+      this.root_accounts.setAttribute("accounts", p.new);
+      this.accounts = p.new;
+      if (!this.transactions || !this.instruments) return;
+      this.render_instrmnts();
     },
   };
 
@@ -36,19 +44,18 @@ export class AppRoot extends AppElement {
   //    this.ready_resolver = { resolve, reject };
   //  });
   //};
-  private render = () => {
-    const data = {
+  private render_instrmnts = () => {
+    const instrmnt_data = {
       transactions: this.transactions,
       instruments: this.instruments,
+      accounts: this.accounts,
     };
-    this.root_instrmnts.setAttribute(
-      "data-all",
-      util.html.json_stringify(data),
-    );
+    this.root_instrmnts.setAttribute("data-all", util.hash_id(instrmnt_data));
   };
 
   private props = this.api.props({});
   //private ready_resolver?: resolver_t;
-  private transactions?: transctn_t[];
-  private instruments?: instrmnt_t[];
+  private transactions?: string;
+  private instruments?: string;
+  private accounts?: string;
 }

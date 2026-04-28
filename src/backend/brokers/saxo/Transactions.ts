@@ -22,6 +22,7 @@ export class Transactions extends _Transactions {
     ): Promise<b.s.transaction_t[]> => {
       const query = this.endpoints.transactions(skip, date);
       const _data = await this.saxo.fetch<b.s.transactions_t>(query);
+      logger.json("SAXO transactions raw", _data);
       const data = [...transactions, ..._data.Data];
       const len = _data.Data.length;
       if (len === 0) return data;
@@ -99,30 +100,31 @@ export class Transactions extends _Transactions {
       }
       let positn = this.saxo.cache.position(Uic);
       if (!positn) {
-        logger.warn("No position found for transaction", "saxo", transaction);
-        let [ticker, exchange] = Symbol.split(":");
+        logger.warn("No position found for transaction", "saxo", Uic);
+        let [ticker, exchange] = Symbol.split(":") as [string, string];
         exchange = exchange!.toUpperCase();
         exchange = this.saxo.exchgs.tv(exchange);
+        if (exchange === "HKEX") ticker = util.string.unpad_hk_ticker(ticker);
         positn = {
-          exchange,
-          ticker,
+          i_id: `${exchange}-${ticker}`,
         } as unknown as b.positn_t;
       }
 
-      const { ticker, exchange } = positn;
+      const { i_id } = positn;
       const broker = "saxo";
       const p_id: p_id_t = `${broker}_${Uic}`;
       return {
         id: id!,
         p_id,
         a_id,
+        i_id,
         price_traded,
         amount,
         fx_traded,
         currency,
         date,
-        ticker,
-        exchange,
+        //ticker,
+        //exchange,
         kind,
         broker,
       };
@@ -245,7 +247,7 @@ export class Transactions extends _Transactions {
 
       const params = [
         `FromDate=${start_date}`,
-        `ToDate=${util.string.epoch_to_iso_date()}`,
+        `ToDate=${util.time.epoch.to_iso_date()}`,
         `TransactionType=${transaction_types}`,
         `ClientKey=${client_key}`,
         `$skip=${skip}`,

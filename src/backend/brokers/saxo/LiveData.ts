@@ -18,8 +18,8 @@ export class LiveData extends Global {
     const starts = period_to_starts(period, granularity, bar_data_limit);
     return Promise.all(
       starts.map((start, i) => {
-        const from = util.string.epoch_to_utc(start);
-        const _granularity = util.time.period_to_min(granularity);
+        const from = util.time.epoch.to_utc(start);
+        const _granularity = util.time.period.to_min(granularity);
         return this.get_bar_data(conid, from, _granularity)
           .then((data) => data.Data)
           .then((data) =>
@@ -47,7 +47,7 @@ export class LiveData extends Global {
         Volume: volume,
         Time,
       } = point;
-      let time = util.time.ms_period_end(Time, granularity);
+      let time = util.time.period.ms_end(Time, granularity);
       time = util.time.sec(time);
 
       c.push({ open, close, high, low, volume, time });
@@ -234,14 +234,14 @@ function calc_ms_ago(
 
   const last_start = starts[starts.length - 1];
   const ms_ago = !last_start
-    ? now - util.time.period_to_ms(period)
+    ? now - util.time.period.to_ms(period)
     : last_start + max_ago;
 
   return [now, ms_ago];
 }
 
 function max_ago_ms(granularity: period_t, max_count: number) {
-  const granularity_ms = util.time.period_to_ms(granularity);
+  const granularity_ms = util.time.period.to_ms(granularity);
   return granularity_ms * max_count;
 }
 

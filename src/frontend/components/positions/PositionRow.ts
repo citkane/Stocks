@@ -52,12 +52,11 @@ export class PositionRow extends AppElement {
 
   private data = this.api.data({
     values: () => {
-      const {
+      let {
         date,
         //sales,
         amount,
         broker,
-        exchange,
         price_traded,
         price_market,
         fx_traded,
@@ -68,10 +67,12 @@ export class PositionRow extends AppElement {
       } = this.transaction;
 
       if (kind === "dividend") {
+        const div_year = util.time.year(date);
+        const year = util.time.year();
+        dividend = div_year < year ? 0 : dividend;
         return {
           date,
           broker,
-          exchange,
           amount,
           dividend,
         };
@@ -80,7 +81,6 @@ export class PositionRow extends AppElement {
         return {
           date,
           broker,
-          exchange,
           //sales,
           amount,
           r_pl,
@@ -105,7 +105,6 @@ export class PositionRow extends AppElement {
       return {
         date,
         broker,
-        exchange,
         //sales,
         amount,
         market_value,
@@ -124,8 +123,7 @@ export class PositionRow extends AppElement {
     return (this._values = this.data.values());
   }
   private get source_filter() {
-    const { a_id, broker, ticker, exchange } = this.transaction;
-    const i_id: i_id_t = `${exchange}-${ticker}`;
+    const { a_id, broker, i_id } = this.transaction;
     const instrument = this.cache.get.instrument(i_id);
     const { asset_sector, asset_industry } = instrument;
 
@@ -140,8 +138,11 @@ export class PositionRow extends AppElement {
   }
   private get transaction() {
     if (!!this._transaction) return this._transaction;
-    const transaction = this.dataset.transaction!;
-    return (this._transaction = util.html.json_parse<transctn_t>(transaction));
+    let transaction = util.html.json_parse<transctn_t>(
+      this.dataset.transaction!,
+    );
+    transaction = util.money.normalise_minor_unit(transaction);
+    return (this._transaction = transaction);
   }
 
   private _transaction?: transctn_t;

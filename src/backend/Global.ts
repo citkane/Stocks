@@ -2,7 +2,11 @@ const currencies = ["ZAR", "CNH", "HKD", "CHF"] as const;
 const base_currency = "EUR";
 
 declare global {
-  type currency_t = (typeof currencies)[number] | typeof base_currency;
+  type currency_t =
+    | (typeof currencies)[number]
+    | typeof base_currency
+    | "ZAC"
+    | "GBp";
   type fx_rates_t = { [T in currency_t]: number };
 }
 

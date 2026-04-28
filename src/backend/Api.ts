@@ -1,20 +1,19 @@
 import { Global } from "backend";
-import { Trading_View as TV } from "@common/Trading_View";
 import { fe_ident } from "@common/Logger";
 
 type auth_code_t = b.s.auth_code_t;
 
 export default class Api extends Global implements Api_t {
   requests = {
-    accounts: (p: req_t) => {
-      this.res.accounts(p);
-    },
-    transactions: (p: req_t) => {
-      this.res.transactions(p);
-    },
-    instruments: (p: req_t) => {
-      this.res.instruments(p);
-    },
+    //accounts: (p: req_t) => {
+    //  this.res.accounts(p);
+    //},
+    //transactions: (p: req_t) => {
+    //  this.res.transactions(p);
+    //},
+    //instruments: (p: req_t) => {
+    //  this.res.instruments(p);
+    //},
     is_authorised: (...pb: p.req_broker) => {
       this.res.is_authorised(...pb);
     },
@@ -36,10 +35,9 @@ export default class Api extends Global implements Api_t {
     //},
   };
   setter = {
-    request_cache: () => this.brokers.request_cache(),
-    saxo_make_token: (code: auth_code_t) => {
-      this.action.saxo_make_token(code);
-    },
+    push_live_data: () => this.brokers.push_live_data(),
+    push_cache: () => this.brokers.push_cache(),
+    saxo_token: (code: auth_code_t) => this.saxo.fetch_token(code.code),
     log_debug: (message: any[]) => this.action.log("debug", message),
     log_info: (message: any[]) => this.action.log("info", message),
     log_log: (message: any[]) => this.action.log("log", message),
@@ -48,21 +46,21 @@ export default class Api extends Global implements Api_t {
   };
 
   private res = {
-    accounts: async (p: req_t) => {
-      await this.brokers.await_cache();
-      const accounts = await this.cache.accounts;
-      p.messenger.response(p.req_uid, accounts);
-    },
-    transactions: async (p: req_t) => {
-      await this.brokers.await_cache();
-      const transactions = await this.cache.transactions;
-      p.messenger.response(p.req_uid, transactions);
-    },
-    instruments: async (p: req_t) => {
-      await this.brokers.await_cache();
-      //const instruments = await this.cache.instruments;
-      //p.messenger.response(p.req_uid, instruments);
-    },
+    //accounts: async (p: req_t) => {
+    //  await this.brokers.await_cache();
+    //  const accounts = await this.cache.accounts;
+    //  p.messenger.response(p.req_uid, accounts);
+    //},
+    //transactions: async (p: req_t) => {
+    //  await this.brokers.await_cache();
+    //  const transactions = await this.cache.transactions;
+    //  p.messenger.response(p.req_uid, transactions);
+    //},
+    //instruments: async (p: req_t) => {
+    //  await this.brokers.await_cache();
+    //  //const instruments = await this.cache.instruments;
+    //  //p.messenger.response(p.req_uid, instruments);
+    //},
     is_authorised: (p: req_t, broker: broker_t) => {
       p.messenger.response(p.req_uid, this.brokers[broker].is_authorised);
     },
@@ -98,9 +96,6 @@ export default class Api extends Global implements Api_t {
     //},
   };
   private action = {
-    saxo_make_token: (code: auth_code_t) => {
-      this.saxo.fetch_auth_token(code.code);
-    },
     log: (level: level_t, message: any[]) => {
       try {
         logger[level](fe_ident, ...message);
@@ -110,10 +105,6 @@ export default class Api extends Global implements Api_t {
       }
     },
   };
-
-  private get cache() {
-    return this.brokers.cache;
-  }
 }
 
 function server_error(p: req_t, err: any) {

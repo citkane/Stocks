@@ -14,23 +14,31 @@ export class Brokers extends Global {
     "exchange",
   ];
 
-  await_login = () =>
-    Promise.all([
+  await_login = () => {
+    return Promise.all([
       this.saxo.await_login().then(() => logger.info("Saxo authorised")),
       this.ibkr.await_login().then(() => logger.info("IBKR authorised")),
     ]);
+  };
 
-  request_cache = () => this.messenger.send("request_cache");
+  cache_init = () => {
+    this.messenger.send("push_cache");
+  };
   //Promise.all([
   //  this.request<account_t[]>("accounts"),
   //  this.request<transctn_t[]>("transactions"),
   //  this.request<instrmnt_t[]>("instruments"),
   //]);
 
-  chart_data = (i_id: i_id_t, period: period_t, granularity: period_t) => {
-    const [broker, conid] = i_id.split("_");
+  chart_data = (
+    saxo_id: number | undefined,
+    ibkr_id: number | undefined,
+    period: period_t,
+    granularity: period_t,
+  ) => {
+    const [broker, id] = !!saxo_id ? ["saxo", saxo_id] : ["ibkr", ibkr_id];
     return this.request<chart_data_t[]>("chart_data", broker, [
-      conid,
+      id,
       period,
       granularity,
     ]);

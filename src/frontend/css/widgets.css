@@ -1,4 +1,5 @@
-money-str {
+money-str,
+percent-str {
   display: block;
   text-align: right;
   &.pl {

@@ -1,28 +1,19 @@
 import { AppElement } from "@frontend/components/AppElement";
 import * as lwc from "lightweight-charts";
 
-type mapped_data_t = {
-  bar: lwc.BarData<lwc.Time>[];
-  price: lwc.BaselineData<lwc.Time>[];
-  volume: lwc.HistogramData<lwc.Time>[];
-};
-type series_options_t = lwc.DeepPartial<
-  lwc.HistogramStyleOptions & lwc.SeriesOptionsCommon
->;
-
 const chart_span: period_t = [10, "y"];
 const chart_granularity: period_t = [1, "d"];
 const visibility_start: period_t = [1, "y"];
 
 export class InstrumentChart extends AppElement {
-  static observedAttributes = ["ticker", "ready"];
+  static observedAttributes = ["i_id", "ready"];
 
   constructor() {
     super();
     this.dom.template_to_self("instrmnt-chart");
     this.style.height = "200px";
 
-    this.props.watch("ticker", this.handlers.fetch_data);
+    this.props.watch("i_id", this.handlers.fetch_data);
     this.props.watch("ready", this.handlers.render);
   }
 
@@ -58,9 +49,9 @@ export class InstrumentChart extends AppElement {
     },
     fetch_data: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-      const { i_id } = this.instrmnt;
+      const { saxo_id, ibkr_id } = this.instrmnt;
       return this.brokers
-        .chart_data(i_id, chart_span, chart_granularity)
+        .chart_data(saxo_id, ibkr_id, chart_span, chart_granularity)
         .then((data) => this.data.map(data))
         .then((data) => {
           this.chart_data = data;
@@ -153,12 +144,11 @@ export class InstrumentChart extends AppElement {
   private data = {
     data: () => this.chart_data!,
     map: (data: chart_data_t[]) => {
-      const { broker, currency } = this.instrmnt;
+      const { currency } = this.instrmnt;
       return data.reduce(
         (c, point) => {
           let { open, close, high, low, time, volume } = point;
-          // SAXO is fucking up ZAR rounding...
-          if (broker === "saxo" && currency === "ZAR") {
+          if (currency === "ZAR" || currency === "ZAC" || currency === "GBp") {
             open = open / 100;
             close = close / 100;
             high = high / 100;
@@ -195,7 +185,7 @@ export class InstrumentChart extends AppElement {
       return Math.round((vals.value * 100) / vals.amount) / 100;
     },
     visible_range: () => {
-      const from = util.time.epoch_ago(visibility_start) / 1000;
+      const from = util.time.epoch.ago(visibility_start) / 1000;
       const now = util.time.ms_now() / 1000;
       return {
         from: Math.floor(from) as lwc.Time,
@@ -205,19 +195,23 @@ export class InstrumentChart extends AppElement {
   };
 
   private get instrmnt() {
-    if (this._instrmnt) return this._instrmnt;
-    const instrmnt = this.dataset.instrmnt!;
-    return (this._instrmnt = util.html.json_parse<instrmnt_t>(instrmnt));
+    return this.cache.instruments[this.i_id]!;
   }
   private get position() {
     if (this._position) return this._position;
-    const transactions = this.dataset.transctns!;
-    return util.money.position(
-      util.html.json_parse<transctn_t[]>(transactions),
-    );
+    const transactions = this.cache.transactions[this.i_id]!;
+    return (this._position = util.money.position(transactions));
   }
 
   private chart_data?: mapped_data_t;
-  private _instrmnt?: instrmnt_t;
   private _position?: f.positn_t;
 }
+
+type mapped_data_t = {
+  bar: lwc.BarData<lwc.Time>[];
+  price: lwc.BaselineData<lwc.Time>[];
+  volume: lwc.HistogramData<lwc.Time>[];
+};
+type series_options_t = lwc.DeepPartial<
+  lwc.HistogramStyleOptions & lwc.SeriesOptionsCommon
+>;
