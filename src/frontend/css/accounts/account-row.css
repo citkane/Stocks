@@ -1,0 +1,28 @@
+account-row {
+  display: block;
+  .grid.header {
+    --grid-col-2: 1/6;
+    background: var(--col-header-background-light);
+    border-bottom: 1px solid var(--col-border-light);
+
+    > * {
+      border-top: none;
+    }
+    > [name="currency"] {
+      font-weight: bold;
+      justify-content: center;
+    }
+    > [name="name"] {
+      font-weight: bold;
+      color: var(--col-text-light);
+    }
+    > money-str {
+      color: var(--col-text-light);
+    }
+    > [name="assets_val"],
+    > [name="cash"],
+    > [name="total"] {
+      border-left: 1px solid var(--col-border);
+    }
+  }
+}

@@ -1,4 +1,78 @@
 accounts-root {
   display: block;
-  position: relative;
+  padding: var(--size-padding-app);
+
+  --grid-columns: repeat(23, 1fr);
+  --grid-col-1: 1/2;
+  --grid-col-2: 2/5;
+  --grid-col-3: 5/6;
+  --grid-col-4: 6/12;
+  --grid-col-5: 12/18;
+  --grid-col-6: 18/24;
+
+  .grid {
+    grid-template-columns: var(--grid-columns);
+    [name="broker"] {
+      grid-column: var(--grid-col-1);
+    }
+    [name="name"] {
+      grid-column: var(--grid-col-2);
+    }
+    [name="currency"] {
+      grid-column: var(--grid-col-3);
+    }
+    [name="assets_val"] {
+      grid-column: var(--grid-col-4);
+    }
+    [name="cash"] {
+      grid-column: var(--grid-col-5);
+    }
+    [name="total"] {
+      grid-column: var(--grid-col-6);
+    }
+  }
+
+  > .grid.header {
+    --grid-col-1: 1/6;
+    [name="broker"] {
+      grid-column: var(--grid-col-1);
+    }
+    border: 1px solid var(--col-border);
+
+    > * {
+      font-weight: bold;
+      justify-content: center;
+      text-transform: capitalize;
+      background: var(--col-header-background);
+      &:not(:last-child) {
+        border-right: none;
+      }
+      &[name="assets_val"],
+      &[name="cash"],
+      &[name="total"] {
+        border-left: 1px solid var(--col-border);
+      }
+    }
+  }
+  > .grid.money {
+    [name="assets_val"],
+    [name="cash"],
+    [name="total"] {
+      border: 1px solid var(--col-border);
+      border-bottom-width: 2px;
+      font-weight: bold;
+      /*background: var(--col-header-background-light);*/
+    }
+    [name="assets_val"] {
+      border-left-width: 2px;
+    }
+    [name="total"] {
+      border-right-width: 2px;
+    }
+  }
+
+  accounts-broker {
+    margin-top: calc(var(--size-padding-cell) * 3);
+    margin-bottom: calc(var(--size-padding-cell) * 3);
+  }
 }

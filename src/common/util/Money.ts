@@ -2,30 +2,24 @@ const money_round = 100;
 const fx_round = 1000000;
 
 export class Money {
-  public normalise_minor_unit = (transctn: transctn_t) => {
-    let { currency, price_traded, price_market } = transctn;
-    if (!["ZAR", "ZAC", "GBP", "GPX"].includes(currency.toUpperCase()))
-      return transctn;
-    price_traded = price_traded / 100;
-    price_market = price_market ? price_market / 100 : undefined;
-    return { ...transctn, ...{ price_market, price_traded } };
-  };
+  public currency_minor: currency_t[] = ["ZAC", "GBp", "GBX"];
+
   /**
    * Calculates total Profit/Loss
    * @param transaction
    * @returns Total P/L in base currency whole number
    */
   public pl_base_whole = (transaction: transctn_t) => {
-    let { amount, price_traded, price_market, fx_traded, fx_market } =
+    let { amount, price_traded, price_market, fx_traded, fx_market, currency } =
       transaction;
     if (!amount || !price_traded || !fx_market || !price_market || !fx_traded)
       return 0;
 
-    price_market = this.whole_money(price_market);
-    price_traded = this.whole_money(price_traded);
+    price_market = this.whole(price_market);
+    price_traded = this.whole(price_traded);
     const price_diff = price_market - price_traded;
 
-    return this.base_money_whole(amount, price_diff / 100, fx_market);
+    return this.base_whole(currency, amount, price_diff / 100, fx_market);
   };
   public percent_pl = (traded: number, market: number) => {
     if (!traded || !market) return 0;
@@ -37,17 +31,25 @@ export class Money {
    * @returns Fx P/L in base currency whole number
    */
   public fx_pl_base_whole = (transaction: transctn_t) => {
-    const { amount, price_traded, price_market, fx_traded, fx_market } =
-      transaction;
+    const {
+      amount,
+      price_traded,
+      price_market,
+      fx_traded,
+      fx_market,
+      currency,
+    } = transaction;
     if (!amount || !price_traded || !fx_market || !price_market || !fx_traded)
       return 0;
 
-    const traded_base_value = this.base_money_whole(
+    const traded_base_value = this.base_whole(
+      currency,
       amount,
       price_traded,
       fx_traded,
     );
-    const market_base_value = this.base_money_whole(
+    const market_base_value = this.base_whole(
+      currency,
       amount,
       price_traded,
       fx_market,
@@ -62,13 +64,15 @@ export class Money {
    * @param fx_rate
    * @returns Money value in whole number
    */
-  public base_money_whole = (
+  public base_whole = (
+    currency: currency_t,
     amount?: number,
     price?: number,
     fx_rate?: number,
   ) => {
     if (!amount || !price || !fx_rate) return 0;
-    price = this.whole_money(price);
+    if (this.currency_minor.includes(currency)) price = price / 100;
+    price = this.whole(price);
     fx_rate = this.round_fx(fx_rate);
     return Math.round(amount * price * fx_rate);
   };
@@ -77,7 +81,7 @@ export class Money {
    * @param value
    * @returns
    */
-  public whole_money = (value: number) => {
+  public whole = (value: number) => {
     return Math.round(value * money_round);
   };
   public round_fx = (rate: number) => {
@@ -90,7 +94,7 @@ export class Money {
         c[`${kind}s`].push(transaction);
         return c;
       },
-      { buys: [], sells: [], dividends: [] } as f.positn_t,
+      { buys: [], sells: [], dividends: [], unbookeds: [] } as f.positn_t,
     );
   };
   public div_est = (market_val_cents: number, yield_perc: number) => {
@@ -132,7 +136,8 @@ export class Money {
     const buys = _positn.buys.map((b) => {
       b.tr.meta = {};
       if (b.acc.state === "closed") {
-        b.tr.meta.traded_value = this.base_money_whole(
+        b.tr.meta.traded_value = this.base_whole(
+          b.tr.currency,
           b.tr.amount,
           b.tr.price_traded,
           b.tr.fx_traded,
@@ -158,22 +163,29 @@ export class Money {
       s.tr.meta = {};
       s.acc.sales = Math.abs(s.tr.amount);
       s.tr.meta.amount = "sell";
-      s.tr.meta.traded_value = this.base_money_whole(
+      s.tr.meta.traded_value = this.base_whole(
+        s.tr.currency,
         s.tr.amount,
         s.tr.price_traded,
         s.tr.fx_traded,
       );
       s.tr.r_pl = s.tr.r_pl
-        ? this.base_money_whole(1, s.tr.r_pl, s.tr.fx_traded)
+        ? this.base_whole("XXX", 1, s.tr.r_pl, s.tr.fx_traded)
         : 0;
 
       return s.tr;
     });
-
+    const unbooked = _positn.unbooked.map((un) => {
+      un.meta = {};
+      un.meta.amount = "unbooked";
+      un.meta.traded_value = "pending";
+      return un;
+    });
     const dividends = _positn.dividends.map((d) => {
       d.meta = {};
       d.meta.amount = "dividend";
-      d.dividend = util.money.base_money_whole(
+      d.dividend = util.money.base_whole(
+        d.currency,
         d.amount,
         d.price_traded,
         d.fx_traded,
@@ -181,13 +193,14 @@ export class Money {
       return d;
     });
 
-    return [...buys, ...sells, ...dividends];
+    return [...buys, ...sells, ...dividends, ...unbooked];
   };
   private calculate_position = (positn: f.positn_t) => {
     const _positn = {
       buys: positn.buys.map((b) => wrap_transctn(b)),
       sells: positn.sells.map((s) => wrap_transctn(s)),
       dividends: positn.dividends,
+      unbooked: positn.unbookeds,
     };
     if (!_positn.sells.length) return _positn;
 
@@ -213,7 +226,10 @@ export class Money {
       _positn.sells.forEach((sell) => {
         if (!sell.acc.sales) return;
         const buy = _positn.buys.find(
-          (buy) => buy.acc.sales! > 0 && buy.tr.date < sell.tr.date,
+          (buy) =>
+            buy.acc.sales! > 0 &&
+            buy.tr.date < sell.tr.date &&
+            buy.tr.broker === sell.tr.broker,
         )!;
         const sell_amount = Math.abs(sell.acc.sales);
         const price_pl = sell.tr.price_traded! - buy.tr.price_traded!;

@@ -5,17 +5,8 @@ type auth_code_t = b.s.auth_code_t;
 
 export default class Api extends Global implements Api_t {
   requests = {
-    //accounts: (p: req_t) => {
-    //  this.res.accounts(p);
-    //},
-    //transactions: (p: req_t) => {
-    //  this.res.transactions(p);
-    //},
-    //instruments: (p: req_t) => {
-    //  this.res.instruments(p);
-    //},
-    is_authorised: (...pb: p.req_broker) => {
-      this.res.is_authorised(...pb);
+    auth_state: (...pb: p.req_broker) => {
+      this.res.auth_state(...pb);
     },
     wait_for_auth: (...pb: p.req_broker) => {
       this.res.wait_for_ready(...pb);
@@ -26,18 +17,13 @@ export default class Api extends Global implements Api_t {
     chart_data: (...pbd: [...p.req_broker, ...p.chart_period]) => {
       this.res.chart_data(...pbd);
     },
-    //save_instrument: (p: req_t, instrmnt: instrmnt_t) => {
-    //  this.res.save_instrument(p, instrmnt);
-    //},
-    //link_html: (p: req_t, link: string) => {
-    //  logger.log(link);
-    //  this.res.link_html(p, link);
-    //},
   };
   setter = {
     push_live_data: () => this.brokers.push_live_data(),
     push_cache: () => this.brokers.push_cache(),
     saxo_token: (code: auth_code_t) => this.saxo.fetch_token(code.code),
+    logout: (broker: broker_t) => this[broker].logout(),
+    login: (broker: broker_t) => this.ibkr.login(),
     log_debug: (message: any[]) => this.action.log("debug", message),
     log_info: (message: any[]) => this.action.log("info", message),
     log_log: (message: any[]) => this.action.log("log", message),
@@ -46,23 +32,8 @@ export default class Api extends Global implements Api_t {
   };
 
   private res = {
-    //accounts: async (p: req_t) => {
-    //  await this.brokers.await_cache();
-    //  const accounts = await this.cache.accounts;
-    //  p.messenger.response(p.req_uid, accounts);
-    //},
-    //transactions: async (p: req_t) => {
-    //  await this.brokers.await_cache();
-    //  const transactions = await this.cache.transactions;
-    //  p.messenger.response(p.req_uid, transactions);
-    //},
-    //instruments: async (p: req_t) => {
-    //  await this.brokers.await_cache();
-    //  //const instruments = await this.cache.instruments;
-    //  //p.messenger.response(p.req_uid, instruments);
-    //},
-    is_authorised: (p: req_t, broker: broker_t) => {
-      p.messenger.response(p.req_uid, this.brokers[broker].is_authorised);
+    auth_state: (p: req_t, broker: broker_t) => {
+      p.messenger.response(p.req_uid, this.brokers[broker].auth_state);
     },
     wait_for_ready: (p: req_t, broker: broker_t) => {
       this.brokers[broker]
@@ -82,18 +53,8 @@ export default class Api extends Global implements Api_t {
       this.brokers.chart
         .data(broker, ...pa)
         .then((data) => p.messenger.response(p.req_uid, data || []))
-        .catch((err) => server_error(p, err));
+        .catch(this[broker].auth_err);
     },
-    //link_html: (p: req_t, link: string) => {
-    //  TV.fetch(link)
-    //    .then((html) => p.messenger.response(p.req_uid, html))
-    //    .catch((err) => server_error(p, err));
-    //},
-    //save_instrument: (p: req_t, instrmnt: instrmnt_t) => {
-    //  this.brokers.instrument
-    //    .save(instrmnt)
-    //    .then(() => p.messenger.response(p.req_uid));
-    //},
   };
   private action = {
     log: (level: level_t, message: any[]) => {

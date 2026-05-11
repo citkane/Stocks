@@ -1,0 +1,21 @@
+balance-row {
+  display: block;
+  border-bottom: 1px solid var(--col-border-light);
+
+  --grid-col-3: 1/6;
+
+  [name="currency"] {
+    justify-content: right;
+    font-weight: bold;
+    color: var(--col-text-feint);
+  }
+  [name="assets_val"],
+  [name="cash"],
+  [name="total"] {
+    border-left: 1px solid var(--col-border);
+  }
+  money-str {
+    justify-content: left;
+    color: var(--col-text-light);
+  }
+}

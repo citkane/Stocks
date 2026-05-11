@@ -15,7 +15,7 @@ export default class Logger {
   static shutdown() {}
 }
 
-export const fe_ident = "[fe]";
+export var fe_ident = "[fe]";
 export function err_to_array(err: Error, cause?: string) {
   if (typeof err === "object" && !Array.isArray(err)) {
     const err_ob = Object.keys(err).reduce(

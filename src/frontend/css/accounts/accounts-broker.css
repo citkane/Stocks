@@ -1,0 +1,29 @@
+accounts-broker {
+  display: block;
+  > .grid.header {
+    --grid-col-1: 1/6;
+
+    border-bottom: 1px solid var(--col-border);
+    > [name="broker"] {
+      font-weight: bold;
+      justify-content: center;
+      text-transform: uppercase;
+    }
+    > [name="assets_val"],
+    > [name="cash"],
+    > [name="total"] {
+      border: 1px solid var(--col-border);
+      border-top-width: 2px;
+    }
+    > [name="assets_val"] {
+      border-left-width: 2px;
+    }
+  }
+  .accounts.wrapper {
+    border: 1px solid var(--col-border);
+    border-top: none;
+  }
+  account-row:last-child balance-row:last-child {
+    border-bottom: none;
+  }
+}

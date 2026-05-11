@@ -1,4 +1,4 @@
-import type { Saxo as Saxo_b } from "@backend/brokers";
+import type { BrokerSaxo as Saxo_b } from "@backend/brokers";
 import type { Saxo as Saxo_f } from "@frontend/app/brokers";
 
 declare global {
@@ -19,7 +19,7 @@ declare global {
         refresh_token: string;
       };
 
-      type data_envelope_t<T> = {
+      type data_t<T> = {
         __next?: string;
         __count: number;
         Data: T[];
@@ -270,7 +270,7 @@ declare global {
         Strike2: number;
         ToolId: string;
         ToOpenOrClose: string;
-        TradeBarrierEventStatus: false;
+        TradeBarrierEventStatus: boolean;
         TradeDate: string;
         TradedValue: number;
         TradeEventType: string;
@@ -284,15 +284,15 @@ declare global {
         Venue: string;
       };
 
-      type accounts_t = {
-        Data: account_t[];
-        __next?: string;
-      };
-      type data_t<T> = {
-        Data: T[];
-        __count: number;
-        __next?: string;
-      };
+      //type accounts_t = {
+      //  Data: account_t[];
+      //  __next?: string;
+      //};
+      //type data_t<T> = {
+      //  Data: T[];
+      //  __count: number;
+      //  __next?: string;
+      //};
 
       type transaction_t = {
         AccountId: string;
@@ -402,6 +402,104 @@ declare global {
         };
         ValueDate: string;
       };
+      type balance_t = {
+        CalculationReliability: string;
+        CashAvailableForTrading: number;
+        CashBalance: number;
+        CashBlocked: number;
+        CashBlockedFromWithdrawal: number;
+        ChangesScheduled: boolean;
+        ClosedPositionsCount: number;
+        CollateralAvailable: number;
+        CollateralCreditValue: {
+          Line: number;
+          UtilizationPct: number;
+        };
+        CorporateActionUnrealizedAmounts: number;
+        CostToClosePositions: number;
+        Currency: currency_t;
+        CurrencyDecimals: number;
+        ExtendedTradingHoursData: {
+          CostToClosePositions: number;
+          InitialMarginUncertainty: number;
+          MaintenanceMarginUncertainty: number;
+          MarginAvailableForTrading: number;
+          MarginUsedByCurrentPositions: number;
+          NonMarginPositionsValue: number;
+          TotalValue: number;
+          UncertaintyValue: null;
+          UnrealizedMarginClosedProfitLoss: number;
+          UnrealizedMarginOpenProfitLoss: number;
+          UnrealizedMarginProfitLoss: number;
+          UnrealizedPositionsValue: number;
+          UnrealizedPositionsValueExcludingCostToClosePositions: number;
+        };
+        FinancingAccruals: number;
+        InitialMargin: {
+          CollateralAvailable: number;
+          CollateralCreditValue: {
+            Line: number;
+            UtilizationPct: number;
+          };
+          MarginAvailable: number;
+          MarginCollateralNotAvailable: number;
+          MarginCollateralNotAvailableIncludingCostToClosePositions: number;
+          MarginUsedByCurrentPositions: number;
+          MarginUtilizationPct: number;
+          NetEquityForMargin: number;
+          OtherCollateralDeduction: number;
+        };
+        IsPortfolioMarginModelSimple: boolean;
+        MarginAndCollateralUtilizationPct: number;
+        MarginAvailableForTrading: number;
+        MarginCollateralNotAvailable: number;
+        MarginCollateralNotAvailableDetail: {
+          InitialFxHaircut: number;
+          InstrumentCollateralDetails: {
+            AssetType: string;
+            ContributingAssetTypes: string[];
+            Description: string;
+            InitialCollateral: number;
+            InitialCollateralNotAvailable: number;
+            InitialConcentrationDeduction: number;
+            MaintenanceCollateral: number;
+            MaintenanceCollateralNotAvailable: number;
+            MaintenanceConcentrationDeduction: number;
+            MarketValue: number;
+            Symbol: string;
+            Uic: number;
+          }[];
+
+          MaintenanceFxHaircut: number;
+        };
+        MarginCollateralNotAvailableIncludingCostToClosePositions: number;
+        MarginExposureCoveragePct: number;
+        MarginNetExposure: number;
+        MarginUsedByCurrentPositions: number;
+        MarginUtilizationPct: number;
+        NetEquityForMargin: number;
+        NetPositionsCount: number;
+        NonMarginPositionsValue: number;
+        OpenIpoOrdersCount: number;
+        OpenPositionsCount: number;
+        OptionPremiumsMarketValue: number;
+        OrdersCount: number;
+        OtherCollateral: number;
+        SettlementValue: number;
+        SpendingPower: number;
+        SpendingPowerDetail: {
+          Current: number;
+        };
+        SrdSpendingPower: number;
+        TotalValue: number;
+        TransactionsNotBooked: number;
+        TriggerOrdersCount: number;
+        UnrealizedMarginClosedProfitLoss: number;
+        UnrealizedMarginOpenProfitLoss: number;
+        UnrealizedMarginProfitLoss: number;
+        UnrealizedPositionsValue: number;
+        UnrealizedPositionsValueExcludingCostToClosePositions: number;
+      };
       type transactions_t = {
         Data: transaction_t[];
         __count: number;
@@ -436,6 +534,37 @@ declare global {
         TimeZone: number;
         TimeZoneAbbreviation: string;
         TimeZoneOffset: string;
+      };
+
+      type client_t = {
+        AccountValueProtectionLimit: number;
+        AllowedNettingProfiles: string[];
+        AllowedTradingSessions: string;
+        ClientId: string;
+        ClientKey: string;
+        ClientType: string;
+        ContractOptionsTradingProfile: string;
+        CountryOfResidence: string;
+        CurrencyDecimals: number;
+        DefaultAccountId: string;
+        DefaultAccountKey: string;
+        DefaultCurrency: currency_t;
+        ForceOpenDefaultValue: boolean;
+        IsMarginTradingAllowed: boolean;
+        IsVariationMarginEligible: boolean;
+        LegalAssetTypes: string[];
+        LegalAssetTypesAreIndicative: boolean;
+        MarginCalculationMethod: string;
+        MarginMonitoringMode: string;
+        MutualFundsCashAmountOrderCurrency: string;
+        Name: string;
+        PartnerPlatformId: string;
+        PositionNettingMethod: string;
+        PositionNettingMode: string;
+        PositionNettingProfile: string;
+        ReduceExposureOnly: boolean;
+        SecurityLendingEnabled: string;
+        SupportsAccountValueProtectionLimit: boolean;
       };
     }
   }

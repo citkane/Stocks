@@ -1,12 +1,20 @@
 import { AppElement } from "@frontend/components/AppElement";
 
-const selectors = ["broker", "a_id", "asset_sector", "asset_industry"] as const;
-
 export class Select extends AppElement {
   constructor() {
     super();
     this.base_dom.template_to_self("select-widget");
+    this.broker = "all";
+    this.a_id = "all";
+    this.asset_sector = "all";
   }
+
+  public enable = () => {
+    this.select_el.disabled = false;
+  };
+  public disable = () => {
+    this.select_el.disabled = true;
+  };
 
   protected base_dom = this.api.dom({
     add_option: (name: string, value = name, class_name = "") => {
@@ -20,57 +28,39 @@ export class Select extends AppElement {
     },
     set_label: (name: string, label: string) => {
       this.select_el.setAttribute("name", name);
-      this.label.setAttribute("for", name);
-      this.label.innerHTML = label;
+      this.label_el.setAttribute("for", name);
+      this.label_el.innerHTML = label;
     },
   });
 
-  public static apply_select = (prop: f.filter_t, value: string) => {
-    this.global_filter[prop] = value;
-    this.apply_filter();
-  };
-  public static reset_select = () => {
-    this.global_filter = def_filter();
-    this.apply_filter();
-  };
-  public static get selectors() {
-    return selectors;
+  protected get value() {
+    return this.select_el.value;
   }
-
-  private static apply_filter = () => {
-    this.instrumnts_root.setAttribute(
-      "filter",
-      util.html.json_stringify(this.global_filter),
-    );
-  };
-  private static global_filter = def_filter();
-  private static get instrumnts_root() {
-    return document.querySelector("instrmnts-root")!;
-  }
-
-  protected set default_value(value: string) {
-    this.select_el.value = value;
-  }
-  protected get label() {
+  protected get label_el() {
     return this.querySelector("label")!;
   }
   protected get select_el() {
     return this.querySelector("select")!;
   }
-}
-
-function def_filter() {
-  return selectors.reduce(
-    (c, filter) => {
-      c[filter] = "all";
-      return c;
-    },
-    {} as { [key in f.filter_t]: string },
-  );
-}
-
-declare global {
-  namespace f {
-    type filter_t = (typeof selectors)[number];
+  protected get name() {
+    return this.getAttribute("name")! as f.filter_keys_t;
+  }
+  protected set broker(broker: string) {
+    this.setAttribute("broker", broker);
+  }
+  protected get broker() {
+    return this.getAttribute("broker")!;
+  }
+  protected set a_id(a_id: string) {
+    this.setAttribute("a_id", a_id);
+  }
+  protected get a_id() {
+    return this.getAttribute("a_id")!;
+  }
+  protected set asset_sector(a_id: string) {
+    this.setAttribute("asset_sector", a_id);
+  }
+  protected get asset_sector() {
+    return this.getAttribute("asset_sector")!;
   }
 }

@@ -7,11 +7,12 @@ export default class App extends Global {
   }
 
   public run = async () => {
-    logger.info("App awaiting authorisation");
+    this.bootstrap_mess("App awaiting authorisation");
     await this.brokers.await_login();
-    logger.info("App awaiting cache");
+    this.bootstrap_mess("App awaiting cache");
     this.brokers.cache_init();
   };
+
   public override add_shutdown_task = (task: Function) => {
     this.shutdown_tasks.push(task);
   };

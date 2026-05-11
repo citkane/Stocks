@@ -11,8 +11,8 @@ export class MoneyString extends AppElement {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      const val = Number(this.value);
-      if (!val || isNaN(val)) return (this.innerHTML = "-");
+      delete this._value;
+      if (typeof this.value === "string") return (this.innerHTML = this.value);
 
       const inner_html =
         typeof this.value === "number"
@@ -25,13 +25,16 @@ export class MoneyString extends AppElement {
     },
   };
   private props = this.api.props({});
+
   private get value() {
-    const val = this.getAttribute("value")!;
+    if (this._value) return this._value;
+    let val: string | number = this.getAttribute("value") || "-";
     const number = Number(val);
-    return isNaN(number) ? val : number;
+    val = !isNaN(number) && !number ? "-" : !isNaN(number) ? number : val;
+    return (this._value = val);
   }
   private get currency() {
-    return this.getAttribute("currency")!;
+    return this.getAttribute("currency") || "";
   }
   private get is_pl() {
     return this.hasAttribute("pl");
@@ -39,4 +42,6 @@ export class MoneyString extends AppElement {
   private get is_loss() {
     return typeof this.value === "number" && this.value < 0;
   }
+
+  private _value?: string | number;
 }

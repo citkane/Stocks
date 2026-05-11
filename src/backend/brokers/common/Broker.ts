@@ -1,4 +1,6 @@
-import { AuthBase, Fetch } from "@backend/brokers/common";
+import { Auth, Fetch } from "@backend/brokers/common";
+import type { BrokerIbkr } from "../BrokerIbkr";
+import type { BrokerSaxo } from "../BrokerSaxo";
 
 export class Broker extends Fetch {
   constructor(
@@ -10,18 +12,21 @@ export class Broker extends Fetch {
   }
 
   public await_auth!: () => Promise<void>;
-  public chart_data!: (..._p: p.chart_period) => Promise<chart_data_t[]>;
+  public revoke_auth!: () => void;
+  public logout!: () => Promise<void>;
+  public chart_data!: (..._p: p.chart_period) => Promise<chart_data_t[] | void>;
   public update!: {
     fx?: () => Promise<void>;
     accounts: () => Promise<void>;
     transactions: () => Promise<void>;
     positions: () => Promise<void>;
+    account_balances: () => Promise<void>;
   };
-  public get is_authorised(): boolean {
+  public get auth_state(): boolean {
     return false;
   }
-  public get auth() {
-    return {} as AuthBase;
+  public get broker_auth() {
+    return {} as Auth;
   }
 
   protected _update!: {
@@ -29,4 +34,19 @@ export class Broker extends Fetch {
     accounts: (accounts: b.s.account_t[] & b.i.account_t[]) => void;
     transactions: () => Promise<void>;
   };
+
+  public auth_err(this: BrokerIbkr | BrokerSaxo, err: any) {
+    if (
+      err instanceof Object &&
+      (err as Object).hasOwnProperty("status") &&
+      err.status === 401
+    ) {
+      this.revoke_auth();
+      console.error(err);
+      return;
+    }
+    throw Error(err);
+  }
+
+  protected auth_resolver?: Promise<void>;
 }

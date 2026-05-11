@@ -1,9 +1,14 @@
 import { Global } from "backend";
-import { Cache_Brokers, Instruments } from "@backend/brokers";
+import { CacheBrokers, Instruments } from "@backend/brokers";
 
 const brokers = ["saxo", "ibkr"] as const;
+const live_data_freq = util.time.period.to_ms([5, "min"]);
 
 export class Brokers extends Global {
+  constructor() {
+    super();
+    this.add_shutdown_fncs(this.stop_polling);
+  }
   public await_auth = async () => {
     await Promise.all([this.ibkr.await_auth(), this.saxo.await_auth()]);
   };
@@ -32,21 +37,6 @@ export class Brokers extends Global {
     this.ws.publish("cache", cache_data);
   };
 
-  //public request_cache = async () => {
-  //  try {
-  //    const instruments = await this.cache.instruments;
-  //    this.ws.publish("instruments", instruments);
-  //  } catch (_err) {}
-  //  try {
-  //    const transactions = await this.cache.transactions;
-  //    this.ws.publish("transactions", transactions);
-  //  } catch (_err) {}
-  //  try {
-  //    const accounts = await this.cache.accounts;
-  //    this.ws.publish("accounts", accounts);
-  //  } catch (_err) {}
-  //};
-
   public chart = {
     data: async (broker: broker_t, ...p: p.chart_period) => {
       const [conid, _period, granularity] = p;
@@ -61,7 +51,7 @@ export class Brokers extends Global {
             return this.db.select.chart(id)!;
           });
     },
-    update: (
+    update: async (
       data: chart_data_t[],
       id: string,
       broker: broker_t,
@@ -71,16 +61,16 @@ export class Brokers extends Global {
       const end_last = data[data.length - 1]!.time;
       const end_now = util.time.period.ms_end(util.time.ms_now(), granularity);
       const update_period = util.time.sec(end_now) - end_last;
-      if (update_period > 0) {
-        period = [update_period, "s"];
-        return this[broker]
-          .chart_data(conid, period, granularity)
-          .then(async (data) => {
-            if (data.length) await this.db.insert.chart(id, data);
-            return this.db.select.chart(id)!;
-          });
-      }
-      return data;
+      if (update_period <= 0) return data;
+
+      period = [update_period, "s"];
+      data = await this[broker].chart_data(conid, period, granularity);
+      if (data.length) await this.db.insert.chart(id, data);
+      return this.db.select.chart(id)!;
+      //.then(async (data) => {
+      //  if (data.length) await this.db.insert.chart(id, data);
+      //  return this.db.select.chart(id)!;
+      //});
     },
   };
   private init_cache = async () => {
@@ -102,32 +92,56 @@ export class Brokers extends Global {
   };
   private update = {
     accounts: async () => {
+      this.bootstrap("Updating accounts");
       return Promise.all(
         brokers.map((broker) => this[broker].update.accounts()),
       );
     },
     positions: async () => {
       await this.resolve.accounts;
+      this.bootstrap("Updating positions");
       return Promise.all(
         brokers.map((broker) => this[broker].update.positions()),
       );
     },
     live_data: async () => {
       await this.resolve.positions;
-      return await this.instruments.live_data();
+      this.bootstrap("Updating live data");
+      return await Promise.all([
+        this.instruments.live_data(),
+        this.ibkr.update.fx().catch(this.ibkr.auth_err),
+        ...brokers.map((broker) =>
+          this[broker].update.account_balances().catch(this[broker].auth_err),
+        ),
+      ]);
     },
     instruments: async () => {
       await this.resolve.positions;
-      return this.instruments.update();
+      this.bootstrap("Updating instruments");
+      await this.instruments.update();
+      this.start_live_polling();
     },
     transactions: async () => {
       await this.resolve.positions;
+      this.bootstrap("Updating transactions");
       return Promise.all(
         brokers.map((broker) => this[broker].update.transactions()),
       );
     },
   };
 
+  public cache = new CacheBrokers();
+  public instruments = new Instruments();
+  private stop_polling = () => {
+    if (this.poll_live_data) clearInterval(this.poll_live_data);
+  };
+  private start_live_polling = () => {
+    this.stop_polling();
+    this.poll_live_data = setInterval(async () => {
+      await this.update.live_data();
+      this.ws.publish("live_data", this.brokers.cache.live_data);
+    }, live_data_freq);
+  };
   private resolver = () => ({
     accounts: null as resolve_t,
     positions: null as resolve_t,
@@ -136,9 +150,7 @@ export class Brokers extends Global {
     live_data: null as resolve_t,
   });
   private resolve = this.resolver();
-
-  public cache = new Cache_Brokers();
-  public instruments = new Instruments();
+  private poll_live_data?: interval_t;
 }
 
 declare global {

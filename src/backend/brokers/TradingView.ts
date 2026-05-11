@@ -1,7 +1,6 @@
 import { Util as util } from "@common/Util";
 
 const logo_size = 32;
-
 const tv_url = "https://www.tradingview.com/symbols";
 const url = "about:blank";
 const data_regex =
@@ -15,12 +14,11 @@ export class TradingView {
     wv.close();
   };
   public instruments = (i_ids: i_id_t[]) => this.instrmnts.scrape(i_ids);
-  public live_data = (postns: b.positn_t[], fx: fx_rates_t) =>
-    this.live(postns, fx);
+  public live_data = (postns: b.positn_t[]) => this.live(postns);
 
   private live = async (
     postns: b.positn_t[],
-    fx: fx_rates_t,
+    //fx: fx_rates_t,
   ): Promise<live_data_t[]> => {
     const i_ids = postns.map((p) => p.i_id);
     const data = await this.html.scrape(i_ids);
@@ -29,14 +27,14 @@ export class TradingView {
         const [i_id, data] = _data;
         if (!data) return;
 
-        logger.json(`${data.type}-${i_id}`, data);
-
         const postn = postns[i]!;
-        const { currency } = postn;
-        const fx_market = fx[currency];
+        let { currency } = postn;
+        currency = currency === "XXX" ? data.currency : currency;
+        currency = currency === "CNY" ? "CNH" : currency;
+        //const fx_market = fx[currency]!;
         const { price: price_market } = data.trade;
         const { dividends_yield: div_yield } = data;
-        return { i_id, price_market, fx_market, div_yield };
+        return { i_id, price_market, div_yield };
       })
       .filter((d) => !!d);
   };

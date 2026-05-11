@@ -1,7 +1,7 @@
 declare global {
   namespace db {
     type data_t =
-      | account_t
+      | balance_t
       | transctn_t
       | instrmnt_t
       | { broker: broker_t; time: number };
@@ -31,17 +31,6 @@ export class Tables {
         ["price_traded", "DECIMAL(38,2)"],
         ["date", "DATETIME NOT NULL"],
         ["kind", "VARCHAR NOT NULL"],
-      ],
-      transactions_updated: [
-        ["broker", "VARCHAR PRIMARY KEY"],
-        ["time", "DATETIME NOT NULL"],
-      ],
-      accounts: [
-        ["a_id", "VARCHAR PRIMARY KEY"],
-        ["a_id_original", "VARCHAR NOT NULL"],
-        ["broker", "CHAR(4) NOT NULL"],
-        ["alias", "VARCHAR"],
-        ["currency", "CHAR(3) NOT NULL"],
       ],
       instruments: [
         ["i_id", "VARCHAR PRIMARY KEY NOT NULL"],

@@ -1,3 +1,36 @@
 app-root {
   display: block;
+  menu {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--col-background-light);
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--col-border);
+    user-select: none;
+    > div {
+      padding: var(--size-padding-cell);
+    }
+    .menu.link {
+      cursor: pointer;
+    }
+    expanding-drawer {
+      display: block;
+      position: absolute;
+      z-index: 300;
+      background: var(--col-background-light);
+      ul,
+      li {
+        padding: var(--size-padding-cell);
+      }
+      li {
+        cursor: pointer;
+      }
+      .inner {
+        border: 1px solid var(--col-border);
+        padding: var(--size-padding-cell);
+      }
+    }
+  }
 }

@@ -1,4 +1,5 @@
 import { Money, Strings, Time, Html } from "@common/util/index";
+//import { randomUUIDv7 } from "bun";
 
 export class Util {
   static string = new Strings();
@@ -29,6 +30,9 @@ export class Util {
         }) as string[][];
     },
   };
+  static random_context = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; //`${randomUUIDv7("base64url", Date.now())}`;
+
   static hash_id = (data: string | Object, length = 16) => {
     const _data: string =
       typeof data === "object" ? JSON.stringify(data) : data;
@@ -44,25 +48,21 @@ export class Util {
     }
     return id.substring(0, length);
   };
-  static get url() {
-    return {
-      saxo: {
-        api: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.api}`,
-        auth: `${conf.saxo.url.auth}`,
-        chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
-        history: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.history}`,
-        ref: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.ref}`,
-        trade: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.trade}`,
-        client_services: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.client_services}`,
-        redirect: {
-          code: `${conf.saxo.url.redirect.code}`,
-          token: `${conf.saxo.url.redirect.token}`,
-        },
-      },
-      ibkr: {
-        api: `${conf.ibkr.url.base}/${conf.ibkr.url.endpoints.api}`,
-        login: `${conf.ibkr.url.base}`,
-      },
-    };
-  }
+  //static get url() {
+  //  return {
+  //    saxo: {
+  //      api: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.api}`,
+  //      auth: `${conf.saxo.url.auth}`,
+  //      chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
+  //      history: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.history}`,
+  //      ref: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.ref}`,
+  //      trade: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.trade}`,
+  //      client_services: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.client_services}`,
+  //    },
+  //    ibkr: {
+  //      api: `${conf.ibkr.url.base}/${conf.ibkr.url.endpoints.api}`,
+  //      login: `${conf.ibkr.url.base}`,
+  //    },
+  //  };
+  //}
 }

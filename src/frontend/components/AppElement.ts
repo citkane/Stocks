@@ -1,18 +1,16 @@
 import { Select } from "@frontend/components";
+import Cache from "@frontend/Cache";
 
-type watch_fnc_t = (prop: p.prop_callback) => void;
-
-//const money_value_keys = ["market_value", "traded_value", "pl", "fx_pl"];
-const info = {
-  exchange: "Exchange where dive position was purchased",
-  date: "Purchase date",
-  position: "Amount of stocks",
-  broker: "Broker where position resides",
-  traded_value: "Total cost at purchase in base currency",
-  market_value: "Current market value in base currency",
-  pl: "Unrealised total profit/loss over position lifetime in base currency",
-  fx_pl: "Profit/Loss as result of fx fluctuation in base currency",
-};
+//const info = {
+//  exchange: "Exchange where dive position was purchased",
+//  date: "Purchase date",
+//  position: "Amount of stocks",
+//  broker: "Broker where position resides",
+//  traded_value: "Total cost at purchase in base currency",
+//  market_value: "Current market value in base currency",
+//  pl: "Unrealised total profit/loss over position lifetime in base currency",
+//  fx_pl: "Profit/Loss as result of fx fluctuation in base currency",
+//};
 
 export class AppElement extends HTMLElement {
   constructor() {
@@ -32,18 +30,44 @@ export class AppElement extends HTMLElement {
   ) {
     try {
       const fnc = this.attribute_changed.get(name);
-      if (!fnc)
-        throw Error(`Could not find function for ${name} on ${this.topic}`);
+      if (!fnc) throw new Error(`Could not find function for ${name}`);
       fnc({ name, old: old_value, new: new_value });
     } catch (err) {
       logger.error(err);
     }
   }
 
+  protected reset_filter = () => {
+    AppElement.make_default_filter();
+    this.apply_filter();
+  };
+  protected handle_filter = (
+    ...props: [f.filter_keys_t, string | undefined][]
+  ) => {
+    props.forEach((prop) => {
+      const [key, val] = prop;
+      Cache._filter[key] = val;
+    });
+    this.apply_filter();
+  };
+
+  protected apply_filter = () => {
+    const filter_string = AppElement.filter_string;
+    this.root_instrmnts_el.setAttribute("data-filter", filter_string);
+  };
+
+  protected static filter_names: string[] = [];
+  protected static get filter_string() {
+    return util.html.json_stringify(Cache._filter);
+  }
+  protected static make_default_filter = () => {
+    Cache._filter = this.filter_names.reduce((c, key) => {
+      c[key as f.filter_keys_t] = "all";
+      return c;
+    }, {} as f.filter_t);
+  };
+
   protected api = {
-    set_topic: (_class: InstanceType<any>) => {
-      this.topic = _class.constructor.name;
-    },
     connected_callback: (...callbacks: Array<() => void>) => {
       this.connected_callbacks = [...this.connected_callbacks, ...callbacks];
     },
@@ -63,25 +87,24 @@ export class AppElement extends HTMLElement {
       dom: <T extends { [key: string]: Function }>(dom: T) => dom,
     },
   };
-
   private api_def = {
     props: {
       watch: (topic: string, fnc: watch_fnc_t) => {
         this.attribute_changed.set(topic, fnc);
       },
 
-      set_info: (el: Element, ..._p: any[]) => {
-        const name = el.getAttribute("name") as keyof typeof info;
-        if (!name || !info[name]) return;
-        el?.setAttribute("info", info[name]);
-      },
+      //set_info: (el: Element, ..._p: any[]) => {
+      //  const name = el.getAttribute("name") as keyof typeof info;
+      //  if (!name || !info[name]) return;
+      //  el?.setAttribute("info", info[name]);
+      //},
       show: () => {
-        this.style.display = "";
-        this.setAttribute("display", "show");
+        this.setAttribute("shown", "");
+        this.removeAttribute("hidden");
       },
       hide: () => {
-        this.style.display = "none";
-        this.setAttribute("display", "none");
+        this.removeAttribute("shown");
+        this.setAttribute("hidden", "");
       },
     },
     dom: {
@@ -125,7 +148,6 @@ export class AppElement extends HTMLElement {
       },
     },
   };
-
   protected money = {
     collector: () =>
       this.money.collect_keys.reduce(
@@ -176,47 +198,54 @@ export class AppElement extends HTMLElement {
   protected get select() {
     return Select;
   }
-  protected get selectors() {
-    return Select.selectors;
-  }
 
-  protected get grid() {
-    return this.querySelector(".grid")!;
-  }
-  protected get root_app() {
+  protected get root_app_el() {
     return document.querySelector("app-root")!;
   }
-  protected get root_instrmnts() {
-    return this.root_app.querySelector("instrmnts-root")!;
+  protected get root_instrmnts_el() {
+    return this.root_app_el.querySelector("instrmnts-root")!;
   }
-  protected get root_accounts() {
-    return this.root_app.querySelector("accounts-root")!;
+  protected get root_accounts_el() {
+    return this.root_app_el.querySelector("accounts-root")!;
   }
-  protected get select_account() {
-    return this.root_app.querySelector("select-account")!;
+  protected get select_account_el() {
+    return this.root_app_el.querySelector("select-account")!;
   }
-  protected get select_broker() {
-    return this.root_app.querySelector("select-broker")!;
+  protected get select_broker_el() {
+    return this.root_instrmnts_el.querySelector("select-broker")!;
   }
-  protected get select_sector() {
-    return this.root_app.querySelector("select-sector")!;
+  protected get select_sector_el() {
+    return this.root_instrmnts_el.querySelector("select-sector")!;
   }
-  protected get select_industry() {
-    return this.root_app.querySelector("select-industry")!;
+  protected get select_industry_el() {
+    return this.root_instrmnts_el.querySelector("select-industry")!;
   }
+  protected get filter_els() {
+    return [
+      ...this.root_instrmnts_el.querySelectorAll(
+        ".filter.wrapper .inner > [filter]",
+      ),
+    ];
+  }
+  protected get displayed_instrmnt_els() {
+    return [
+      ...this.root_instrmnts_el.querySelectorAll("instrmnt-row:not([hidden])"),
+    ];
+  }
+
   protected get i_id() {
     return this.getAttribute("i_id") as i_id_t;
   }
-
+  protected get filter() {
+    return this.cache.filter;
+  }
   private get attribute_keys() {
     return [...this.attribute_changed.keys()] as const;
   }
 
-  protected topic?: component_key_t;
   private attribute_changed = new Map<string, watch_fnc_t>();
   private connected_callbacks = [] as Function[];
   private disconnected_callbacks = [] as Function[];
-  private _money_keys?: string[];
 }
 
 function parse_html(html: string) {
@@ -224,4 +253,17 @@ function parse_html(html: string) {
   template.innerHTML = html.trim();
   const clone = document.importNode(template.content, true);
   return clone.firstChild!;
+}
+
+type watch_fnc_t = (prop: p.prop_callback) => void;
+declare global {
+  namespace f {
+    type filter_keys_t =
+      | "broker"
+      | "a_id"
+      | "asset_sector"
+      | "asset_industry"
+      | "search";
+    type filter_t = { [key in filter_keys_t]: string | undefined };
+  }
 }

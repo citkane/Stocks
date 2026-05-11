@@ -16,8 +16,9 @@ export default class Logger extends _Logger {
 
   static override error(...p: any[]): void;
   static override error(err: Error, cause?: string, ..._p: any[]) {
-    const e_array = err instanceof Error ? err_to_array(err, cause) : arguments;
-    console.error(...e_array);
+    const is_err = err instanceof Error;
+    const e_array = is_err ? [err.message, cause || err.cause] : arguments;
+    console.error(is_err ? err : _p);
     this.send("log_error", e_array);
   }
 

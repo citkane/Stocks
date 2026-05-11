@@ -17,6 +17,10 @@ export class ExpandingDrawer extends AppElement {
     this.content.forEach((child) => this.inner.appendChild(child));
   }
 
+  public toggle = () => {
+    this.setAttribute("state", this.state === "open" ? "closed" : "open");
+  };
+
   private handlers = {
     toggle: (p: p.prop_callback) => {
       if (p.old === p.new) return;
@@ -45,6 +49,9 @@ export class ExpandingDrawer extends AppElement {
     return this.querySelector(".inner")! as HTMLElement;
   }
   private get content() {
-    return this.querySelectorAll("*:not(.inner)");
+    return this.querySelectorAll("&> *:not(.inner)");
+  }
+  private get state() {
+    return this.getAttribute("state")!;
   }
 }

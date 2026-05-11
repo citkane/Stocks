@@ -11,27 +11,30 @@ export default class Api extends Global implements Api_t {
     accounts: (accs: cache_t["accounts"]) => this.set_accounts(accs),
     live_data: (data: cache_t["live_data"]) => this.set_live_data(data),
     cache: (data: cache_t) => this.set_cache(data),
+    bootstrap: (message: string) => this.bootstrap_mess(`[backend] ${message}`),
+    logged_out: (broker: broker_t) => this.logged_out(broker),
   };
 
   private set_transctns = (transactions: cache_t["transactions"]) => {
     this.cache.transactions = transactions;
     const data = util.hash_id(this.cache.transactions);
-    this.root_app.setAttribute("transactions", data);
+    this.app_root.setAttribute("transactions", data);
   };
   private set_instrmnts = (instruments: cache_t["instruments"]) => {
     this.cache.instruments = instruments;
     const data = util.hash_id(this.cache.instruments);
-    this.root_app.setAttribute("instruments", data);
+    this.app_root.setAttribute("instruments", data);
   };
   private set_accounts = (accounts: cache_t["accounts"]) => {
     this.cache.accounts = accounts;
     const data = util.hash_id(this.cache.accounts);
-    this.root_app.setAttribute("accounts", data);
+    this.app_root.setAttribute("accounts", data);
   };
   private set_live_data = (live_data: cache_t["live_data"]) => {
     this.cache.live_data = live_data;
     this.set_instrmnts(this.cache.instruments);
     this.set_transctns(this.cache.transactions);
+    this.set_accounts(this.cache.accounts);
   };
   private set_cache = (data: cache_t) => {
     const { accounts, instruments, transactions, live_data } = data;
@@ -39,7 +42,11 @@ export default class Api extends Global implements Api_t {
     this.set_instrmnts(instruments);
     this.set_transctns(transactions);
     this.set_live_data(live_data);
-    logger.info("Cache ready");
+    this.bootstrap_mess("Cache ready");
+    this.bootstrap_end();
+  };
+  private logged_out = (broker: broker_t) => {
+    this[broker].await_login();
   };
   private get topics() {
     return Object.keys(this.setter);

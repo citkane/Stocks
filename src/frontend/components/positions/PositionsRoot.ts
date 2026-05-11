@@ -1,15 +1,15 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class PositionsRoot extends AppElement {
-  static observedAttributes = ["data-transctns", "filter"];
+  static observedAttributes = ["data-transctns", "data-filter"];
 
   constructor() {
     super();
-    this.api.set_topic(this);
+    //this.api.set_topic(this);
     this.dom.template_to_self("position-root");
 
     this.props.watch("data-transctns", this.handlers.render);
-    this.props.watch("filter", this.handlers.filter);
+    this.props.watch("data-filter", this.handlers.filter);
   }
 
   private handlers = {
@@ -24,7 +24,7 @@ export class PositionsRoot extends AppElement {
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      this.positn_rows.forEach((row) => row.setAttribute("filter", p.new));
+      this.positn_rows.forEach((row) => row.setAttribute("data-filter", p.new));
       this.props.refresh();
     },
   };
@@ -40,7 +40,7 @@ export class PositionsRoot extends AppElement {
             ex_el || this.dom.make_el("position-row", "", `id="${id}"`);
           const data_transctn = util.html.json_stringify(transctn);
           positn_el.setAttribute("data-transaction", data_transctn);
-          if (!ex_el) this.grid.appendChild(positn_el);
+          if (!ex_el) this.rows.appendChild(positn_el);
         });
     },
   });
@@ -52,7 +52,7 @@ export class PositionsRoot extends AppElement {
       //this.setAttribute("r_pl", String(this.realised_pl));
     },
     sum_values_to_props: () => {
-      const values = this.data.money_totals(this.displayed_positn_rows);
+      const values = this.data.money_totals(this.active_positn_rows);
       Object.keys(values).forEach((key) => {
         this.setAttribute(key, values[key]!.toString());
       });
@@ -60,7 +60,7 @@ export class PositionsRoot extends AppElement {
     set_position_count: () =>
       this.setAttribute(
         "position_count",
-        this.displayed_positn_rows.length.toString(),
+        this.active_positn_rows.length.toString(),
       ),
   });
   private data = this.api.data({});
@@ -72,11 +72,19 @@ export class PositionsRoot extends AppElement {
     if (this._position) return this._position;
     return (this._position = util.money.position(this.transactions));
   }
-  private get displayed_positn_rows() {
-    return [...this.querySelectorAll('position-row[display="show"]')!];
+  private get active_positn_rows() {
+    const rows = [...this.querySelectorAll("position-row:not([hidden])")!]; //[display="show"]')!];
+    const dividend_rows = rows.filter(
+      (r) => r.getAttribute("kind") === "dividend",
+    );
+    if (rows.length === dividend_rows.length) return [];
+    return rows;
   }
   private get positn_rows() {
     return [...this.querySelectorAll("position-row")!];
+  }
+  private get rows() {
+    return this.querySelector(".wrapper.rows")!;
   }
 
   //private _transctns?: transctn_t[];

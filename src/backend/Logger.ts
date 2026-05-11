@@ -6,11 +6,11 @@ import {
   type level_t,
 } from "@common/Logger";
 
-const log_dir = ".logs";
-const err_writer = await file_writer("error");
-const log_writer = await file_writer("info");
-const debug_writer = await file_writer("debug");
-const fe = {
+var log_dir = ".logs";
+var err_writer = await file_writer("error");
+var log_writer = await file_writer("info");
+var debug_writer = await file_writer("debug");
+var fe = {
   err_writer: await file_writer("error.frontend"),
   log_writer: await file_writer("info.frontend"),
   debug_writer: await file_writer("debug.frontend"),

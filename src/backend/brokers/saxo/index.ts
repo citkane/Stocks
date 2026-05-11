@@ -1,8 +1,7 @@
-export * from "./Authorise";
-export * from "./Cache";
-export { Account, Accounts } from "./Accounts";
-export { Positions } from "./Positions";
-export { Transactions } from "./Transactions";
-export { LiveData } from "./LiveData";
-export { Ref } from "./Ref";
-export { Exchanges } from "./Exchanges";
+export { AuthSaxo } from "./AuthSaxo";
+export { CacheSaxo } from "./CacheSaxo";
+export { AccountsSaxo } from "./AccountsSaxo";
+export { PositionsSaxo } from "./PositionsSaxo";
+export { TransactionsSaxo } from "./TransactionsSaxo";
+export { LiveDataSaxo } from "./LiveDataSaxo";
+export { EndpointsSaxo } from "./EndpointsSaxo";

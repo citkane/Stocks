@@ -19,15 +19,9 @@ import "@frontend/components/index";
 import Logger from "./Logger";
 import App from "@frontend/App";
 import Api from "@frontend/Api";
-import {
-  Router,
-  ClientWs,
-  Ibkr,
-  Saxo,
-  Brokers,
-  Events,
-} from "@frontend/app/index.ts";
-import { Cache } from "./Cache";
+import Router from "@frontend/Router";
+import Cache from "@frontend/Cache";
+import { ClientWs, Ibkr, Saxo, Brokers } from "@frontend/app/index.ts";
 
 (window as any).logger = Logger;
 (window as any).frontend = {
@@ -39,7 +33,6 @@ import { Cache } from "./Cache";
   api: new Api(),
   ws: new ClientWs(),
   cache: new Cache(),
-  events: new Events(),
   saxo: new Saxo(),
   ibkr: new Ibkr(),
 };

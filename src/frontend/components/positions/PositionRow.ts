@@ -1,15 +1,14 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class PositionRow extends AppElement {
-  static observedAttributes = ["data-transaction", "filter"];
+  static observedAttributes = ["data-transaction", "data-filter"];
 
   constructor() {
     super();
-    this.api.set_topic(this);
     this.dom.template_to_self("position-row");
 
     this.props.watch("data-transaction", this.handlers.render);
-    this.props.watch("filter", this.handlers.filter);
+    this.props.watch("data-filter", this.handlers.filter);
     this.props.show();
   }
 
@@ -20,11 +19,12 @@ export class PositionRow extends AppElement {
       delete this._transaction;
       delete this._values;
 
-      const { meta } = this.transaction;
+      const { meta, kind } = this.transaction;
+      this.setAttribute("kind", kind);
 
       Object.keys(this.values).forEach((key) => {
         const k = key as keyof typeof this.values;
-        let value = String(this.values[k]);
+        let value = String(this.values[k] || 0);
 
         const el = this.querySelector(`[name="${key}"]`);
         this.setAttribute(key, value);
@@ -39,11 +39,13 @@ export class PositionRow extends AppElement {
 
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
+      if (this.filter.search) return this.props.show();
 
       const hide = !!Object.keys(this.source_filter).find((key) => {
-        const k = key as f.filter_t;
-        const val = this.source_filter[k];
-        const _val = this.target_filter[k];
+        if (key === "a_id" && this.transaction.kind === "dividend")
+          return false;
+        const val = this.source_filter[key];
+        const _val = this.filter[key as f.filter_keys_t];
         return _val !== "all" && _val !== val;
       });
       hide ? this.props.hide() : this.props.show();
@@ -54,9 +56,9 @@ export class PositionRow extends AppElement {
     values: () => {
       let {
         date,
-        //sales,
         amount,
         broker,
+        currency,
         price_traded,
         price_market,
         fx_traded,
@@ -81,7 +83,6 @@ export class PositionRow extends AppElement {
         return {
           date,
           broker,
-          //sales,
           amount,
           r_pl,
           traded_value: 0,
@@ -91,12 +92,14 @@ export class PositionRow extends AppElement {
       const fx_pl = util.money.fx_pl_base_whole(this.transaction);
       const pl = util.money.pl_base_whole(this.transaction);
 
-      const market_value = util.money.base_money_whole(
+      const market_value = util.money.base_whole(
+        currency,
         amount,
         price_market,
         fx_market,
       );
-      const traded_value = util.money.base_money_whole(
+      const traded_value = util.money.base_whole(
+        currency,
         amount,
         price_traded,
         fx_traded,
@@ -105,7 +108,6 @@ export class PositionRow extends AppElement {
       return {
         date,
         broker,
-        //sales,
         amount,
         market_value,
         traded_value,
@@ -128,20 +130,14 @@ export class PositionRow extends AppElement {
     const { asset_sector, asset_industry } = instrument;
 
     return { a_id, broker, asset_sector, asset_industry } as {
-      [key in f.filter_t]: string;
+      [key: string]: string;
     };
-  }
-  private get target_filter() {
-    return util.html.json_parse<typeof this.source_filter>(
-      this.getAttribute("filter")!,
-    );
   }
   private get transaction() {
     if (!!this._transaction) return this._transaction;
     let transaction = util.html.json_parse<transctn_t>(
       this.dataset.transaction!,
     );
-    transaction = util.money.normalise_minor_unit(transaction);
     return (this._transaction = transaction);
   }
 

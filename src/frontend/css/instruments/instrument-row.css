@@ -1,26 +1,31 @@
 instrmnt-row {
-  > *:not(positions-root) {
-    align-content: center;
-  }
+  display: block;
 
   button {
-    padding: 0.5em 0.75em;
     cursor: pointer;
     text-align: center;
-    font-size: 12px;
+    height: var(--size-button);
+    width: var(--size-button);
   }
-  > *[name="ticker"] button {
+  [name="ticker"] button {
     width: 100%;
-    /*height: 100%;*/
   }
 
   [name="description"] {
-    display: flex;
-    align-items: center;
-    line-height: 1.2em;
+    display: inline-flex;
+    align-items: stretch;
     a {
-      padding-left: var(--padding-cell);
+      display: flex;
+      flex: 1 1 auto;
+      min-width: 0;
+      align-items: center;
+      padding-left: var(--size-padding-cell);
       text-decoration: none;
+      span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       &.no_link {
         color: gray;
       }
@@ -28,83 +33,91 @@ instrmnt-row {
     svg,
     .no_logo {
       border-radius: 8px;
-      border: 1px solid gray;
-      width: 32px;
-      height: 32px;
+      border: 1px solid var(--col-border);
+      width: var(--size-button);
+      height: var(--size-button);
       display: flex;
       flex: 0 0 auto;
     }
     .no_logo {
       color: gray;
-      width: 32px;
-      height: 32px;
       align-items: center;
       justify-content: center;
-    }
-  }
-  [name="live_data"] {
-    grid-column: var(--grid-col-all);
-    display: flex;
-
-    font-size: var(--font-size-small);
-    border-top: var(--border-light);
-    border-bottom: var(--border-light);
-
-    .section {
-      display: inline-grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, auto));
-      max-height: 150px;
-
-      line-height: 1.5em;
-      margin-right: 20px;
-      > .title {
-        font-weight: bold;
-      }
-
-      padding: var(--padding-cell) 0;
-      .snippet {
-        padding: 0 var(--padding-cell);
-      }
-    }
-  }
-  [name="breadcrumb"] {
-    grid-column: var(--grid-col-all);
-    padding-bottom: var(--padding-cell);
-    border-bottom: var(--border-light);
-  }
-  [name="about_company"] {
-    grid-column: var(--grid-col-all);
-    .about {
-      max-height: 200px;
-      display: inline-flex;
-      flex-direction: column;
-      flex-wrap: wrap;
-      column-gap: 20px;
-      font-size: var(--font-size-small);
-      line-height: 1.2em;
-      padding-bottom: var(--padding-cell);
-      p {
-        padding-bottom: var(--padding-cell);
-        width: 300px;
-      }
-      /*p {
-        display: none;
-        padding-bottom: var(--padding-cell);
-        width: 300px;
-      }
-      p:first-child {
-        display: block;
-        &:after {
-          content: "more...";
-          display: inline-block;
-          padding-left: var(--padding-cell);
-        }
-      }*/
     }
   }
   [name="positions"] {
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+  expanding-drawer {
+    [name="header"] {
+      display: flex;
+      border-bottom: 1px solid var(--col-border);
+      border-top: 1px solid var(--col-border-light);
+      align-items: center;
+      justify-content: space-between;
+      .breadcrumb {
+        border-right: 1px solid var(--col-border-light);
+        a {
+          padding: var(--size-padding-cell);
+          background: var(--col-header-background);
+          display: inline-block;
+          cursor: pointer;
+        }
+        .sector::after {
+          content: "|";
+          display: inline-block;
+          position: relative;
+          right: calc(var(--size-padding-cell) * -1);
+        }
+      }
+      .currency {
+        padding: var(--size-padding-cell);
+        text-align: center;
+        align-self: flex-end;
+        flex-basis: 56px;
+        background: var(--col-header-background);
+        border-left: 1px solid var(--col-border-light);
+      }
+    }
+    [name="live_data"] {
+      grid-column: var(--grid-col-all);
+      display: flex;
+      border-top: var(--border-light);
+      .section {
+        display: inline-grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, auto));
+        max-height: 150px;
+
+        line-height: 1.5em;
+        margin-right: 20px;
+        > .title {
+          font-weight: bold;
+        }
+
+        padding: var(--size-padding-cell) 0;
+        .snippet {
+          padding: 0 var(--size-padding-cell);
+        }
+      }
+    }
+
+    [name="about_company"] {
+      height: 200px;
+      line-height: 1.2em;
+      padding: var(--size-padding-cell);
+      padding-bottom: calc(var(--size-padding-cell) * 2);
+      text-align: justify;
+      columns: 4 300px;
+      column-gap: 20px;
+      column-fill: auto;
+      column-rule: 1px solid var(--col-border-light);
+      color: var(--col-text-light);
+      p {
+        break-inside: avoid;
+        margin-bottom: calc(var(--size-padding-cell) * 2);
+      }
+    }
   }
 }

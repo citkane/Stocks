@@ -2,70 +2,91 @@ instrmnts-root {
   display: block;
   width: 100%;
   min-height: 100vh;
-  .select.wrapper {
-    background: var(--col-background-light);
-    position: sticky;
-    top: -32;
-    z-index: 100;
+  padding: var(--size-padding-app);
+
+  instrmnt-row {
+    border-bottom: 1px solid var(--col-border-light);
+    &[shown]:last-child {
+      border-bottom: none;
+    }
   }
-  > .grid {
-    > .header_wrap {
-      display: contents;
-      .header.row {
-        > * {
-          background: var(--col-background-light);
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          border: var(--border-light);
-          border-left: none;
-          &:first-child {
-            border-left: var(--border-light);
-          }
-        }
-      }
+  .instruments.wrapper {
+    border: 1px solid var(--col-border);
+    transition: opacity 300ms;
+  }
+  .instruments.wrapper.working {
+    opacity: 0.5;
+  }
 
-      > .money.row {
-        > * {
-          background: var(--col-background-light);
-          position: sticky;
-          top: 26;
-          z-index: 100;
-          &:first-child,
-          &:nth-child(2),
-          &:nth-child(3) {
-            background: none;
-          }
-        }
-        money-str,
-        percent-str {
-          font-size: var(--font-size-small);
-          border: var(--border-light);
-          border-bottom-width: 2px;
+  .header.wrapper {
+    position: sticky;
+    top: 24;
+    z-index: 100;
+    padding-bottom: var(--size-padding-cell);
 
-          &.first {
-            box-shadow: -1px 0 0 var(--col-border-light);
-          }
-          &.last {
-            border-right-width: 2px;
-          }
-        }
-      }
+    [bold] {
+      font-weight: bold;
     }
 
-    [name="positions"] {
-      text-align: center;
-    }
-    .row.instrmnt:not(.header):not(.money),
-    .row.position:not(.header) {
-      > [name="percent_pl"],
-      > [name="fx_pl"],
-      > [name="div_yield"],
-      > [name="dividend"],
-      > [name="div_est"] {
-        font-size: var(--font-size-small);
-        opacity: 0.7;
+    .filter.wrapper .inner {
+      display: flex;
+      justify-content: space-between;
+      background: var(--col-background-light);
+      padding: 10px;
+      form {
+        display: inline-block;
       }
+    }
+    > .grid.header > * {
+      justify-content: center;
+      background-color: var(--col-header-background);
+      border: 1px solid var(--col-border);
+      cursor: pointer;
+      user-select: none;
+      &[name="pl"] {
+        border-top: none;
+      }
+    }
+    > .grid.header > *:not(:last-child) {
+      border-right: none;
+    }
+    > .grid.u_pl {
+      background: var(--col-background-light);
+      [name="u_pl"] {
+        grid-column: var(--grid-col-7);
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+        background-color: var(--col-header-background);
+        border: 1px solid var(--col-border);
+        border-bottom: none;
+        border-right: none;
+      }
+      [name="u_pl_total"] {
+        justify-content: center;
+        grid-column: var(--grid-col-8-9);
+        border: 1px solid var(--col-border);
+        border-bottom: none;
+        border-right: none;
+      }
+      [name="rem"] {
+        grid-column: var(--grid-col-10-12);
+        background-color: var(--col-header-background);
+        justify-content: center;
+        border: 1px solid var(--col-border);
+        border-bottom: none;
+      }
+    }
+    > .grid.money {
+      > money-str,
+      > percent-str {
+        background: var(--col-background-light);
+        border: 1px solid var(--col-border);
+        border-top: none;
+      }
+    }
+    > .grid.money > *:not(:last-child) {
+      border-right: none;
     }
   }
 }

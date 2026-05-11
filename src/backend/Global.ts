@@ -1,12 +1,7 @@
-const currencies = ["ZAR", "CNH", "HKD", "CHF"] as const;
-const base_currency = "EUR";
+const base_currency: currency_t = "EUR";
 
 declare global {
-  type currency_t =
-    | (typeof currencies)[number]
-    | typeof base_currency
-    | "ZAC"
-    | "GBp";
+  type currency_t = `${string}${string}${string}`;
   type fx_rates_t = { [T in currency_t]: number };
 }
 
@@ -38,13 +33,14 @@ export class Global {
   protected get ibkr() {
     return this.broker.ibkr;
   }
-  protected get currencies() {
-    return currencies as unknown as currency_t[];
-  }
-  protected get base_currency() {
-    return base_currency as currency_t;
-  }
 
+  protected get base_currency() {
+    return base_currency;
+  }
+  public bootstrap = (message: string) => {
+    logger.info(message);
+    this.ws.publish("bootstrap", message);
+  };
   protected add_shutdown_fncs = (...fncs: Function[]) => {
     fncs.forEach((fnc) => this.shutdown_fns.push(fnc));
   };

@@ -13,19 +13,16 @@ type res_error_t = {
   statusText: string;
   url?: string;
 };
-
 type transctn_t = {
   id: string;
   p_id: p_id_t;
   a_id: string;
   i_id: i_id_t;
   broker: broker_t;
-  //ticker: string;
   currency: currency_t;
-  //exchange: string;
   amount: number;
   date: number;
-  kind: "buy" | "sell" | "dividend";
+  kind: "buy" | "sell" | "dividend" | "unbooked";
   price_traded: number;
   fx_traded: number;
   price_market?: number;
@@ -33,13 +30,11 @@ type transctn_t = {
   dividend?: number;
   r_pl?: number;
   meta?: { [key: string]: string | number | undefined };
-  //sales?: number;
-  //state?: "open" | "closed";
 };
 type live_data_t = {
   i_id: i_id_t;
   price_market: number;
-  fx_market: number;
+  //fx_market: number;
   div_yield?: number;
 };
 type account_t = {
@@ -48,6 +43,11 @@ type account_t = {
   broker: broker_t;
   alias?: string;
   currency: currency_t;
+  saxo_key?: string;
+};
+type balance_t = Omit<account_t, "saxo_key"> & {
+  assets_val: number;
+  cash: number;
 };
 
 type fx_pair_t = {
@@ -98,8 +98,14 @@ type cache_t = {
   accounts: account_t[];
   instruments: { [i_id: i_id_t]: instrmnt_t };
   transactions: { [i_id: i_id_t]: transctn_t[] };
-  live_data: live_data_t[];
+  live_data: {
+    data?: live_data_t[];
+    balances?: { [a_id: string]: balances_t[] };
+    fx?: fx_rates_t;
+  };
 };
+
+type iso_date_t = `${string}-${string}-${string}`;
 
 namespace f {
   type positn_t = { [key in `${transctn_t["kind"]}s`]: transctn_t[] };

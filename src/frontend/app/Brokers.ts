@@ -16,8 +16,12 @@ export class Brokers extends Global {
 
   await_login = () => {
     return Promise.all([
-      this.saxo.await_login().then(() => logger.info("Saxo authorised")),
-      this.ibkr.await_login().then(() => logger.info("IBKR authorised")),
+      this.saxo
+        .await_login()
+        .then(() => this.bootstrap_mess("Saxo authorised")),
+      this.ibkr
+        .await_login()
+        .then(() => this.bootstrap_mess("IBKR authorised")),
     ]);
   };
 

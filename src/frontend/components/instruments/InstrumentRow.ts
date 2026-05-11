@@ -1,15 +1,16 @@
 import { AppElement } from "@frontend/components/AppElement.ts";
 
 export class InstrumentRow extends AppElement {
-  static observedAttributes = ["data-all", "filter", "state_info"];
+  static observedAttributes = ["data-all", "data-filter", "state_info"];
 
   constructor() {
     super();
-    this.api.set_topic(this);
+    //this.api.set_topic(this);
     this.dom.template_to_self("instrmnt-row");
+    this.setAttribute("shown", "");
 
     this.props.watch("data-all", this.handlers.render);
-    this.props.watch("filter", this.handlers.filter);
+    this.props.watch("data-filter", this.handlers.filter);
     this.props.watch("state_info", this.handlers.info_drawer);
   }
 
@@ -30,20 +31,33 @@ export class InstrumentRow extends AppElement {
       this.dom.make_info();
       this.pos_button.addEventListener("click", this.handlers.drawer);
       this.pos_button.addEventListener("contextmenu", this.handlers.drawers);
-      this.ticker_button.removeAttribute("disabled");
       this.ticker_button.addEventListener("click", this.handlers.drawer);
       this.ticker_button.addEventListener("contextmenu", this.handlers.drawers);
     },
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      this.positions_root.setAttribute("filter", p.new);
+      this.positions_root.setAttribute("data-filter", p.new);
       this.props.set_values();
       this.pos_button.innerHTML = this.pos_count;
+      const { search } = this.filter;
+      if (search) {
+        const description = this.instrmnt.description.toLowerCase();
+        const ticker = this.instrmnt.ticker.toLowerCase();
+        const about = this.instrmnt.about_instrmnt?.toLowerCase();
+        const found =
+          ticker.includes(search) ||
+          description.includes(search) ||
+          about?.includes(search);
+
+        return found ? this.props.show() : this.props.hide();
+      }
       Number(this.pos_count) ? this.props.show() : this.props.hide();
     },
     drawer: (e: Event) => {
-      const name = (e.target as HTMLElement).getAttribute("name")!;
+      const name = (e.target! as HTMLElement).parentElement!.getAttribute(
+        "name",
+      )!;
       let state;
       switch (name) {
         case "ticker":
@@ -62,20 +76,10 @@ export class InstrumentRow extends AppElement {
       e.preventDefault();
       let state: string;
       let tos: NodeJS.Timeout[];
-      const name = (e.target as HTMLElement).getAttribute("name")!;
+      const name = (e.target! as HTMLElement).parentElement!.getAttribute(
+        "name",
+      )!;
       switch (name) {
-        case "ticker":
-          state = this.info_drawer.getAttribute("state")!;
-          state = state === "open" ? "closed" : "open";
-          tos = this.handlers.drawers_to.tick;
-          while (tos.length) clearTimeout(tos.pop());
-
-          this.instrmnt_rows_below.forEach((row, i) =>
-            tos.push(
-              setTimeout(() => row.setAttribute("state_info", state), i),
-            ),
-          );
-          break;
         case "positions":
           state = this.pos_drawer.getAttribute("state")!;
           state = state === "open" ? "closed" : "open";
@@ -118,15 +122,20 @@ export class InstrumentRow extends AppElement {
         values.div_yield,
       );
       const { traded_value, market_value } = values;
+      const { description, ticker, asset_sector, asset_industry } =
+        this.instrmnt;
       values.percent_pl = util.money.percent_pl(traded_value!, market_value!);
       values.positions = this.pos_count;
-      values = { ...this.instrmnt, ...values };
       Object.keys(values).forEach((key) => {
         const val = String(values[key]);
         this.setAttribute(key, val);
         const el = this.querySelector(`[name="${key}"]`);
         el?.setAttribute("value", val);
       });
+      this.setAttribute("description", description);
+      this.setAttribute("ticker", ticker);
+      if (asset_sector) this.setAttribute("asset_sector", asset_sector);
+      if (asset_industry) this.setAttribute("asset_industry", asset_industry);
     },
   });
   private dom = this.api.dom({
@@ -137,25 +146,28 @@ export class InstrumentRow extends AppElement {
         ? this.dom.make_el("span", "!", 'class="no_logo"')
         : new DOMParser().parseFromString(svg_string, "image/svg+xml")
             .documentElement;
-
-      const desc_link = this.dom.make_el(
-        "a",
-        description,
-        !url ? "" : `href="${url}"`,
-        !url ? "" : `target="blank"`,
-        !url ? 'class="no_link"' : "",
-      );
-
-      this.description_element.innerHTML = "";
-      this.description_element.appendChild(logo);
-      this.description_element.appendChild(desc_link);
+      if (url) {
+        this.description_el.setAttribute("href", url);
+        this.description_el.setAttribute("target", "blank");
+      } else {
+        this.description_el.classList.add("no_link");
+      }
+      this.description_el.querySelector("span")!.innerHTML = description;
+      this.description_el.parentElement!.prepend(logo);
     },
     make_info: () => {
-      const { about_instrmnt, asset_industry, asset_sector } = this.instrmnt;
-      this.info_breadcrumb.innerHTML = `${asset_sector} | ${asset_industry}`;
-      const _about = util.string.p_html(about_instrmnt || "");
-      const about = this.dom.make_el("div", _about, 'class="about"');
-      this.about_company.appendChild(about);
+      let { about_instrmnt, asset_industry, asset_sector, currency } =
+        this.instrmnt;
+      if (!about_instrmnt) {
+        this.ticker_button.disabled = true;
+        return;
+      }
+      this.info_bcrumb.querySelector(".sector")!.innerHTML = asset_sector!;
+      this.info_bcrumb.querySelector(".industry")!.innerHTML = asset_industry!;
+
+      this.info_currency.innerHTML = currency;
+      const about = util.string.p_html(about_instrmnt || "");
+      this.about_company.innerHTML = about;
     },
   });
 
@@ -167,13 +179,13 @@ export class InstrumentRow extends AppElement {
   }
 
   private get ticker_button() {
-    return this.querySelector("button[name=ticker]")! as HTMLButtonElement;
+    return this.querySelector("[name=ticker] button")! as HTMLButtonElement;
+  }
+  private get pos_button() {
+    return this.querySelector("[name=positions] button")!;
   }
   private get pos_count() {
     return this.positions_root.getAttribute("position_count")!;
-  }
-  private get pos_button() {
-    return this.querySelector("button[name=positions]")!;
   }
   private get pos_drawer(): HTMLElement {
     return this.querySelector('expanding-drawer[name="positions_drawer"]')!;
@@ -190,8 +202,8 @@ export class InstrumentRow extends AppElement {
     return this.querySelector("instrmnt-chart")!;
   }
   private get instrmnt_rows_below() {
-    const q = "instrmnt-row:not([display=none]";
-    const rows = [...this.root_instrmnts.querySelectorAll(q)!];
+    const q = "instrmnt-row:not([hidden]";
+    const rows = [...this.root_instrmnts_el.querySelectorAll(q)!];
     let index: number;
     rows.some((r, i) => {
       index = i;
@@ -202,15 +214,17 @@ export class InstrumentRow extends AppElement {
   private get info_drawer(): HTMLElement {
     return this.querySelector('expanding-drawer[name="info_drawer"]')!;
   }
-  private get info_breadcrumb() {
-    return this.info_drawer.querySelector('[name="breadcrumb"]')!;
+  private get info_bcrumb() {
+    return this.info_drawer.querySelector(`[name="header"] .breadcrumb`)!;
+  }
+  private get info_currency() {
+    return this.info_drawer.querySelector(`[name="header"] .currency`)!;
   }
   private get about_company() {
     return this.info_drawer.querySelector('[name="about_company"]')!;
   }
-
-  private get description_element() {
-    return this.dom.named_el("description");
+  private get description_el() {
+    return this.querySelector(`[name="description"] a`)!;
   }
   private get tv_url() {
     if (!this.instrmnt.about_instrmnt) return undefined;

@@ -1,0 +1,790 @@
+{
+  "MOEX.RU": {
+    "id": "RUS",
+    "confidence": "90%",
+    "mic": "MISX"
+  },
+  "T24X.US": {
+    "not_found": "24X National Exchange is not listed in TradingView. TV covers NASDAQ, NYSE, AMEX, CBOE, OTC only.",
+    "mic": "24EQ"
+  },
+  "PSX.US": {
+    "id": "NASDAQ",
+    "confidence": "70%",
+    "mic": "XPSX"
+  },
+  "N.RIGA.LV": {
+    "id": "OMXRSE",
+    "confidence": "100%",
+    "mic": "XRIS"
+  },
+  "TGATE.DE": {
+    "id": "TRADEGATE",
+    "confidence": "100%",
+    "mic": "XGAT"
+  },
+  "CHX.US": {
+    "id": "CBOE",
+    "confidence": "70%",
+    "mic": "XCBO"
+  },
+  "DFM.AE": {
+    "id": "DFM",
+    "confidence": "100%",
+    "mic": "XDFM"
+  },
+  "AQEUIT.IT": {
+    "id": "MIL",
+    "confidence": "70%",
+    "mic": "XMIL"
+  },
+  "DXEEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "90%",
+    "mic": "XBRU"
+  },
+  "BATEEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "85%",
+    "mic": "XLIS"
+  },
+  "CHIXEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "85%",
+    "mic": "XBRU"
+  },
+  "TRWBEN.IT": {
+    "id": "MIL",
+    "confidence": "60%",
+    "mic": "XMIL"
+  },
+  "SWB.DE": {
+    "id": "SWB",
+    "confidence": "100%",
+    "mic": "XSTU"
+  },
+  "PINK.US": {
+    "id": "OTC",
+    "confidence": "90%",
+    "mic": "PINX"
+  },
+  "SEHK.HK": {
+    "id": "HKEX",
+    "confidence": "100%",
+    "mic": "XHKG"
+  },
+  "BATEEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "85%",
+    "mic": "XAMS"
+  },
+  "TGHEIT.IT": {
+    "id": "MIL",
+    "confidence": "70%",
+    "mic": "XMIL"
+  },
+  "BURSAMY.MY": {
+    "id": "MYX",
+    "confidence": "100%",
+    "mic": "XKLS"
+  },
+  "APEXIT.IT": {
+    "id": "MIL",
+    "confidence": "60%",
+    "mic": "XMIL"
+  },
+  "BATECH.CH": {
+    "id": "SIX",
+    "confidence": "80%",
+    "mic": "XSWX"
+  },
+  "APEXEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "70%",
+    "mic": "XLIS"
+  },
+  "TGHEEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "70%",
+    "mic": "XLIS"
+  },
+  "NASDAQ.US": {
+    "id": "NASDAQ",
+    "confidence": "100%",
+    "mic": "XNAS"
+  },
+  "AQEUEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "70%",
+    "mic": "XAMS"
+  },
+  "BVL.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "100%",
+    "mic": "XLIS"
+  },
+  "CBOE.US": {
+    "id": "CBOE",
+    "confidence": "100%",
+    "mic": "XCBO"
+  },
+  "DRCTEDGE.US": {
+    "id": "CBOE",
+    "confidence": "80%",
+    "mic": "XCBO"
+  },
+  "BUX.HU": {
+    "id": "BET",
+    "confidence": "100%",
+    "mic": "XBUD"
+  },
+  "IBIS.DE": {
+    "id": "XETR",
+    "confidence": "100%",
+    "mic": "XETR"
+  },
+  "AQEUEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "70%",
+    "mic": "XLIS"
+  },
+  "SGX.SG": {
+    "id": "SGX",
+    "confidence": "100%",
+    "mic": "XSES"
+  },
+  "BATEIT.IT": {
+    "id": "MIL",
+    "confidence": "80%",
+    "mic": "XMIL"
+  },
+  "TRWBEN.SE": {
+    "id": "OMXSTO",
+    "confidence": "60%",
+    "mic": "XSTO"
+  },
+  "N.TALLINN.EE": {
+    "id": "OMXTSE",
+    "confidence": "100%",
+    "mic": "XTAL"
+  },
+  "TGHEEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "70%",
+    "mic": "XAMS"
+  },
+  "APEXEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "70%",
+    "mic": "XAMS"
+  },
+  "NYSEFLOOR.US": {
+    "id": "NYSE",
+    "confidence": "100%",
+    "mic": "XNYS"
+  },
+  "PEARL.US": {
+    "id": "CBOE",
+    "confidence": "60%",
+    "mic": "XCBO"
+  },
+  "TRWBUKETF.UK": {
+    "id": "LSE",
+    "confidence": "60%",
+    "mic": "XLON"
+  },
+  "IEX.US": {
+    "not_found": "IEX (Investors Exchange) is not listed in TradingView. TV includes NASDAQ, NYSE, AMEX, CBOE, OTC only.",
+    "mic": "IEXG"
+  },
+  "BATEES.ES": {
+    "id": "BME",
+    "confidence": "80%",
+    "mic": "XMAD"
+  },
+  "BATEEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "85%",
+    "mic": "XPAR"
+  },
+  "TRQXEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "70%",
+    "mic": "XBRU"
+  },
+  "AQEUDE.DE": {
+    "id": "XETR",
+    "confidence": "70%",
+    "mic": "XETR"
+  },
+  "ISLAND.US": {
+    "id": "NASDAQ",
+    "confidence": "80%",
+    "mic": "XNAS"
+  },
+  "ARCAEDGE.US": {
+    "id": "AMEX",
+    "confidence": "80%",
+    "mic": "XASE"
+  },
+  "PRA.CZ": {
+    "id": "PSECZ",
+    "confidence": "100%",
+    "mic": "XPRA"
+  },
+  "BVME.IT": {
+    "id": "MIL",
+    "confidence": "100%",
+    "mic": "XMIL"
+  },
+  "LJSE.SI": {
+    "not_found": "Ljubljana Stock Exchange is not in TradingView.",
+    "mic": "XLJU"
+  },
+  "AQEUDK.DK": {
+    "id": "OMXCOP",
+    "confidence": "70%",
+    "mic": "XCSE"
+  },
+  "BM.ES": {
+    "id": "BME",
+    "confidence": "100%",
+    "mic": "XMAD"
+  },
+  "NYSE.US": {
+    "id": "NYSE",
+    "confidence": "100%",
+    "mic": "XNYS"
+  },
+  "TGHEDE.DE": {
+    "id": "XETR",
+    "confidence": "70%",
+    "mic": "XETR"
+  },
+  "CPH.DK": {
+    "id": "OMXCOP",
+    "confidence": "100%",
+    "mic": "XCSE"
+  },
+  "TGHEDK.DK": {
+    "id": "OMXCOP",
+    "confidence": "70%",
+    "mic": "XCSE"
+  },
+  "AEQLIT.CA": {
+    "id": "CBOE_CANADA",
+    "confidence": "80%",
+    "mic": "NEOE"
+  },
+  "EDGEA.US": {
+    "id": "CBOE",
+    "confidence": "80%",
+    "mic": "XCBO"
+  },
+  "SFB.SE": {
+    "id": "OMXSTO",
+    "confidence": "100%",
+    "mic": "XSTO"
+  },
+  "BATS.US": {
+    "id": "CBOE",
+    "confidence": "80%",
+    "mic": "BATS"
+  },
+  "MEXI.MX": {
+    "id": "BMV",
+    "confidence": "100%",
+    "mic": "XMEX"
+  },
+  "CHIXUK.UK": {
+    "id": "LSE",
+    "confidence": "70%",
+    "mic": "XLON"
+  },
+  "TRWBEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "60%",
+    "mic": "XAMS"
+  },
+  "IBEOS.US": {
+    "not_found": "IBEOS is Interactive Brokers' internal overnight trading facility, not a public exchange.",
+    "mic": null
+  },
+  "AQXECH.CH": {
+    "id": "SIX",
+    "confidence": "70%",
+    "mic": "XSWX"
+  },
+  "TRWBCH.CH": {
+    "id": "SIX",
+    "confidence": "60%",
+    "mic": "XSWX"
+  },
+  "CHIXDE.DE": {
+    "id": "XETR",
+    "confidence": "80%",
+    "mic": "XETR"
+  },
+  "OTCLNKECN.US": {
+    "id": "OTC",
+    "confidence": "90%",
+    "mic": "OTCN"
+  },
+  "WSE.PL": {
+    "id": "GPW",
+    "confidence": "100%",
+    "mic": "XWAR"
+  },
+  "DXEEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "85%",
+    "mic": "XPAR"
+  },
+  "TRWBUK.UK": {
+    "id": "LSE",
+    "confidence": "60%",
+    "mic": "XLON"
+  },
+  "SEHKNTL.CN": {
+    "id": "SSE",
+    "confidence": "80%",
+    "mic": "XSHG"
+  },
+  "SEHKNTL.HK": {
+    "id": "SSE",
+    "confidence": "80%",
+    "mic": "XSHG"
+  },
+  "AQXEUK.UK": {
+    "id": "AQUIS",
+    "confidence": "100%",
+    "mic": "AQXE"
+  },
+  "DXEEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "85%",
+    "mic": "XAMS"
+  },
+  "TWSE.TW": {
+    "id": "TWSE",
+    "confidence": "100%",
+    "mic": "XTAI"
+  },
+  "SEHKSTAR.HK": {
+    "id": "SSE",
+    "confidence": "80%",
+    "mic": "XSHG"
+  },
+  "MEMX.US": {
+    "not_found": "MEMX (Members Exchange) is not in TradingView.",
+    "mic": "MEMX"
+  },
+  "OVERNIGHT.HK": {
+    "id": "HKEX",
+    "confidence": "50%",
+    "mic": "XHKG"
+  },
+  "OMXNO.SE": {
+    "id": "OMXSTO",
+    "confidence": "70%",
+    "mic": "XSTO"
+  },
+  "FWB.DE": {
+    "id": "FWB",
+    "confidence": "100%",
+    "mic": "XFRA"
+  },
+  "CHIXEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "85%",
+    "mic": "XLIS"
+  },
+  "HEX.FI": {
+    "id": "OMXHEX",
+    "confidence": "100%",
+    "mic": "XHEL"
+  },
+  "TRWBDE.DE": {
+    "id": "XETR",
+    "confidence": "60%",
+    "mic": "XETR"
+  },
+  "VSE.AT": {
+    "id": "VIE",
+    "confidence": "100%",
+    "mic": "XWBO"
+  },
+  "BATEEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "85%",
+    "mic": "XBRU"
+  },
+  "TSE.CA": {
+    "id": "TSX",
+    "confidence": "100%",
+    "mic": "XTSE"
+  },
+  "TRQXES.ES": {
+    "id": "BME",
+    "confidence": "70%",
+    "mic": "XMAD"
+  },
+  "TRQXEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "70%",
+    "mic": "XPAR"
+  },
+  "BYX.US": {
+    "id": "CBOE",
+    "confidence": "80%",
+    "mic": "BATY"
+  },
+  "TRWBEN.DE": {
+    "id": "XETR",
+    "confidence": "60%",
+    "mic": "XETR"
+  },
+  "DXEIT.IT": {
+    "id": "MIL",
+    "confidence": "80%",
+    "mic": "XMIL"
+  },
+  "CHIXEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "85%",
+    "mic": "XAMS"
+  },
+  "LTSE.US": {
+    "not_found": "LTSE (Long Term Stock Exchange) is not listed in TradingView.",
+    "mic": "LTSE"
+  },
+  "CHIXCH.CH": {
+    "id": "SIX",
+    "confidence": "80%",
+    "mic": "XSWX"
+  },
+  "N.VILNIUS.LT": {
+    "id": "OMXVSE",
+    "confidence": "100%",
+    "mic": "XVIL"
+  },
+  "DXEAT.AT": {
+    "id": "VIE",
+    "confidence": "80%",
+    "mic": "XWBO"
+  },
+  "ISE.US": {
+    "id": "NASDAQ",
+    "confidence": "80%",
+    "mic": "XISX"
+  },
+  "LSEIOB1.UK": {
+    "id": "LSIN",
+    "confidence": "90%",
+    "mic": "XLON"
+  },
+  "AQEUEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "70%",
+    "mic": "XBRU"
+  },
+  "TRQXDE.DE": {
+    "id": "XETR",
+    "confidence": "70%",
+    "mic": "XETR"
+  },
+  "TGHEAT.AT": {
+    "id": "VIE",
+    "confidence": "70%",
+    "mic": "XWBO"
+  },
+  "TRWBEN.CH": {
+    "id": "SIX",
+    "confidence": "60%",
+    "mic": "XSWX"
+  },
+  "TADAWUL.SA": {
+    "id": "TADAWUL",
+    "confidence": "100%",
+    "mic": "XSAU"
+  },
+  "CHIXIT.IT": {
+    "id": "MIL",
+    "confidence": "80%",
+    "mic": "XMIL"
+  },
+  "AQEUAT.AT": {
+    "id": "VIE",
+    "confidence": "70%",
+    "mic": "XWBO"
+  },
+  "TPEX.TW": {
+    "id": "TPEX",
+    "confidence": "100%",
+    "mic": "XTPE"
+  },
+  "PHLX.US": {
+    "id": "NASDAQ",
+    "confidence": "80%",
+    "mic": "XPHL"
+  },
+  "TRQXUK.UK": {
+    "id": "LSE",
+    "confidence": "90%",
+    "mic": "XLON"
+  },
+  "AEB.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "100%",
+    "mic": "XAMS"
+  },
+  "CHINEXT.CN": {
+    "id": "SZSE",
+    "confidence": "90%",
+    "mic": "XSHE"
+  },
+  "CHINEXT.HK": {
+    "id": "SZSE",
+    "confidence": "90%",
+    "mic": "XSHE"
+  },
+  "NYSENAT.US": {
+    "id": "NYSE",
+    "confidence": "90%",
+    "mic": "XNYS"
+  },
+  "AMEX.US": {
+    "id": "AMEX",
+    "confidence": "100%",
+    "mic": "XASE"
+  },
+  "CHIXAU.AU": {
+    "id": "CHIXAU",
+    "confidence": "100%",
+    "mic": "XCX2"
+  },
+  "TGHEEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "70%",
+    "mic": "XBRU"
+  },
+  "APEXEN.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "70%",
+    "mic": "XBRU"
+  },
+  "JSE.ZA": {
+    "id": "JSE",
+    "confidence": "100%",
+    "mic": "XJSE"
+  },
+  "CHIXEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "85%",
+    "mic": "XPAR"
+  },
+  "NSE.IN": {
+    "id": "NSE",
+    "confidence": "100%",
+    "mic": "XNSE"
+  },
+  "TSEJ.JP": {
+    "id": "TSE",
+    "confidence": "100%",
+    "mic": "XTKS"
+  },
+  "CHIXES.ES": {
+    "id": "BME",
+    "confidence": "80%",
+    "mic": "XMAD"
+  },
+  "DXEES.ES": {
+    "id": "BME",
+    "confidence": "80%",
+    "mic": "XMAD"
+  },
+  "OSE.NO": {
+    "id": "OSL",
+    "confidence": "100%",
+    "mic": "XOSL"
+  },
+  "TRWBSE.SE": {
+    "id": "OMXSTO",
+    "confidence": "60%",
+    "mic": "XSTO"
+  },
+  "TRQXEN.NL": {
+    "id": "EURONEXTAMS",
+    "confidence": "70%",
+    "mic": "XAMS"
+  },
+  "SEHKSZSE.CN": {
+    "id": "SZSE",
+    "confidence": "90%",
+    "mic": "XSHE"
+  },
+  "SEHKSZSE.HK": {
+    "id": "SZSE",
+    "confidence": "90%",
+    "mic": "XSHE"
+  },
+  "ASXCEN.AU": {
+    "id": "ASX",
+    "confidence": "80%",
+    "mic": "ASXC"
+  },
+  "TRQXCH.CH": {
+    "id": "SIX",
+    "confidence": "70%",
+    "mic": "XSWX"
+  },
+  "ADX.AE": {
+    "id": "ADX",
+    "confidence": "100%",
+    "mic": "XADS"
+  },
+  "B3.BR": {
+    "id": "BMFBOVESPA",
+    "confidence": "100%",
+    "mic": "XBSP"
+  },
+  "BVME.ETF.IT": {
+    "id": "MIL",
+    "confidence": "90%",
+    "mic": "XMIL"
+  },
+  "TRQXEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "70%",
+    "mic": "XLIS"
+  },
+  "TRWBIT.IT": {
+    "id": "MIL",
+    "confidence": "60%",
+    "mic": "XMIL"
+  },
+  "EBS.CH": {
+    "id": "SIX",
+    "confidence": "90%",
+    "mic": "XSWX"
+  },
+  "EDGX.US": {
+    "id": "CBOE",
+    "confidence": "80%",
+    "mic": "EDGX"
+  },
+  "DXEDK.DK": {
+    "id": "OMXCOP",
+    "confidence": "80%",
+    "mic": "XCSE"
+  },
+  "BEX.US": {
+    "id": "NASDAQ",
+    "confidence": "80%",
+    "mic": "XBOS"
+  },
+  "DXEDE.DE": {
+    "id": "XETR",
+    "confidence": "80%",
+    "mic": "XETR"
+  },
+  "BATEUK.UK": {
+    "id": "LSE",
+    "confidence": "80%",
+    "mic": "XLON"
+  },
+  "LSEETF.UK": {
+    "id": "LSE",
+    "confidence": "90%",
+    "mic": "XLON"
+  },
+  "SBF.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "100%",
+    "mic": "XPAR"
+  },
+  "DXEEN.PT": {
+    "id": "EURONEXTLIS",
+    "confidence": "85%",
+    "mic": "XLIS"
+  },
+  "TRWBEN.UK": {
+    "id": "LSE",
+    "confidence": "60%",
+    "mic": "XLON"
+  },
+  "APEXEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "70%",
+    "mic": "XPAR"
+  },
+  "TGHEEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "70%",
+    "mic": "XPAR"
+  },
+  "TGHEES.ES": {
+    "id": "BME",
+    "confidence": "70%",
+    "mic": "XMAD"
+  },
+  "ISED.IE": {
+    "id": "EURONEXTDUB",
+    "confidence": "100%",
+    "mic": "XDUB"
+  },
+  "JPNNEXT.JP": {
+    "not_found": "Japannext is a PTS in Japan, not a listed exchange in TradingView.",
+    "mic": "SBIU"
+  },
+  "LSE.UK": {
+    "id": "LSE",
+    "confidence": "100%",
+    "mic": "XLON"
+  },
+  "ENEXT.BE.BE": {
+    "id": "EURONEXTBRU",
+    "confidence": "100%",
+    "mic": "XBRU"
+  },
+  "BATEDE.DE": {
+    "id": "XETR",
+    "confidence": "80%",
+    "mic": "XETR"
+  },
+  "VENTURE.CA": {
+    "id": "TSXV",
+    "confidence": "100%",
+    "mic": "XTSX"
+  },
+  "GETTEX.DE": {
+    "id": "GETTEX",
+    "confidence": "100%",
+    "mic": "MUNC"
+  },
+  "AQEUES.ES": {
+    "id": "BME",
+    "confidence": "70%",
+    "mic": "XMAD"
+  },
+  "ARCA.US": {
+    "id": "AMEX",
+    "confidence": "100%",
+    "mic": "ARCX"
+  },
+  "AQEUEN.FR": {
+    "id": "EURONEXTPAR",
+    "confidence": "70%",
+    "mic": "XPAR"
+  },
+  "TASE.IL": {
+    "id": "TASE",
+    "confidence": "100%",
+    "mic": "XTAE"
+  },
+  "ASX.AU": {
+    "id": "ASX",
+    "confidence": "100%",
+    "mic": "XASX"
+  }
+}

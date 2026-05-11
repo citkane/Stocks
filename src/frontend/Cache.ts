@@ -1,10 +1,18 @@
-export class Cache {
+export default class Cache {
   public get ready() {
     const ready = !!this.accounts && !!this.instruments && !!this._transctns;
     return ready;
   }
   public get = {
-    account: (a_id: string) => {
+    accounts: (broker: broker_t) => {
+      return this.accounts.filter((a) => a.broker === broker);
+    },
+    a_ids: (broker: broker_t) => {
+      return [
+        ...new Set(this.get.accounts(broker).map((a) => a.a_id)).values(),
+      ];
+    },
+    balances: (a_id: string) => {
       const err = `Account ${a_id} not found`;
       if (!this._accounts.has(a_id)) throw Error(err);
       return this._accounts.get(a_id)!;
@@ -15,13 +23,22 @@ export class Cache {
       return this._instrmnts.get(i_id)!;
     },
     transactions: (i_id: i_id_t) => {
-      const err = `Transactions for ${i_id} not found`;
-      if (!this._transctns.has(i_id)) throw Error(err);
+      if (!this._transctns.has(i_id)) {
+        const warn = `Transactions for ${i_id} not found, unbooked`;
+        logger.warn(warn);
+        return [this.unbooked_transctn(i_id)];
+      }
       return [...this._transctns.get(i_id)!.values()];
     },
   };
+  public get a_ids() {
+    return [...this._accounts.keys()];
+  }
+  public get account_brokers() {
+    return [...new Set(this.accounts.map((a) => a.broker)).values()];
+  }
   public get accounts() {
-    return [...this._accounts.values()];
+    return [...this._accounts.values()].flat();
   }
   public get instruments() {
     return this._instrmnts.keys().reduce(
@@ -48,21 +65,11 @@ export class Cache {
     const exchngs = this._instrmnts.values().map((i) => i.exchange);
     return (this._exchgs = [...new Set(exchngs).values()]);
   }
-  public get asset_classes() {
-    if (this._asset_classes) return this._asset_classes;
-    const classes = [...this._instrmnts.values()]
-      .filter((i) => !!i.asset_class)
-      .map((i) => i.asset_class!)
-      .sort((a, b) => a.localeCompare(b));
-    return (this._asset_classes = [...new Set(classes).values()]);
+  public get fx() {
+    return this._fx!;
   }
-  public get asset_sectors() {
-    if (this._sectors) return this._sectors;
-    const sectors = [...this._instrmnts.values()]
-      .filter((i) => !!i.asset_sector)
-      .map((i) => i.asset_sector!)
-      .sort((a, b) => a.localeCompare(b));
-    return (this._sectors = [...new Set(sectors).values()]);
+  public get filter() {
+    return Cache._filter;
   }
   public get asset_industries() {
     if (this._industries) return this._industries;
@@ -89,17 +96,27 @@ export class Cache {
       a[1]!.localeCompare(b[1]),
     ));
   }
-  public set accounts(accounts: account_t[]) {
-    accounts.forEach(this.add.account);
-    logger.info("Cache accounts updated");
+  public set accounts(accounts: (account_t | balance_t)[]) {
+    const _accounts = accounts.reduce(
+      (c, acc) => {
+        const { a_id } = acc;
+        if (!c[a_id]) c[a_id] = [];
+        c[a_id].push(acc);
+        return c;
+      },
+      {} as { [a_id: string]: (account_t | balance_t)[] },
+    );
+
+    Object.keys(_accounts).forEach((a_id) =>
+      this._accounts.set(a_id, _accounts[a_id]!),
+    );
   }
-  public set transactions(_transctns: { [i_id: i_id_t]: transctn_t[] }) {
+  public set transactions(_transctns: cache_t["transactions"]) {
     Object.keys(_transctns).forEach((_i_id) => {
       const i_id = _i_id as i_id_t;
       const transcts = _transctns[i_id]!;
       this._transctns.set(i_id, new Set(transcts));
     });
-    logger.info("Cache transactions updated");
   }
   public set instruments(instruments: { [i_id: i_id_t]: instrmnt_t }) {
     delete this._asset_classes;
@@ -114,44 +131,74 @@ export class Cache {
       };
       this._instrmnts.set(i_id, _instrumnt);
     });
-    logger.info("Cache instruments updated");
   }
-  public set live_data(data: live_data_t[]) {
-    data.forEach((data) => {
-      let { price_market, fx_market, div_yield, i_id } = data;
+  public set fx(fx: fx_rates_t) {
+    this._fx = fx;
+  }
+  public set live_data(data: cache_t["live_data"]) {
+    this.fx = data.fx!;
+    data.data?.forEach((data) => {
+      let { price_market, div_yield, i_id } = data;
       div_yield = div_yield || 0;
 
-      const _transcts = this._transctns.get(i_id)!;
+      const _transcts = this._transctns.get(i_id);
       let instrmnt = this._instrmnts.get(i_id)!;
 
+      //if (!_transcts) console.log(i_id, instrmnt);
+
       instrmnt = { ...instrmnt, ...{ div_yield } };
-      const transctns = [..._transcts.values()].map((t) => {
-        t =
-          t.kind === "buy"
-            ? { ...t, ...{ price_market, fx_market } }
-            : { ...t, ...{ fx_market } };
-        return t;
+      const transctns = [...(_transcts?.values() || [])].map((t) => {
+        const { currency } = t;
+        const fx_market = this.fx[currency]!;
+        return t.kind === "buy"
+          ? { ...t, ...{ price_market, fx_market } }
+          : { ...t, ...{ fx_market } };
       });
 
       this._instrmnts.set(i_id, instrmnt);
       this._transctns.set(i_id, new Set(transctns));
     });
-    logger.info("Live data updated");
+    Object.keys(data.balances!).forEach((a_id) =>
+      this._accounts.set(a_id, data.balances![a_id]!),
+    );
   }
 
-  private add = {
-    account: (account: account_t) => {
-      const { a_id } = account;
-      this._accounts.set(a_id, account);
-    },
+  private unbooked_transctn = (i_id: i_id_t): transctn_t => {
+    const instrmnt = this._instrmnts.get(i_id)!;
+    const { saxo_id, ibkr_id } = instrmnt;
+    const p_id: p_id_t = saxo_id ? `saxo_${saxo_id}` : `ibkr_${ibkr_id}`;
+    const broker = saxo_id ? "saxo" : "ibkr";
+    const a_id = "unknown";
+    const currency = "XXX";
+    const amount = 0;
+    const date = util.time.ms_now();
+    const price_traded = 0;
+    const fx_traded = 0;
+    const id = util.random_context();
+
+    return {
+      kind: "unbooked",
+      id,
+      p_id,
+      i_id,
+      broker,
+      a_id,
+      currency,
+      amount,
+      date,
+      price_traded,
+      fx_traded,
+    };
   };
-  private _accounts = new Map<string, account_t>();
+
+  public static _filter = {} as f.filter_t;
+
+  private _accounts = new Map<string, (balance_t | account_t)[]>();
   private _instrmnts = new Map<i_id_t, instrmnt_t>();
   private _transctns = new Map<i_id_t, Set<transctn_t>>();
   private _exchgs?: string[];
   private _sectors?: string[];
   private _industries?: [string, string][];
   private _asset_classes?: string[];
+  private _fx?: fx_rates_t;
 }
-
-//type instrmnt_set_t = instrmt_trnscts_t<Set<transctn_t>>;

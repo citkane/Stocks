@@ -1,4 +1,4 @@
-import type { Ibkr as Ibkr_b } from "@backend/brokers";
+import type { BrokerIbkr as Ibkr_b } from "@backend/brokers";
 import type { Ibkr as Ibkr_f } from "@frontend/app/brokers";
 
 declare global {
@@ -120,6 +120,7 @@ declare global {
         conid: number;
         type: b.i.transaction_type_t;
         desc: string;
+        isRealTime?: boolean;
       };
       type transactions_t = {
         nd: number;
@@ -204,6 +205,38 @@ declare global {
         region: string;
         assets: string;
         country_code: string;
+      };
+      type balance_t = {
+        commoditymarketvalue: number;
+        futuremarketvalue: number;
+        settledcash: number;
+        exchangerate: number;
+        sessionid: number;
+        cashbalance: number;
+        corporatebondsmarketvalue: number;
+        warrantsmarketvalue: number;
+        netliquidationvalue: number;
+        interest: number;
+        unrealizedpnl: number;
+        stockmarketvalue: number;
+        moneyfunds: number;
+        currency: currency_t;
+        realizedpnl: number;
+        funds: number;
+        acctcode: string;
+        issueroptionsmarketvalue: number;
+        key: string;
+        timestamp: number;
+        severity: number;
+        stockoptionmarketvalue: number;
+        futuresonlypnl: number;
+        tbondsmarketvalue: number;
+        futureoptionmarketvalue: number;
+        cashbalancefxsegment: number;
+        secondkey: currency_t;
+        tbillsmarketvalue: number;
+        endofbundle: number;
+        dividends: number;
       };
     }
   }

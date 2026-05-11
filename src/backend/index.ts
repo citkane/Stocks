@@ -18,11 +18,12 @@ declare global {
   }
 }
 
-(globalThis as any).logger = Logger;
+var logger = Logger;
+(globalThis as any).logger = logger;
 
 import { ServerHttp, ServerWs } from "./servers";
 import { Database } from "./database";
-import { Brokers, Saxo, Ibkr } from "./brokers";
+import { Brokers, BrokerSaxo, BrokerIbkr } from "./brokers";
 import Api from "./Api.ts";
 import App from "./App.ts";
 
@@ -35,8 +36,8 @@ import App from "./App.ts";
 };
 
 (globalThis as any).backend.broker = {
-  saxo: new Saxo(),
-  ibkr: new Ibkr(),
+  saxo: new BrokerSaxo(),
+  ibkr: new BrokerIbkr(),
 };
 
 new App();

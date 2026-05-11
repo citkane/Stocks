@@ -1,7 +1,9 @@
 money-str,
 percent-str {
-  display: block;
+  white-space: pre;
+  font-family: var(--font-monospace);
   text-align: right;
+  justify-content: right;
   &.pl {
     color: var(--col-pos);
   }
@@ -12,21 +14,18 @@ percent-str {
 select-broker {
   label {
     display: inline-block;
-    margin-right: var(--padding-cell);
+    margin-right: var(--size-padding-cell);
   }
   display: inline-block;
-  margin: var(--padding-cell);
+  margin: var(--size-padding-cell);
   margin-left: none;
 }
 
 expanding-drawer {
-  grid-column: var(--grid-col-all);
+  display: block;
+  width: 100%;
   overflow-y: hidden;
-  padding: 0 !important;
   .inner {
-    display: grid;
-    grid-template-columns: var(--grid-columns);
-
-    padding: var(--padding-cell);
+    width: 100%;
   }
 }

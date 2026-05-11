@@ -20,7 +20,6 @@ export class InstrumentChart extends AppElement {
   private handlers = {
     render: async (p: p.prop_callback) => {
       if (p.old === p.new) return;
-
       try {
         const chart = this.dom.createChart();
         this.addEventListener("dblclick", () =>
@@ -144,16 +143,9 @@ export class InstrumentChart extends AppElement {
   private data = {
     data: () => this.chart_data!,
     map: (data: chart_data_t[]) => {
-      const { currency } = this.instrmnt;
       return data.reduce(
         (c, point) => {
           let { open, close, high, low, time, volume } = point;
-          if (currency === "ZAR" || currency === "ZAC" || currency === "GBp") {
-            open = open / 100;
-            close = close / 100;
-            high = high / 100;
-            low = low / 100;
-          }
           const color = open > close ? util.colours.red : util.colours.green;
           const value = Math.round((high * 100 + low * 100) / 2) / 100;
           c.bar.push({ close, open, high, low, time });
@@ -193,7 +185,6 @@ export class InstrumentChart extends AppElement {
       };
     },
   };
-
   private get instrmnt() {
     return this.cache.instruments[this.i_id]!;
   }

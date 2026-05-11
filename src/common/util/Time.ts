@@ -114,7 +114,7 @@ export class Time {
      * @returns
      */
     to_iso_date: (ms: number = new Date().valueOf()) => {
-      return this.epoch.to_iso(ms).split("T")[0]!;
+      return this.epoch.to_iso(ms).split("T")[0]! as iso_date_t;
     },
     /**
      * Convert epoch to a UTC time string "Day, dd mm yyyy hh:mm:ss TZONE"

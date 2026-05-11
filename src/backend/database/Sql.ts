@@ -50,11 +50,14 @@ export class Sql extends Global {
       condition?: db.condition_t<T>,
       sort?: db.sort_t<T>,
       ignore?: db.ignore_t<T>,
+      max?: db.col_n<T>,
     ) => {
       const columns = this.fragment.columns_sql(table, ignore);
       const cond = this.fragment.condition_sql(condition);
       const sorter = this.fragment.sort_sql(sort);
-      return sql`SELECT ${columns} FROM ${sql(table)} ${cond} ${sorter}`;
+      return max
+        ? sql`SELECT MAX(${sql(max)}) AS ${sql(max)} FROM ${sql(table)} ${cond}`
+        : sql`SELECT ${columns} FROM ${sql(table)} ${cond} ${sorter}`;
     },
     exists: (id: string, _sql = sql) =>
       _sql`SELECT name FROM sqlite_master WHERE type='table' AND name=${_sql(id)}`.then(
