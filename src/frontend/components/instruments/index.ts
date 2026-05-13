@@ -12,6 +12,8 @@ export {
   InstrumentChart,
   SelectSector,
   SelectIndustry,
+  SelectBroker,
+  SelectAccount,
 };
 
 customElements.define("instrmnts-root", InstrumentsRoot);

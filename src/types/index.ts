@@ -13,7 +13,6 @@ import type Cache_f from "@frontend/Cache";
 import type Router_f from "@frontend/Router";
 import type { ClientWs as Ws_f } from "@frontend/app/servers";
 import type { Brokers as Brokers_f } from "@frontend/app/Brokers";
-import type { Events as Events_f } from "@frontend/app/Events";
 
 export type * as saxo_t from "./saxo_t";
 export type * as ibkr_t from "./ibkr_t";
@@ -35,7 +34,6 @@ declare global {
     type Router_t = Router_f;
     type ClientWs_t = Ws_f;
     type Brokers_t = Brokers_f;
-    type Events_t = Events_f;
     type Cache_t = Cache_f;
     type Api_t = Api_f;
     type Ws_t = Ws_f;

@@ -46,7 +46,7 @@
     border-left: 1px solid var(--col-border);
     grid-column: var(--grid-col-6);
   }
-  [name="pl"] {
+  [name="u_pl"] {
     border-left: 1px solid var(--col-border);
     grid-column: var(--grid-col-7);
   }

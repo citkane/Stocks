@@ -31,6 +31,7 @@ export default class Api extends Global implements Api_t {
     this.app_root.setAttribute("accounts", data);
   };
   private set_live_data = (live_data: cache_t["live_data"]) => {
+    delete this.cache.selector;
     this.cache.live_data = live_data;
     this.set_instrmnts(this.cache.instruments);
     this.set_transctns(this.cache.transactions);

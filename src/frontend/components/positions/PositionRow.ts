@@ -1,15 +1,16 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
+import { AnyString, DateString } from "@frontend/components";
 
-export class PositionRow extends AppElement {
+export class PositionRow extends WebComponent {
   static observedAttributes = ["data-transaction", "data-filter"];
 
   constructor() {
     super();
     this.dom.template_to_self("position-row");
-
     this.props.watch("data-transaction", this.handlers.render);
     this.props.watch("data-filter", this.handlers.filter);
     this.props.show();
+    this.dom.define_selectors();
   }
 
   private handlers = {
@@ -17,121 +18,69 @@ export class PositionRow extends AppElement {
       if (p.old === p.new) return;
 
       delete this._transaction;
-      delete this._values;
+      const { amount, r_pl, dividend, date, broker, meta, kind } =
+        this.transaction;
+      const {
+        dividend: meta_dividend,
+        amount: meta_amount,
+        u_pl,
+        fx_pl,
+        traded_value,
+        market_value,
+        sales,
+      } = meta!;
+      if (market_value) this.els_money.market.money_value = market_value;
+      if (traded_value) this.els_money.traded.money_value = traded_value;
+      if (dividend) this.els_money.dividend.money_value = dividend;
+      if (u_pl) this.els_money.u_pl.money_value = u_pl;
+      if (fx_pl) this.els_money.fx_pl.money_value = fx_pl;
+      if (r_pl) this.els_money.r_pl.money_value = r_pl;
 
-      const { meta, kind } = this.transaction;
-      this.setAttribute("kind", kind);
-
-      Object.keys(this.values).forEach((key) => {
-        const k = key as keyof typeof this.values;
-        let value = String(this.values[k] || 0);
-
-        const el = this.querySelector(`[name="${key}"]`);
-        this.setAttribute(key, value);
-        const _value = meta && meta[key];
-        if (!!_value) {
-          value = String(_value);
-          el?.classList.add("meta");
-        }
-        el?.setAttribute("value", value);
-      });
+      if (!dividend && meta_dividend) this.sales_el.value = meta_dividend;
+      if (sales) this.sales_el.value = sales;
+      this.amount_el.value = meta_amount !== undefined ? meta_amount : amount;
+      this.kind_el.value = kind;
+      this.date_el.value = date;
+      this.broker_el.value = broker;
     },
 
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-      if (this.filter.search) return this.props.show();
 
       const hide = !!Object.keys(this.source_filter).find((key) => {
-        if (key === "a_id" && this.transaction.kind === "dividend")
-          return false;
-        const val = this.source_filter[key];
-        const _val = this.filter[key as f.filter_keys_t];
-        return _val !== "all" && _val !== val;
+        //if (key === "a_id" && this.transaction.kind === "dividend")
+        //  return false;
+        const source_val = this.source_filter[key as filter_keys_t];
+        const val = this.cache.filter[key as filter_keys_t];
+        return val !== "all" && val !== source_val;
       });
       hide ? this.props.hide() : this.props.show();
     },
   };
-
-  private data = this.api.data({
-    values: () => {
-      let {
-        date,
-        amount,
-        broker,
-        currency,
-        price_traded,
-        price_market,
-        fx_traded,
-        fx_market,
-        kind,
-        dividend,
-        r_pl,
-      } = this.transaction;
-
-      if (kind === "dividend") {
-        const div_year = util.time.year(date);
-        const year = util.time.year();
-        dividend = div_year < year ? 0 : dividend;
-        return {
-          date,
-          broker,
-          amount,
-          dividend,
-        };
-      }
-      if (kind === "sell") {
-        return {
-          date,
-          broker,
-          amount,
-          r_pl,
-          traded_value: 0,
-        };
-      }
-
-      const fx_pl = util.money.fx_pl_base_whole(this.transaction);
-      const pl = util.money.pl_base_whole(this.transaction);
-
-      const market_value = util.money.base_whole(
-        currency,
-        amount,
-        price_market,
-        fx_market,
-      );
-      const traded_value = util.money.base_whole(
-        currency,
-        amount,
-        price_traded,
-        fx_traded,
-      );
-
-      return {
-        date,
-        broker,
-        amount,
-        market_value,
-        traded_value,
-        fx_pl,
-        pl,
-        r_pl,
-      };
+  private dom = this.api.dom({
+    define_selectors: () => {
+      this.date_el = this.querySelector<DateString>(`[name="date"]`)!;
+      this.broker_el = this.querySelector<AnyString>(`[name="broker"]`)!;
+      this.sales_el = this.querySelector<AnyString>(`[name="sales"]`)!;
+      this.kind_el = this.querySelector<AnyString>(`[name="kind"]`)!;
+      this.amount_el = this.querySelector<AnyString>(`[name="amount"]`)!;
+      this.els_money = this.selector.money.instruments(this);
     },
   });
-  private dom = this.api.dom({});
   private props = this.api.props({});
 
-  private get values() {
-    if (this._values) return this._values;
-    return (this._values = this.data.values());
-  }
-  private get source_filter() {
+  private get source_filter(): filter_t {
+    if (!!this._source_filter) return this._source_filter;
+
     const { a_id, broker, i_id } = this.transaction;
     const instrument = this.cache.get.instrument(i_id);
     const { asset_sector, asset_industry } = instrument;
-
-    return { a_id, broker, asset_sector, asset_industry } as {
-      [key: string]: string;
-    };
+    return (this._source_filter = {
+      a_id,
+      broker,
+      asset_sector,
+      asset_industry,
+    });
   }
   private get transaction() {
     if (!!this._transaction) return this._transaction;
@@ -141,6 +90,16 @@ export class PositionRow extends AppElement {
     return (this._transaction = transaction);
   }
 
+  private date_el!: DateString;
+  private broker_el!: AnyString;
+  private sales_el!: AnyString;
+  private kind_el!: AnyString;
+  private amount_el!: AnyString;
+  public els_money!: ReturnType<typeof this.selector.money.instruments>;
+
   private _transaction?: transctn_t;
-  private _values?: ReturnType<typeof this.data.values>;
+  private _source_filter?: filter_t;
 }
+
+type filter_t = Omit<f.filter_t, "search">;
+type filter_keys_t = Exclude<f.filter_keys_t, "search">;

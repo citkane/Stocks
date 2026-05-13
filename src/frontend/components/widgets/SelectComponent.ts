@@ -1,6 +1,8 @@
-import { AppElement } from "@frontend/components/AppElement";
+import { WebComponent } from "@frontend/components/common/index";
 
-export class Select extends AppElement {
+export class SelectComponent extends WebComponent {
+  static observedAttributes = ["data-filter"];
+
   constructor() {
     super();
     this.base_dom.template_to_self("select-widget");

@@ -4,7 +4,7 @@ import { DateString } from "./DateString";
 import { AnyString } from "./AnyString";
 import { ExpandingDrawer } from "./ExpandingDrawer";
 
-export { Select } from "./Select";
+export { SelectComponent } from "./SelectComponent";
 export { MoneyString, DateString, AnyString, ExpandingDrawer, PercentString };
 
 customElements.define("money-str", MoneyString);

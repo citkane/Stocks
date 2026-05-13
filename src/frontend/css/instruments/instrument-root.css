@@ -6,7 +6,7 @@ instrmnts-root {
 
   instrmnt-row {
     border-bottom: 1px solid var(--col-border-light);
-    &[shown]:last-child {
+    &:nth-last-child(1 of [shown]) {
       border-bottom: none;
     }
   }
@@ -43,7 +43,7 @@ instrmnts-root {
       border: 1px solid var(--col-border);
       cursor: pointer;
       user-select: none;
-      &[name="pl"] {
+      &[name="u_pl"] {
         border-top: none;
       }
     }

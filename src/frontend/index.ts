@@ -8,7 +8,6 @@ declare global {
     var api: Api_t;
     var ws: Ws_t;
     var cache: Cache_t;
-    var events: Events_t;
     var saxo: Saxo_t;
     var ibkr: Ibkr_t;
   }

@@ -1,94 +1,76 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
+import { BalanceRow } from "@frontend/components";
 
-export class AccountRow extends AppElement {
-  static observedAttributes = ["a_id"];
-
+export class AccountRow extends WebComponent {
   constructor() {
     super();
-    //this.api.set_topic(this);
     this.dom.template_to_self("account-row");
-    this.props.watch("a_id", this.handlers.render);
   }
 
-  private handlers = {
-    render: (_p: p.prop_callback) => {
-      this.name_el.innerText = this.name;
-      this.balances.forEach((balance) => {
-        const { currency, cash, assets_val } = balance as balance_t;
-        if (!cash && !assets_val) return;
+  public render = () => {
+    this.name_el.innerText = this.name;
+    this.balances.forEach((balance) => {
+      const { currency, cash, assets_val } = balance;
+      if (!cash && !assets_val) return;
 
-        const ex_el = this.querySelector(`balance-row[currency=${currency}]`);
-        const balance_row = ex_el || this.dom.make_el("balance-row", "");
-        balance_row.setAttribute("currency", currency);
-        balance_row.setAttribute(
-          "data-balance",
-          util.html.json_stringify(balance),
-        );
-        this.props.set_values();
-        if (!!ex_el) return;
+      const ex_el = this.dom.find_balance_row(currency);
+      const balance_row = ex_el || this.dom.make_balance_row(currency);
+      if (!ex_el) this.balances_wrapper_el.appendChild(balance_row);
 
-        this.balances_wrapper.appendChild(balance_row);
-        this.props.set_values();
-      });
-    },
+      const balance_data = util.html.json_stringify(balance);
+      balance_row.setAttribute("data-balance", balance_data);
+      this.props.set_money();
+    });
   };
-  private props = this.api.props({
-    get_values: () => {
-      return this.balance_rows.reduce(
-        (c, el) => {
-          let cash = get(el, "base_cash");
-          let assets_val = get(el, "base_assets_val");
-          c.cash = c.cash + Number(cash);
-          c.assets_val = c.assets_val + Number(assets_val);
-          c.total = c.cash + c.assets_val;
-          return c;
-        },
-        { cash: 0, assets_val: 0, total: 0 },
-      );
-      function get(el: Element, attr?: string) {
-        return el.getAttribute(attr || "0") as string | number;
-      }
-    },
-    set_values: () => {
-      const values = this.props.get_values();
-      this.setAttribute("base_cash", String(values.cash));
-      this.setAttribute("base_assets_val", String(values.assets_val));
-      this.setAttribute("base_total", String(values.total));
 
-      this.cash_el.setAttribute("value", String(values.cash));
-      this.assets_val_el.setAttribute("value", String(values.assets_val));
-      this.total_el.setAttribute("value", String(values.total));
+  private props = this.api.props({
+    set_money: () => {
+      const { tally } = this.money.accounts;
+      const { cash, assets_val, total } = tally(this.balance_row_els);
+      this.els_money.cash.money_value = cash;
+      this.els_money.assets.money_value = assets_val;
+      this.els_money.total.money_value = total;
     },
   });
-  private dom = this.api.dom({});
+  private dom = this.api.dom({
+    find_balance_row: (currency: currency_t) => {
+      return this.querySelector<BalanceRow>(
+        `balance-row[currency=${currency}]`,
+      );
+    },
+    make_balance_row: (currency: currency_t) => {
+      return this.dom.make_el<BalanceRow>(
+        "balance-row",
+        "",
+        `currency="${currency}"`,
+      );
+    },
+  });
 
   private get a_id() {
     return this.getAttribute("a_id")!;
   }
   private get balances() {
-    return this.cache.get.balances(this.a_id);
+    return this.cache.get.balances(this.a_id) as balance_t[];
   }
   private get name() {
     const acc = this.balances[0]!;
     const { alias, a_id_original } = acc;
     return alias || a_id_original;
   }
+
+  public get els_money() {
+    return this.selector.money.accounts(this);
+  }
   private get name_el() {
-    return this.querySelector(`div[name="name"]`)! as HTMLElement;
+    return this.querySelector<HTMLElement>(`div[name="name"]`)!;
   }
-  private get balances_wrapper() {
-    return this.querySelector(".wrapper.balances")!;
+  private get balances_wrapper_el() {
+    return this.querySelector<HTMLElement>(".wrapper.balances")!;
   }
-  private get balance_rows() {
-    return [...this.balances_wrapper.querySelectorAll(`balance-row`)];
-  }
-  private get cash_el() {
-    return this.querySelector(`[name="cash"]`)! as HTMLElement;
-  }
-  private get assets_val_el() {
-    return this.querySelector(`[name="assets_val"]`)! as HTMLElement;
-  }
-  private get total_el() {
-    return this.querySelector(`[name="total"]`)! as HTMLElement;
+  private get balance_row_els() {
+    return this.balances_wrapper_el
+      .querySelectorAll<BalanceRow>(`balance-row`)
+      .values();
   }
 }

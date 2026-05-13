@@ -1,12 +1,13 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
+import type { PositionRow } from "@frontend/components";
 
-export class PositionsRoot extends AppElement {
+export class PositionsRoot extends WebComponent {
   static observedAttributes = ["data-transctns", "data-filter"];
 
   constructor() {
     super();
-    //this.api.set_topic(this);
     this.dom.template_to_self("position-root");
+    this.dom.define_selectors();
 
     this.props.watch("data-transctns", this.handlers.render);
     this.props.watch("data-filter", this.handlers.filter);
@@ -17,14 +18,18 @@ export class PositionsRoot extends AppElement {
       if (p.old === p.new) return;
 
       delete this._position;
-      const transctns = util.money.calculate_transctns(this.position);
+      const transctns = this.money.positions.calculate_transctns(this.position);
       this.dom.position_rows(transctns);
+      this.dom.define_selectors();
       this.props.refresh();
     },
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      this.positn_rows.forEach((row) => row.setAttribute("data-filter", p.new));
+      delete this._shown_position_elements;
+      this.positn_row_els.forEach((row) => {
+        row.setAttribute("data-filter", p.new);
+      });
       this.props.refresh();
     },
   };
@@ -35,58 +40,70 @@ export class PositionsRoot extends AppElement {
         .sort((a, b) => a.date - b.date)
         .forEach((transctn) => {
           const { id } = transctn;
-          const ex_el = this.querySelector(`position-row[id="${id}"]`);
-          const positn_el =
-            ex_el || this.dom.make_el("position-row", "", `id="${id}"`);
+          const ex_el = this.props.find_ex_positn(id);
+          const positn_el = ex_el || this.props.make_positn_row(id);
           const data_transctn = util.html.json_stringify(transctn);
           positn_el.setAttribute("data-transaction", data_transctn);
-          if (!ex_el) this.rows.appendChild(positn_el);
+          if (!ex_el) this.rows_wrapper_el.appendChild(positn_el);
         });
+    },
+    define_selectors: () => {
+      this.positn_row_els = this.querySelectorAll<PositionRow>("position-row")
+        .values()
+        .toArray();
+      this.rows_wrapper_el = this.querySelector<HTMLElement>(".wrapper.rows")!;
     },
   });
 
   private props = this.api.props({
+    find_ex_positn: (id: string) => {
+      return this.querySelector<PositionRow>(`position-row[id="${id}"]`);
+    },
+    make_positn_row: (id: string) => {
+      return this.dom.make_el("position-row", "", `id="${id}"`);
+    },
     refresh: () => {
       this.props.set_position_count();
-      this.props.sum_values_to_props();
-      //this.setAttribute("r_pl", String(this.realised_pl));
+      this.props.tally_money();
     },
-    sum_values_to_props: () => {
-      const values = this.data.money_totals(this.active_positn_rows);
-      Object.keys(values).forEach((key) => {
-        this.setAttribute(key, values[key]!.toString());
-      });
+    tally_money: () => {
+      this.tally = this.money.instruments.tally(this.shown_positn_els);
     },
     set_position_count: () =>
       this.setAttribute(
         "position_count",
-        this.active_positn_rows.length.toString(),
+        this.shown_positn_els.length.toString(),
       ),
   });
-  private data = this.api.data({});
+
+  private get shown_positn_els() {
+    if (this._shown_position_elements) return this._shown_position_elements;
+
+    const rows = this.querySelectorAll<PositionRow>(
+      "position-row:not([hidden])",
+    )
+      .values()
+      .toArray();
+
+    const dividend_rows = rows.filter(
+      (r) => r.getAttribute("kind") === "dividend",
+    );
+    return (this._shown_position_elements =
+      rows.length === dividend_rows.length ? [] : rows);
+  }
+
+  private positn_row_els!: PositionRow[];
+  private rows_wrapper_el!: HTMLElement;
+  private _shown_position_elements?: PositionRow[];
 
   private get transactions() {
     return this.cache.get.transactions(this.i_id);
   }
   private get position() {
     if (this._position) return this._position;
-    return (this._position = util.money.position(this.transactions));
-  }
-  private get active_positn_rows() {
-    const rows = [...this.querySelectorAll("position-row:not([hidden])")!]; //[display="show"]')!];
-    const dividend_rows = rows.filter(
-      (r) => r.getAttribute("kind") === "dividend",
-    );
-    if (rows.length === dividend_rows.length) return [];
-    return rows;
-  }
-  private get positn_rows() {
-    return [...this.querySelectorAll("position-row")!];
-  }
-  private get rows() {
-    return this.querySelector(".wrapper.rows")!;
+    return (this._position = this.money.positions.position(this.transactions));
   }
 
-  //private _transctns?: transctn_t[];
+  public tally!: f.instrmnt_collector_t;
   private _position?: f.positn_t;
 }

@@ -1,6 +1,6 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
 
-export class PercentString extends AppElement {
+export class PercentString extends WebComponent {
   static observedAttributes = ["value"];
 
   constructor() {
@@ -21,10 +21,13 @@ export class PercentString extends AppElement {
     },
   };
   private props = this.api.props({});
-  private get value() {
+  public get value() {
     const val = this.getAttribute("value")!;
     const number = Number(val);
     return isNaN(number) ? val : number;
+  }
+  public set value(percent: number | string) {
+    this.setAttribute("value", String(percent));
   }
 
   private get is_pl() {

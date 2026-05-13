@@ -1,7 +1,6 @@
-export * from "@frontend/components/accounts/index.ts";
-export * from "@frontend/components/instruments";
-export * from "@frontend/components/positions/index.ts";
-export * from "@frontend/components/app/index.ts";
-export * from "@frontend/components/widgets";
-
-export { AppElement } from "./AppElement";
+export * from "@frontend/components/accounts/index";
+export * from "@frontend/components/instruments/index";
+export * from "@frontend/components/positions/index";
+export * from "@frontend/components/app/index";
+export * from "@frontend/components/widgets/index";
+export * from "@frontend/components/common/index";

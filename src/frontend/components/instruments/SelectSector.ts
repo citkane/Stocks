@@ -1,8 +1,6 @@
-import { Select } from "@frontend/components/widgets";
+import { SelectComponent } from "@frontend/components/widgets/SelectComponent";
 
-export class SelectSector extends Select {
-  static observedAttributes = ["data-filter"];
-
+export class SelectSector extends SelectComponent {
   constructor() {
     super();
     this.dom.set_label("sector", "Sector:");
@@ -14,7 +12,7 @@ export class SelectSector extends Select {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
       if (!p.old) this.dom.make_options();
-      const { a_id, broker } = this.filter;
+      const { a_id, broker } = this.cache.filter;
       if (this.a_id === a_id && this.broker === broker) return;
 
       if (broker) this.broker = broker;
@@ -23,7 +21,7 @@ export class SelectSector extends Select {
     },
     change: (e: Event) => {
       const { value } = e.target as HTMLSelectElement;
-      this.handle_filter([this.name, value], ["asset_industry", "all"]);
+      this.filter.handle([this.name, value], ["asset_industry", "all"]);
     },
   };
   private dom = {
@@ -39,9 +37,9 @@ export class SelectSector extends Select {
   private props = this.api.props({});
 
   private get sectors() {
-    const sectors = this.displayed_instrmnt_els.map((el) =>
-      el.getAttribute("asset_sector"),
-    );
+    const sectors = this.selector.filter
+      .shown_instrmnts()
+      .map((el) => el.getAttribute("asset_sector"));
     return [...new Set(sectors).values()]
       .filter((s) => s !== null)
       .sort((a, b) => a.localeCompare(b));

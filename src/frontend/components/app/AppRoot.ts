@@ -1,7 +1,7 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
-import type { ExpandingDrawer } from "../widgets";
+import { WebComponent } from "@frontend/components/common/index";
+import type { ExpandingDrawer } from "@frontend/components";
 
-export class AppRoot extends AppElement {
+export class AppRoot extends WebComponent {
   static observedAttributes = ["transactions", "instruments", "accounts"];
 
   constructor() {
@@ -31,7 +31,7 @@ export class AppRoot extends AppElement {
     },
     accounts: (p: p.prop_callback) => {
       if (p.new === p.old) return;
-      this.root_accounts_el.setAttribute("accounts", p.new);
+      this.selector.root.accnts.setAttribute("accounts", p.new);
       this.accounts = p.new;
       if (!this.transactions || !this.instruments) return;
       this.render_instrmnts();
@@ -67,7 +67,7 @@ export class AppRoot extends AppElement {
       instruments: this.instruments,
       accounts: this.accounts,
     };
-    this.root_instrmnts_el.setAttribute(
+    this.selector.root.instrmnts.setAttribute(
       "data-all",
       util.hash_id(instrmnt_data),
     );

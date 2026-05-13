@@ -1,7 +1,6 @@
-import { Select } from "@frontend/components/widgets";
+import { SelectComponent } from "@frontend/components/widgets/SelectComponent";
 
-export class SelectAccount extends Select {
-  static observedAttributes = ["data-filter"];
+export class SelectAccount extends SelectComponent {
   constructor() {
     super();
     this.dom.set_label("account", "Account:");
@@ -13,14 +12,14 @@ export class SelectAccount extends Select {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
       if (!p.old) this.dom.make_options();
-      const { broker } = this.filter;
+      const { broker } = this.cache.filter;
       if (this.broker === broker) return;
       if (broker) this.broker = broker;
       this.dom.make_options();
     },
     change: (e: Event) => {
       const { value } = e.target as HTMLSelectElement;
-      this.handle_filter(
+      this.filter.handle(
         [this.name, value],
         ["asset_sector", "all"],
         ["asset_industry", "all"],

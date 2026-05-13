@@ -1,8 +1,8 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
 
 const transition_sec = 1;
 
-export class ExpandingDrawer extends AppElement {
+export class ExpandingDrawer extends WebComponent {
   static observedAttributes = ["state", "height"];
 
   constructor() {

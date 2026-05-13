@@ -29,7 +29,15 @@ type transctn_t = {
   fx_market?: number;
   dividend?: number;
   r_pl?: number;
-  meta?: { [key: string]: string | number | undefined };
+  meta?: {
+    dividend?: number | string;
+    traded_value?: number | string;
+    amount?: number | string;
+    u_pl?: number | string;
+    fx_pl?: number | string;
+    market_value?: number | string;
+    sales?: number | string;
+  };
 };
 type live_data_t = {
   i_id: i_id_t;

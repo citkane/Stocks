@@ -1,6 +1,6 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
 
-export class DateString extends AppElement {
+export class DateString extends WebComponent {
   static observedAttributes = ["value"];
 
   constructor() {
@@ -19,7 +19,10 @@ export class DateString extends AppElement {
   };
   private props = this.api.props({});
 
-  private get value() {
+  public get value() {
     return Number(this.getAttribute("value")!);
+  }
+  public set value(epoch: number) {
+    this.setAttribute("value", String(epoch));
   }
 }

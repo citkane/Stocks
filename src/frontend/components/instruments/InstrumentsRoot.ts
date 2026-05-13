@@ -1,14 +1,18 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
-import type { Select } from "..";
+import { WebComponent } from "@frontend/components/common/index";
+import {
+  type InstrumentRow,
+  type MoneyString,
+  type SelectComponent,
+} from "@frontend/components";
+
 const transition_time = 300;
 
-export class InstrumentsRoot extends AppElement {
+export class InstrumentsRoot extends WebComponent {
   static observedAttributes = ["data-all", "data-filter"];
 
   constructor() {
     super();
     this.dom.template_to_self("instrmnts-root");
-    //this.props.set_header_info();
     this.data.init_sort_register();
     this.props.watch("data-all", this.handlers.render);
     this.props.watch("data-filter", this.handlers.filter);
@@ -22,20 +26,20 @@ export class InstrumentsRoot extends AppElement {
         .sort((a, b) => a.description.localeCompare(b.description))
         .forEach((instrmnt) => {
           const { i_id } = instrmnt;
-          const ex_el = this.querySelector(`instrmnt-row[i_id="${i_id}"]`);
-          const instrmnt_el =
-            ex_el || this.dom.make_el("instrmnt-row", "", `i_id="${i_id}"`);
-          const transactions = this.data.transactions(instrmnt.i_id);
-          const data = { instrument: instrmnt, transactions };
-          instrmnt_el.setAttribute("data-all", util.hash_id(data));
-          if (!ex_el) this.instrmnt_wrapper_el.appendChild(instrmnt_el);
+          const ex_row_el = this.props.find_instrmnt(i_id);
+          const row_el = ex_row_el || this.props.make_instrmnt(i_id);
+          const transactions = this.data.transactions(i_id);
+          const data = { instrmnt, transactions };
+          row_el.setAttribute("data-all", util.hash_id(data));
+          if (!ex_row_el) this.instrmnt_wrapper_el.appendChild(row_el);
         });
-      this.props.set_money_totals();
+      this.props.tally_money();
       if (!!p.old) return;
 
       this.props.init_filters();
       this.dom.set_sort_actions();
     },
+
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
       if (this.dom_busy) {
@@ -43,9 +47,13 @@ export class InstrumentsRoot extends AppElement {
       }
       this.dom.set_busy();
       setTimeout(() => {
-        this.instrmnt_els.forEach((r) => r.setAttribute("data-filter", p.new));
-        this.filter_els.forEach((el) => el.setAttribute("data-filter", p.new));
-        this.props.set_money_totals();
+        this.instrmnt_els.forEach((r) => {
+          r.setAttribute("data-filter", p.new);
+        });
+        this.selector.filter.selects.forEach((el) => {
+          el.setAttribute("data-filter", p.new);
+        });
+        this.props.tally_money();
         this.dom.unset_busy();
       }, transition_time);
     },
@@ -59,7 +67,7 @@ export class InstrumentsRoot extends AppElement {
       });
       this.querySelector(`.grid.u_pl [name="u_pl"]`)!.addEventListener(
         "click",
-        () => this.dom.sort_rows("pl"),
+        () => this.dom.sort_rows("u_pl"),
       );
     },
     sort_rows: (name: string) => {
@@ -71,7 +79,7 @@ export class InstrumentsRoot extends AppElement {
           .querySelector(`[name="${name}"]`)
           ?.hasAttribute("number");
 
-        const sorted = this.instrmnt_els.sort((a, b) => {
+        const sorted = [...this.instrmnt_els].sort((a, b) => {
           const val_a = a.getAttribute(name)!;
           const val_b = b.getAttribute(name)!;
 
@@ -100,31 +108,24 @@ export class InstrumentsRoot extends AppElement {
   });
 
   private props = this.api.props({
-    set_money_totals: () => {
-      const rows = this.displayed_instrmnt_els;
-      const values = this.data.money_totals(rows);
-      const { market_value, div_est } = values;
-      values.div_yield = (div_est! / market_value!) * 100;
-      Object.keys(values).forEach((key) => {
-        const value = values[key]!.toString();
-        const el = this.header_money_el.querySelector(`[name=${key}]`)!;
-        el.setAttribute("value", value);
-      });
-      const u_pl_total = values.pl! + values.fx_pl!;
-      this.u_pl_total_el.setAttribute("value", String(u_pl_total));
+    find_instrmnt: (i_id: i_id_t) => {
+      return this.querySelector(`instrmnt-row[i_id="${i_id}"]`);
     },
-    //set_header_info: () => {
-    //  this.querySelectorAll(".header > *")?.forEach((e) =>
-    //    this.props.set_info(e),
-    //  );
-    //},
+    make_instrmnt: (i_id: i_id_t) => {
+      return this.dom.make_el("instrmnt-row", "", `i_id="${i_id}"`);
+    },
+    tally_money: () => {
+      const tally = this.money.instruments.tally(
+        this.selector.filter.shown_instrmnts(),
+      );
+      this.money.instruments.assign(this.els_money, tally);
+      this.money_u_pl_total_el.money_value = tally.u_pl + tally.fx_pl;
+    },
+
     init_filters: () => {
-      const names = this.filter_els.map((el) => el.getAttribute("name")!);
-      AppElement.filter_names = names;
-      AppElement.make_default_filter();
-      const filter_str = AppElement.filter_string;
-      this.filter_els.forEach((el) =>
-        el.setAttribute("data-filter", filter_str),
+      this.filter.init();
+      this.selector.filter.selects.forEach((el) =>
+        el.setAttribute("data-filter", this.filter_str),
       );
       this.search_el.addEventListener("input", (e) =>
         this.data.search((e.target as HTMLInputElement).value),
@@ -148,49 +149,55 @@ export class InstrumentsRoot extends AppElement {
     search: (term: string) => {
       if (term.length <= 2) {
         this.select_els.forEach((el) => el.enable());
-        this.handle_filter(["search", undefined]);
+        this.filter.handle(["search", undefined]);
         return;
       }
       clearTimeout(this.search_debouncer);
       this.search_debouncer = setTimeout(() => {
         term = term.toLowerCase();
         this.select_els.forEach((el) => el.disable());
-        this.handle_filter(["search", term]);
+        this.filter.handle(["search", term]);
       }, 500);
     },
   });
-
-  private get instrmnt_els() {
-    return [...this.querySelectorAll("instrmnt-row")];
-  }
-  private get instrmnt_wrapper_el() {
-    return this.querySelector(".wrapper.instruments")! as HTMLElement;
-  }
-  private get header_money_el() {
-    return this.querySelector(".header .money")!;
-  }
-  private get header_el() {
-    return this.querySelector(".header .header")!;
-  }
-  private get u_pl_total_el() {
-    return this.querySelector(`.grid.u_pl [name="u_pl_total"]`)!;
-  }
-  private get search_el() {
-    return this.querySelector(
-      `.filter.wrapper [name="search"]`,
-    )! as HTMLInputElement;
-  }
-  private get select_els() {
-    return this.querySelectorAll(
-      `.filter.wrapper [filter][select]`,
-    ) as NodeListOf<Select>;
-  }
 
   private get instrmnts() {
     return this.cache.instruments;
   }
   private get transcts() {
     return this.cache.transactions;
+  }
+
+  private get instrmnt_els() {
+    return this.querySelectorAll<InstrumentRow>("instrmnt-row")
+      .values()
+      .toArray();
+  }
+  private get instrmnt_wrapper_el() {
+    return this.querySelector<HTMLElement>(".wrapper.instruments")!;
+  }
+  private get header_money_el() {
+    return this.querySelector<HTMLElement>(".header .money")!;
+  }
+  private get header_el() {
+    return this.querySelector<HTMLElement>(".header .header")!;
+  }
+  private get money_u_pl_total_el() {
+    return this.querySelector<MoneyString>(`.grid.u_pl [name="u_pl_total"]`)!;
+  }
+
+  private get els_money() {
+    return this.selector.money.instruments(this.header_money_el);
+  }
+  private get search_el() {
+    return this.querySelector<HTMLInputElement>(
+      `.filter.wrapper [name="search"]`,
+    )!;
+  }
+  private get select_els() {
+    return this.querySelectorAll<SelectComponent>(
+      `.filter.wrapper [filter][select]`,
+    );
   }
 
   private sort_registry: { [key: string]: "up" | "dn" } = {};

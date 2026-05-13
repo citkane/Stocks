@@ -1,6 +1,6 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
 
-export class AnyString extends AppElement {
+export class AnyString extends WebComponent {
   static observedAttributes = ["value"];
 
   constructor() {
@@ -16,7 +16,10 @@ export class AnyString extends AppElement {
   };
   private props = this.api.props({});
 
-  private get value() {
+  public set value(value: number | string) {
+    this.setAttribute("value", String(value));
+  }
+  public get value(): string {
     const value = this.getAttribute("value")!;
     return value === "undefined" || value === "null" ? "" : value;
   }

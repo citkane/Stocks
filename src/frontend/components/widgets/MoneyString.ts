@@ -1,6 +1,6 @@
-import { AppElement } from "@frontend/components/AppElement.ts";
+import { WebComponent } from "@frontend/components/common/index";
 
-export class MoneyString extends AppElement {
+export class MoneyString extends WebComponent {
   static observedAttributes = ["value"];
 
   constructor() {
@@ -25,6 +25,13 @@ export class MoneyString extends AppElement {
     },
   };
   private props = this.api.props({});
+
+  public get money_value(): number {
+    return typeof this.value === "string" ? 0 : this.value;
+  }
+  public set money_value(value: number | string) {
+    this.setAttribute("value", String(value));
+  }
 
   private get value() {
     if (this._value) return this._value;

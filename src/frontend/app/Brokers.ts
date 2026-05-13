@@ -1,19 +1,6 @@
 import { Global } from "@frontend/Global";
 
 export class Brokers extends Global {
-  static account_headers = ["broker", "alias", "currency", "id"];
-  static instrmnt_headers = ["description", "ticker", "positions"];
-  static positions_headers = [
-    "date",
-    "position",
-    "buy",
-    "market",
-    "pl",
-    "fx pl",
-    "broker",
-    "exchange",
-  ];
-
   await_login = () => {
     return Promise.all([
       this.saxo
@@ -28,11 +15,6 @@ export class Brokers extends Global {
   cache_init = () => {
     this.messenger.send("push_cache");
   };
-  //Promise.all([
-  //  this.request<account_t[]>("accounts"),
-  //  this.request<transctn_t[]>("transactions"),
-  //  this.request<instrmnt_t[]>("instruments"),
-  //]);
 
   chart_data = (
     saxo_id: number | undefined,

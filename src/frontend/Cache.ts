@@ -1,3 +1,4 @@
+import { Money } from "@frontend/components/common";
 export default class Cache {
   public get ready() {
     const ready = !!this.accounts && !!this.instruments && !!this._transctns;
@@ -26,7 +27,7 @@ export default class Cache {
       if (!this._transctns.has(i_id)) {
         const warn = `Transactions for ${i_id} not found, unbooked`;
         logger.warn(warn);
-        return [this.unbooked_transctn(i_id)];
+        return [Money.unbooked_transctn(i_id)];
       }
       return [...this._transctns.get(i_id)!.values()];
     },
@@ -163,35 +164,8 @@ export default class Cache {
     );
   }
 
-  private unbooked_transctn = (i_id: i_id_t): transctn_t => {
-    const instrmnt = this._instrmnts.get(i_id)!;
-    const { saxo_id, ibkr_id } = instrmnt;
-    const p_id: p_id_t = saxo_id ? `saxo_${saxo_id}` : `ibkr_${ibkr_id}`;
-    const broker = saxo_id ? "saxo" : "ibkr";
-    const a_id = "unknown";
-    const currency = "XXX";
-    const amount = 0;
-    const date = util.time.ms_now();
-    const price_traded = 0;
-    const fx_traded = 0;
-    const id = util.random_context();
-
-    return {
-      kind: "unbooked",
-      id,
-      p_id,
-      i_id,
-      broker,
-      a_id,
-      currency,
-      amount,
-      date,
-      price_traded,
-      fx_traded,
-    };
-  };
-
   public static _filter = {} as f.filter_t;
+  public selector?: f.selector_i;
 
   private _accounts = new Map<string, (balance_t | account_t)[]>();
   private _instrmnts = new Map<i_id_t, instrmnt_t>();

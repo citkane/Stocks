@@ -1,8 +1,6 @@
-import { Select } from "@frontend/components/widgets";
+import { SelectComponent } from "@frontend/components/widgets/SelectComponent";
 
-export class SelectIndustry extends Select {
-  static observedAttributes = ["data-filter"];
-
+export class SelectIndustry extends SelectComponent {
   constructor() {
     super();
     this.dom.set_label("industry", "Industry:");
@@ -20,7 +18,7 @@ export class SelectIndustry extends Select {
       if (p.old === p.new) return;
       if (!p.old) this.dom.make_options();
 
-      const { a_id, broker, asset_sector } = this.filter;
+      const { a_id, broker, asset_sector } = this.cache.filter;
       if (
         this.a_id === a_id &&
         this.broker === broker &&
@@ -34,7 +32,7 @@ export class SelectIndustry extends Select {
     },
     change: (e: Event) => {
       const { value } = e.target as HTMLSelectElement;
-      this.handle_filter([this.name, value]);
+      this.filter.handle([this.name, value]);
     },
   };
   private dom = {
@@ -57,7 +55,7 @@ export class SelectIndustry extends Select {
   private props = this.api.props({});
 
   private get industries() {
-    const industries = this.displayed_instrmnt_els.map((el) => {
+    const industries = this.selector.filter.shown_instrmnts().map((el) => {
       const industry = el.getAttribute("asset_industry");
       const sector = el.getAttribute("asset_sector");
       return this.asset_sector === sector ? industry : null;

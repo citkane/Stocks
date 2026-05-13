@@ -1,11 +1,11 @@
-import { AppElement } from "@frontend/components/AppElement";
+import { WebComponent } from "@frontend/components/common/index";
 import * as lwc from "lightweight-charts";
 
 const chart_span: period_t = [10, "y"];
 const chart_granularity: period_t = [1, "d"];
 const visibility_start: period_t = [1, "y"];
 
-export class InstrumentChart extends AppElement {
+export class InstrumentChart extends WebComponent {
   static observedAttributes = ["i_id", "ready"];
 
   constructor() {
@@ -157,7 +157,7 @@ export class InstrumentChart extends AppElement {
       );
     },
     buys: () => {
-      return util.money
+      return this.money.chart
         .aggregate_position(this.position)
         .filter((t) => t.amount > 0);
     },
@@ -191,7 +191,7 @@ export class InstrumentChart extends AppElement {
   private get position() {
     if (this._position) return this._position;
     const transactions = this.cache.transactions[this.i_id]!;
-    return (this._position = util.money.position(transactions));
+    return (this._position = this.money.chart.position(transactions));
   }
 
   private chart_data?: mapped_data_t;

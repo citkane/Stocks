@@ -1,8 +1,6 @@
-import { Select } from "@frontend/components/widgets";
+import { SelectComponent } from "@frontend/components/widgets/SelectComponent";
 
-export class SelectBroker extends Select {
-  static observedAttributes = ["data-filter"];
-
+export class SelectBroker extends SelectComponent {
   constructor() {
     super();
     this.dom.set_label("broker", "Broker:");
@@ -18,7 +16,7 @@ export class SelectBroker extends Select {
     },
     change: (e: Event) => {
       const { value } = e.target as HTMLSelectElement;
-      this.handle_filter(
+      this.filter.handle(
         [this.name, value],
         ["a_id", "all"],
         ["asset_sector", "all"],
