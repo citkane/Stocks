@@ -17,11 +17,6 @@ export class Login extends Global {
       this.popup_window?.resizeTo(width, height);
     },
     close: async () => {
-      //const cookies = await this.popup_window?.cookieStore.getAll();
-      //console.log(cookies);
-      //cookies?.forEach((cookie) => {
-      //  this.popup_window!.cookieStore.delete(cookie.name!);
-      //});
       this.popup_window?.close();
       delete this.popup_window;
       window.focus();

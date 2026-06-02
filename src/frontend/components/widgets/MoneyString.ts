@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 
 export class MoneyString extends WebComponent {
   static observedAttributes = ["value"];

@@ -96,11 +96,11 @@ type instrmnt_t = {
   isin?: string;
   cfi?: string;
   website?: string;
-  svg_string?: string;
+  svg_logo?: string;
   div_yield?: number;
   saxo_id?: number;
   ibkr_id?: number;
-};
+} & geo_data_t;
 
 type cache_t = {
   accounts: account_t[];
@@ -114,6 +114,22 @@ type cache_t = {
 };
 
 type iso_date_t = `${string}-${string}-${string}`;
+
+type geo_data_t = {
+  place: string;
+  region: string;
+  country: string;
+  place_qid: string;
+  country_qid: string;
+  region_qid: string;
+  place_link: string;
+  region_link: string;
+  country_link: string;
+  place_point?: string;
+  region_point?: string;
+  country_shape?: string;
+  region_shape?: string;
+};
 
 namespace f {
   type positn_t = { [key in `${transctn_t["kind"]}s`]: transctn_t[] };

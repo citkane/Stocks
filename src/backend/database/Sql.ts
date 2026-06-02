@@ -15,8 +15,6 @@ await init_db();
 export class Sql extends Global {
   constructor() {
     super();
-
-    Promise.all(this.table_names.map((table) => this.sql.create(table)));
   }
   protected sql = {
     create: (table: db.table_n, _sql = sql) => {
@@ -28,7 +26,7 @@ export class Sql extends Global {
     drop: (table: db.table_n) => {
       return sql`DROP TABLE IF EXISTS ${sql(table)};`;
     },
-    insert: (table: db.table_n, values: db.data_t[]) => {
+    insert: <T extends db.table_n>(table: T, values: db.data_t<T>[]) => {
       if (!values.length) return Promise.resolve([]);
       const conflict = this.fragment.primary_conflict_sql(table);
       const statement = sql`INSERT INTO ${sql(table)} ${sql(values)} ${conflict}`;
@@ -39,7 +37,7 @@ export class Sql extends Global {
     },
     update: <T extends db.table_n>(
       table: T,
-      value: db.data_t,
+      value: db.data_t<T>,
       condition?: db.condition_t<T>,
     ) => {
       const cond = this.fragment.condition_sql(condition);
@@ -108,7 +106,7 @@ export class Sql extends Global {
 
     primary_conflict_sql: (table: db.table_n) => {
       const primary_row = this.table_cols(table).find((col) =>
-        col[1].includes("PRIMARY KEY"),
+        (col[1] as string)?.includes("PRIMARY KEY"),
       );
       if (!primary_row) return sql``;
       return sql`ON CONFLICT (${sql(primary_row[0])}) DO NOTHING`;
@@ -124,20 +122,16 @@ export class Sql extends Global {
         .join(", ");
     },
   };
-
   private table_cols = (table: db.table_n) => {
     return this.tables[table];
   };
 
-  private get table_names() {
-    return Tables.table_names;
-  }
   private get tables() {
     return Tables.tables;
   }
 }
 
-function init_db() {
+async function init_db() {
   !existsSync(db_dir) && mkdirSync(db_dir);
 
   const options = {
@@ -155,14 +149,21 @@ function init_db() {
     ...options,
   });
 
-  return Promise.all(
-    Tables.table_names.map((table) => {
-      const schema = Tables.tables[table]
-        .map((col) => `'${col[0]}' ${col[1]}`)
-        .join(", ");
-      return sql
-        .unsafe(`CREATE TABLE IF NOT EXISTS ${table} (${schema})`)
-        .execute();
-    }),
-  );
+  const instrmnt_view = Tables.views.instruments;
+  const location_view = Tables.views.location_search;
+  await sql.unsafe(instrmnt_view).execute();
+  await sql.unsafe(location_view).execute();
+
+  const table_names = Tables.table_names.filter((name) => {
+    return !Tables.view_names.includes(name) && !name.endsWith("_");
+  }) as db.table_n[];
+  await Promise.all(table_names.map(table_schema));
+
+  function table_schema(table_name: db.table_n) {
+    const table_rows = Tables.tables[table_name]!;
+    const schema = table_rows.map((col) => `'${col[0]}' ${col[1]}`).join(", ");
+    return sql
+      .unsafe(`CREATE TABLE IF NOT EXISTS ${table_name} (${schema})`)
+      .execute();
+  }
 }

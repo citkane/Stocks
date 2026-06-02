@@ -19,7 +19,7 @@ export class LoginSaxo extends Login {
     const code = Object.fromEntries(url.searchParams) as b.s.auth_code_t;
     document
       .querySelector("body")
-      ?.setHTMLUnsafe("<pre>Client login succeeds</pre>");
+      ?.setHTMLUnsafe('<pre id="login_succeeds">Client login succeeds</pre>');
     this.send("saxo_token", code);
   };
 }

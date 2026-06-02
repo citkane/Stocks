@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 import type { PositionRow } from "@frontend/components";
 
 export class PositionsRoot extends WebComponent {
@@ -63,38 +63,38 @@ export class PositionsRoot extends WebComponent {
       return this.dom.make_el("position-row", "", `id="${id}"`);
     },
     refresh: () => {
-      this.props.set_position_count();
       this.props.tally_money();
     },
     tally_money: () => {
       this.tally = this.money.instruments.tally(this.shown_positn_els);
     },
-    set_position_count: () =>
-      this.setAttribute(
-        "position_count",
-        this.shown_positn_els.length.toString(),
-      ),
   });
+
+  public get transctn_display_count() {
+    return this.shown_positn_els.length;
+  }
 
   private get shown_positn_els() {
     if (this._shown_position_elements) return this._shown_position_elements;
 
-    const rows = this.querySelectorAll<PositionRow>(
-      "position-row:not([hidden])",
-    )
+    let rows: PositionRow[] = [],
+      div_rows: PositionRow[] = [];
+    this.querySelectorAll<PositionRow>("position-row:not([hidden])")
       .values()
-      .toArray();
+      .toArray()
+      .forEach((row) => {
+        const { kind } = row.transaction;
+        if (kind === "dividend") {
+          div_rows.push(row);
+        } else {
+          rows.push(row);
+        }
+      });
+    if (!rows.length) return [];
 
-    const dividend_rows = rows.filter(
-      (r) => r.getAttribute("kind") === "dividend",
-    );
-    return (this._shown_position_elements =
-      rows.length === dividend_rows.length ? [] : rows);
+    rows = [...rows, ...div_rows];
+    return (this._shown_position_elements = rows);
   }
-
-  private positn_row_els!: PositionRow[];
-  private rows_wrapper_el!: HTMLElement;
-  private _shown_position_elements?: PositionRow[];
 
   private get transactions() {
     return this.cache.get.transactions(this.i_id);
@@ -106,4 +106,7 @@ export class PositionsRoot extends WebComponent {
 
   public tally!: f.instrmnt_collector_t;
   private _position?: f.positn_t;
+  private positn_row_els!: PositionRow[];
+  private rows_wrapper_el!: HTMLElement;
+  private _shown_position_elements?: PositionRow[];
 }

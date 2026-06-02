@@ -2,8 +2,6 @@ export { Brokers } from "./Brokers.ts";
 export { BrokerSaxo } from "./BrokerSaxo.ts";
 export { BrokerIbkr } from "./BrokerIbkr.ts";
 export { CacheBrokers } from "./CacheBrokers.ts";
-export { TradingView } from "./TradingView";
-export { Instruments } from "./Instruments";
 export * from "./common/index.ts";
 export * from "./ibkr/index.ts";
 export * from "./saxo/index.ts";

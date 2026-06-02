@@ -1,6 +1,7 @@
 import "../index";
 import Logger from "./Logger.ts";
 export { Global } from "./Global.ts";
+export * from "./metadata";
 
 declare global {
   namespace backend {

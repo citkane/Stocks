@@ -18,7 +18,7 @@ const tls = {
 export class BrokerIbkr extends Broker {
   constructor() {
     super(fetch_rate_limit, default_fetch_params, tls);
-    this.auth_err = this.auth_err.bind(this);
+    this.what_err = this.what_err.bind(this);
   }
 
   public override await_auth = () => {

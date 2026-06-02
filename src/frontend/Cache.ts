@@ -144,9 +144,7 @@ export default class Cache {
 
       const _transcts = this._transctns.get(i_id);
       let instrmnt = this._instrmnts.get(i_id)!;
-
-      //if (!_transcts) console.log(i_id, instrmnt);
-
+      if (!instrmnt) console.warn(i_id);
       instrmnt = { ...instrmnt, ...{ div_yield } };
       const transctns = [...(_transcts?.values() || [])].map((t) => {
         const { currency } = t;

@@ -1,5 +1,4 @@
 import { Money, Strings, Time, Html } from "@common/util/index";
-//import { randomUUIDv7 } from "bun";
 
 export class Util {
   static string = new Strings();
@@ -31,7 +30,7 @@ export class Util {
     },
   };
   static random_context = () =>
-    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; //`${randomUUIDv7("base64url", Date.now())}`;
+    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   static hash_id = (data: string | Object, length = 16) => {
     const _data: string =
@@ -48,21 +47,25 @@ export class Util {
     }
     return id.substring(0, length);
   };
-  //static get url() {
-  //  return {
-  //    saxo: {
-  //      api: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.api}`,
-  //      auth: `${conf.saxo.url.auth}`,
-  //      chart: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.chart}`,
-  //      history: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.history}`,
-  //      ref: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.ref}`,
-  //      trade: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.trade}`,
-  //      client_services: `${conf.saxo.url.base}/${conf.saxo.url.endpoints.client_services}`,
-  //    },
-  //    ibkr: {
-  //      api: `${conf.ibkr.url.base}/${conf.ibkr.url.endpoints.api}`,
-  //      login: `${conf.ibkr.url.base}`,
-  //    },
-  //  };
-  //}
+
+  static parse_location = (
+    about_instrmnt: string | undefined,
+  ): { [key in "country_name" | "place_name"]: string | undefined } => {
+    if (!about_instrmnt) return undef();
+
+    let pars = about_instrmnt.replace(/.$/, "").split(". ");
+    pars = pars.splice(pars.length - 2);
+    if (pars[0]?.endsWith(pars[1] || "")) pars.pop();
+    const location = pars.join()?.split(" headquartered in ")[1]?.trim();
+    if (!location) return undef();
+
+    let [place_name, country_name] = location.split(", ") as [string, string];
+    //if (!country_name && place_name === "Hong Kong") country_name = "China";
+    //if (!country_name) country_name = place_name;
+    return { country_name, place_name };
+
+    function undef() {
+      return { country_name: undefined, place_name: undefined };
+    }
+  };
 }

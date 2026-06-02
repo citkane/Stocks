@@ -1,45 +1,60 @@
 import { Global } from "@frontend/Global";
 
+const landing_page = "/portfolio";
+
 export default class Router extends Global {
   constructor() {
     super();
-    window.addEventListener("hashchange", this.route);
     window.addEventListener("popstate", this.route);
     this.route();
   }
 
   private route = () => {
-    const url = new URL(window.location.href);
-    const { pathname, hash } = url;
-    const location = `${pathname}${hash}`;
-    switch (location) {
-      case "/":
-        this.locate("/#instruments");
-        break;
+    const { pathname } = window.location;
+    switch (pathname) {
       case `/${conf.saxo.redirect}`:
         this.saxo.send_token_code();
         break;
-      case "/#instruments":
-        this.locate(location);
+      case "/":
+        window.location.pathname = landing_page;
         break;
-      case "/#accounts":
-        this.locate(location);
-        break;
+      default:
+        this.locate(pathname);
     }
   };
-  private locate = (location: string) => {
-    if (this.app_root.hasAttribute("hidden")) {
+  public navigate = (pathname: string) => {
+    const url = new URL(window.location.href);
+    url.pathname = pathname;
+    url.search = "";
+    url.hash = "";
+    history.pushState({}, "", url);
+    this.route();
+  };
+
+  private locate = (pathname: string) => {
+    if (this.el_app_root.hasAttribute("hidden")) {
       this.app.run();
     }
-    switch (location) {
-      case "/#accounts":
-        this.accounts_root.removeAttribute("hidden");
-        this.instruments_root.setAttribute("hidden", "");
-        break;
-      case "/#instruments":
-        this.accounts_root.setAttribute("hidden", "");
-        this.instruments_root.removeAttribute("hidden");
-        break;
+    this.els_root.forEach((root) => root.hide());
+    if (!this.routes[pathname as route_key_t]) {
+      window.location.pathname = landing_page;
+      return;
     }
+    this.routes[pathname as route_key_t]();
+  };
+  private routes = {
+    "/accounts": () => {
+      this.el_accounts_root.show();
+    },
+    "/portfolio": () => {
+      this.el_instruments_root.show();
+    },
+    "/insight": () => {
+      this.el_insight_root.show();
+    },
   };
 }
+
+type router_t = InstanceType<typeof Router>;
+type routes_t = router_t["routes"];
+type route_key_t = keyof routes_t;

@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 import { AnyString, DateString } from "@frontend/components";
 
 export class PositionRow extends WebComponent {
@@ -46,13 +46,13 @@ export class PositionRow extends WebComponent {
 
     filter: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-
-      const hide = !!Object.keys(this.source_filter).find((key) => {
+      const hide = Object.keys(this.source_filter).some((key) => {
         //if (key === "a_id" && this.transaction.kind === "dividend")
         //  return false;
         const source_val = this.source_filter[key as filter_keys_t];
         const val = this.cache.filter[key as filter_keys_t];
-        return val !== "all" && val !== source_val;
+        if (val === "all") return false;
+        return val !== source_val;
       });
       hide ? this.props.hide() : this.props.show();
     },
@@ -74,15 +74,19 @@ export class PositionRow extends WebComponent {
 
     const { a_id, broker, i_id } = this.transaction;
     const instrument = this.cache.get.instrument(i_id);
-    const { asset_sector, asset_industry } = instrument;
+    const { asset_sector, asset_industry, country_qid, region_qid, place_qid } =
+      instrument;
     return (this._source_filter = {
       a_id,
       broker,
-      asset_sector,
-      asset_industry,
+      asset_sector: asset_sector!,
+      asset_industry: asset_industry!,
+      country: country_qid,
+      region: region_qid,
+      place: place_qid,
     });
   }
-  private get transaction() {
+  public get transaction() {
     if (!!this._transaction) return this._transaction;
     let transaction = util.html.json_parse<transctn_t>(
       this.dataset.transaction!,
@@ -102,4 +106,4 @@ export class PositionRow extends WebComponent {
 }
 
 type filter_t = Omit<f.filter_t, "search">;
-type filter_keys_t = Exclude<f.filter_keys_t, "search">;
+type filter_keys_t = Exclude<f.filter_key_t, "search">;

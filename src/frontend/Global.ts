@@ -1,3 +1,9 @@
+import type {
+  AccountsRoot,
+  InsightWrapper,
+  InstrumentsRoot,
+} from "@frontend/components";
+
 export class Global {
   protected get app() {
     return frontend.app;
@@ -17,9 +23,6 @@ export class Global {
   protected get cache() {
     return frontend.cache;
   }
-  protected get events() {
-    return frontend.events;
-  }
   protected get saxo() {
     return frontend.saxo;
   }
@@ -35,25 +38,36 @@ export class Global {
   protected get send() {
     return this.messenger.send;
   }
-  protected get bootstrap() {
+  protected get el_bootstrap() {
     return document.getElementById("bootstrap");
   }
-  protected get app_root() {
+  protected get el_app_root() {
     return document.querySelector("app-root")!;
   }
-  protected get accounts_root() {
-    return document.querySelector("accounts-root")!;
+  protected get el_accounts_root() {
+    return document.querySelector<AccountsRoot>("accounts-root")!;
   }
-  protected get instruments_root() {
-    return document.querySelector("instrmnts-root")!;
+  protected get el_instruments_root() {
+    return document.querySelector<InstrumentsRoot>("instrmnts-root")!;
   }
+  protected get el_insight_root() {
+    return document.querySelector<InsightWrapper>("insight-wrapper")!;
+  }
+  protected get els_root() {
+    return [
+      this.el_accounts_root,
+      this.el_instruments_root,
+      this.el_insight_root,
+    ];
+  }
+
   protected bootstrap_mess = (message: string) => {
     logger.info(message);
-    this.bootstrap?.append(`\n${message}`);
+    this.el_bootstrap?.append(`\n${message}`);
   };
   protected bootstrap_end = () => {
-    this.app_root.removeAttribute("hidden");
-    this.bootstrap?.remove();
+    this.el_app_root.removeAttribute("hidden");
+    this.el_bootstrap?.remove();
   };
 
   protected add_shutdown_task = (fn: Function) => {

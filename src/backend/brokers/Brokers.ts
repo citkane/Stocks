@@ -1,5 +1,5 @@
-import { Global } from "backend";
-import { CacheBrokers, Instruments } from "@backend/brokers";
+import { Global, Instruments } from "backend";
+import { CacheBrokers } from "@backend/brokers";
 
 const brokers = ["saxo", "ibkr"] as const;
 const live_data_freq = util.time.period.to_ms([5, "min"]);
@@ -109,9 +109,9 @@ export class Brokers extends Global {
       this.bootstrap("Updating live data");
       return await Promise.all([
         this.instruments.live_data(),
-        this.ibkr.update.fx().catch(this.ibkr.auth_err),
+        this.ibkr.update.fx().catch(this.ibkr.what_err),
         ...brokers.map((broker) =>
-          this[broker].update.account_balances().catch(this[broker].auth_err),
+          this[broker].update.account_balances().catch(this[broker].what_err),
         ),
       ]);
     },

@@ -22,8 +22,10 @@ export class CacheBrokers extends Global {
   }
   public get instruments() {
     if (this._instrumnts) return Promise.resolve(this._instrumnts);
+
     return this.db.select.instruments().then((instrmnts) => {
       if (!instrmnts.length) throw Error(err_m("Instruments"));
+
       return (this._instrumnts = instrmnts.reduce(
         (c, instrmnt) => {
           const { i_id } = instrmnt;
@@ -40,9 +42,6 @@ export class CacheBrokers extends Global {
   }
   public get i_ids() {
     return Object.keys(this.positions) as i_id_t[];
-    //  const postn = this.positions[p_id]!;
-    //  return postn.i_id;
-    //}));
   }
   public get live_data() {
     if (!this._live_data?.data || !this._live_data?.balances)
@@ -101,15 +100,19 @@ export class CacheBrokers extends Global {
   public set fx(fx: fx_rates_t) {
     this._fx = fx;
   }
-  public set_instruments = async (instruments: instrmnt_t[]) => {
-    if (!instruments.length) return;
-    delete this._instrumnts;
-    delete this._currencies;
-    await this.db.insert.instruments(instruments);
-  };
   public set_transctns = async (transactions: transctn_t[]) => {
-    delete this._transctns;
+    this.invalidate.fx();
     await this.db.insert.transactions(transactions);
+  };
+
+  public invalidate = {
+    instruments: () => {
+      delete this._instrumnts;
+      delete this._currencies;
+    },
+    fx: () => {
+      delete this._transctns;
+    },
   };
 
   private _transctns?: cache_t["transactions"];

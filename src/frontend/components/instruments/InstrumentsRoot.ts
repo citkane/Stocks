@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { RootComponent } from "@frontend/components/RootComponent";
 import {
   type InstrumentRow,
   type MoneyString,
@@ -7,55 +7,68 @@ import {
 
 const transition_time = 300;
 
-export class InstrumentsRoot extends WebComponent {
-  static observedAttributes = ["data-all", "data-filter"];
+export class InstrumentsRoot extends RootComponent {
+  static observedAttributes = ["data-all"];
 
   constructor() {
     super();
     this.dom.template_to_self("instrmnts-root");
     this.data.init_sort_register();
     this.props.watch("data-all", this.handlers.render);
-    this.props.watch("data-filter", this.handlers.filter);
   }
 
+  public apply_filter = (filter_string: string) => {
+    return new Promise((resolve) => filter.bind(this)(resolve, filter_string));
+
+    function filter(
+      this: InstrumentsRoot,
+      resolve: resolve_t,
+      filter_string: string,
+    ) {
+      if (this.dom_busy) {
+        return setTimeout(
+          () => filter.bind(this)(resolve, filter_string),
+          transition_time,
+        );
+      }
+      this.dom.set_busy();
+      clearTimeout(this.filter_timeout);
+      this.filter_timeout = setTimeout(() => {
+        this.instrmnt_els.forEach((r) => {
+          r.setAttribute("data-filter", filter_string);
+        });
+        this.props.tally_money();
+        this.dom.unset_busy();
+        resolve();
+      }, transition_time);
+    }
+  };
   private handlers = {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-
-      Object.values(this.instrmnts)
-        .sort((a, b) => a.description.localeCompare(b.description))
-        .forEach((instrmnt) => {
-          const { i_id } = instrmnt;
-          const ex_row_el = this.props.find_instrmnt(i_id);
-          const row_el = ex_row_el || this.props.make_instrmnt(i_id);
-          const transactions = this.data.transactions(i_id);
-          const data = { instrmnt, transactions };
-          row_el.setAttribute("data-all", util.hash_id(data));
-          if (!ex_row_el) this.instrmnt_wrapper_el.appendChild(row_el);
-        });
+      try {
+        Object.values(this.instrmnts)
+          .sort((a, b) => {
+            //console.log({ a, b });
+            return a.description.localeCompare(b.description);
+          })
+          .forEach((instrmnt) => {
+            const { i_id } = instrmnt;
+            const ex_row_el = this.props.find_instrmnt(i_id);
+            const row_el = ex_row_el || this.props.make_instrmnt(i_id);
+            const transactions = this.data.transactions(i_id);
+            const data = { instrmnt, transactions };
+            row_el.setAttribute("data-all", util.hash_id(data));
+            if (!ex_row_el) this.instrmnt_wrapper_el.appendChild(row_el);
+          });
+      } catch (err) {
+        console.error(err);
+      }
       this.props.tally_money();
       if (!!p.old) return;
 
       this.props.init_filters();
       this.dom.set_sort_actions();
-    },
-
-    filter: (p: p.prop_callback) => {
-      if (p.old === p.new) return;
-      if (this.dom_busy) {
-        return setTimeout(() => this.handlers.filter(p), transition_time);
-      }
-      this.dom.set_busy();
-      setTimeout(() => {
-        this.instrmnt_els.forEach((r) => {
-          r.setAttribute("data-filter", p.new);
-        });
-        this.selector.filter.selects.forEach((el) => {
-          el.setAttribute("data-filter", p.new);
-        });
-        this.props.tally_money();
-        this.dom.unset_busy();
-      }, transition_time);
     },
   };
 
@@ -115,18 +128,14 @@ export class InstrumentsRoot extends WebComponent {
       return this.dom.make_el("instrmnt-row", "", `i_id="${i_id}"`);
     },
     tally_money: () => {
-      const tally = this.money.instruments.tally(
-        this.selector.filter.shown_instrmnts(),
-      );
+      const shown_instruments = this.selector.filter.shown_instrmnts();
+      const tally = this.money.instruments.tally(shown_instruments);
       this.money.instruments.assign(this.els_money, tally);
       this.money_u_pl_total_el.money_value = tally.u_pl + tally.fx_pl;
     },
 
     init_filters: () => {
       this.filter.init();
-      this.selector.filter.selects.forEach((el) =>
-        el.setAttribute("data-filter", this.filter_str),
-      );
       this.search_el.addEventListener("input", (e) =>
         this.data.search((e.target as HTMLInputElement).value),
       );
@@ -147,12 +156,12 @@ export class InstrumentsRoot extends WebComponent {
       return this.transcts[i_id];
     },
     search: (term: string) => {
+      clearTimeout(this.search_debouncer);
       if (term.length <= 2) {
         this.select_els.forEach((el) => el.enable());
         this.filter.handle(["search", undefined]);
         return;
       }
-      clearTimeout(this.search_debouncer);
       this.search_debouncer = setTimeout(() => {
         term = term.toLowerCase();
         this.select_els.forEach((el) => el.disable());
@@ -203,4 +212,5 @@ export class InstrumentsRoot extends WebComponent {
   private sort_registry: { [key: string]: "up" | "dn" } = {};
   private dom_busy = false;
   private search_debouncer?: interval_t;
+  private filter_timeout: any;
 }

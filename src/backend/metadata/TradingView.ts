@@ -1,24 +1,25 @@
-import { Util as util } from "@common/Util";
+import { WikiData } from "@backend/metadata/WikiData";
 
 const logo_size = 32;
 const tv_url = "https://www.tradingview.com/symbols";
 const url = "about:blank";
-const data_regex =
-  /<script type="application\/prs.init-data\+json">(.*?)<\/script>/gs;
 
 const wv = await new Bun.WebView();
 await wv.navigate(url);
 
-export class TradingView {
+export class TradingView extends WikiData {
+  constructor() {
+    super();
+  }
   public static close = () => {
     wv.close();
   };
-  public instruments = (i_ids: i_id_t[]) => this.instrmnts.scrape(i_ids);
-  public live_data = (postns: b.positn_t[]) => this.live(postns);
+  protected scrape_instruments = (i_ids: i_id_t[]) =>
+    this.instrmnts.scrape(i_ids);
+  //public live_data = (postns: b.positn_t[]) => this.fetch_live_data(postns);
 
-  private live = async (
+  protected fetch_live_data = async (
     postns: b.positn_t[],
-    //fx: fx_rates_t,
   ): Promise<live_data_t[]> => {
     const i_ids = postns.map((p) => p.i_id);
     const data = await this.html.scrape(i_ids);
@@ -31,7 +32,6 @@ export class TradingView {
         let { currency } = postn;
         currency = currency === "XXX" ? data.currency : currency;
         currency = currency === "CNY" ? "CNH" : currency;
-        //const fx_market = fx[currency]!;
         const { price: price_market } = data.trade;
         const { dividends_yield: div_yield } = data;
         return { i_id, price_market, div_yield };
@@ -40,20 +40,22 @@ export class TradingView {
   };
   private html = {
     scrape: async (i_ids: i_id_t[]) => {
-      const collect: [i_id_t, tv_data_t | undefined, string | undefined][] = [];
-      const urls = i_ids.map((i_id) => [i_id, this.html.url(i_id)]);
-      const htmls = await this.html.fetch(urls as [i_id_t, string][]);
-      for (let i = 0; i < htmls.length; i++) {
-        const [p_id, html] = htmls[i]!;
-        const data = !!html ? this.html.parse(html) : undefined;
-        collect.push([p_id, data, html]);
-      }
-      return collect;
+      const urls = i_ids.map((i_id) => this.html.url(i_id));
+      const htmls = await Promise.all(urls.map(this.html.fetch));
+      const tv_data = await Promise.all(htmls.map(this.html.parse));
+      return i_ids.map((i_id, i) => {
+        const data = tv_data[i];
+        const html = htmls[i];
+        return [i_id, data, html];
+      }) as tv_data_raw_t[];
     },
-    parse: (html: string): tv_data_t => {
+    parse: (html?: string): tv_data_t | undefined => {
+      if (!html) return undefined;
+      const regex =
+        /<script type="application\/prs.init-data\+json">(.*?)<\/script>/gs;
       const matches = [];
       let match;
-      while ((match = data_regex.exec(html)) !== null) {
+      while ((match = regex.exec(html)) !== null) {
         matches.push(match[1]?.trim());
       }
       const jsons = matches.map((m) => JSON.parse(m!));
@@ -63,22 +65,13 @@ export class TradingView {
       const data = !!_data && _data[Object.keys(_data)[0]!]?.data?.symbol;
       return data;
     },
-    fetch: async (urls: [i_id_t, string][]) => {
-      return await Promise.all(
-        urls.map(async (pair) => {
-          const [p_id, url] = pair;
-          const html = await _fetch(url);
-          return [p_id, html] as [i_id_t, string | undefined];
-        }),
+    fetch: async (url: string) => {
+      const html = await fetch(url).then((res) =>
+        res.ok ? res.text() : undefined,
       );
-      async function _fetch(url: string) {
-        const html = await fetch(url).then((res) =>
-          res.ok ? res.text() : undefined,
-        );
-        return !!html
-          ? html.trim() //util.html.escape(html)
-          : (logger.warn(`No data found for ${url}`) as undefined);
-      }
+      return !!html
+        ? html.trim()
+        : (logger.warn(`No data found for ${url}`) as undefined);
     },
     url: (p_id: i_id_t, endpoint = "") => {
       return `${tv_url}/${p_id}/${endpoint}`;
@@ -86,65 +79,78 @@ export class TradingView {
   };
   private instrmnts = {
     scrape: async (i_ids: i_id_t[]) => {
-      const instrmnts: (instrmnt_t | i_id_t)[] = [];
-      const _data = await this.html.scrape(i_ids);
+      const tv_data_raw = await this.html.scrape(i_ids);
+      const part_instrmnts = tv_data_raw.map(this.instrmnts.part_instrmnt);
       await this.tv_data.init_dom();
-      for (let i = 0; i < _data.length; i++) {
-        const [p_id, data, html] = _data[i]!;
-        if (!data || !html) {
-          instrmnts.push(i_ids[i]!);
+
+      for (let i = 0; i < tv_data_raw.length; i++) {
+        this.bootstrap(
+          `Updating instrument [${i + 1}] of [${tv_data_raw.length}]`,
+        );
+        const [i_id, tv_data, html] = tv_data_raw[i]!;
+        let part_instrmnt = part_instrmnts[i];
+        const positn = this.brokers.cache.positions[i_id]!;
+        const { saxo_id, ibkr_id, description, currency } = positn;
+
+        if (!part_instrmnt || !tv_data || !html) {
+          logger.info("Metadata for instrument not found:", i_id);
+
+          const [exchange, ticker] = i_id!.split("-") as [string, string];
+          const instrmnt = {
+            i_id: i_id!,
+            exchange,
+            ticker,
+            description,
+            currency,
+            saxo_id,
+            ibkr_id,
+          } as instrmnt_t;
+          logger.debug("inserting instrument:", instrmnt.i_id);
+          await this.db.insert.instruments([instrmnt]);
+          logger.debug(
+            "-----------------------------------------------------------------------------",
+          );
           continue;
         }
-        const instrmnt = await this.instrmnts.instrmnt(p_id, data, html);
-        let svg = await fetch(instrmnt.svg_string!).then((svg) => svg.text());
-        svg = svg.replace("<!-- by TradingView -->", "");
-        svg = await this.tv_data.update_logo(util.html.escape(svg));
-        instrmnt.svg_string = svg;
-        instrmnts.push(instrmnt);
+        part_instrmnt = {
+          ...part_instrmnt,
+          saxo_id,
+          ibkr_id,
+          description,
+          currency,
+        };
+        const data = [part_instrmnt, tv_data, html] as const;
+        let [instrmnt] = await Promise.all([
+          this.instrmnts.merge_instrmnt(...data),
+          this.instrmnts.location(part_instrmnt),
+        ]);
+        logger.debug("inserting instrument:", instrmnt.i_id);
+        await this.db.insert.instruments([instrmnt]);
+
+        logger.debug(
+          "-----------------------------------------------------------------------------",
+        );
       }
-      return instrmnts;
     },
 
-    instrmnt: async (i_id: i_id_t, data: tv_data_t, html: string) => {
-      let website: string,
-        asset_sector: string,
-        asset_industry: string,
-        cfi: string | undefined = undefined,
-        {
-          type: asset_class,
-          instrument_name: description,
-          medium_logo_urls: _svg_string,
-          ast_business_description: _about,
-          short_name: ticker,
-          exchange,
-          currency,
-          isin_displayed: isin,
-          sector,
-          industry,
-        } = data;
+    part_instrmnt: (tv_data: tv_data_raw_t) => {
+      const [i_id, data] = tv_data;
+      if (!data) return undefined;
+      let {
+        type: asset_class,
+        instrument_name: description,
+        medium_logo_urls: _svg_strings,
+        ast_business_description: _about,
+        short_name: ticker,
+        exchange,
+        currency,
+        isin_displayed: isin,
+      } = data;
 
-      const svg_string = _svg_string[0]!;
+      const svg_logo = _svg_strings[0]!;
       const about_instrmnt = _about.children[0]!;
 
-      switch (asset_class) {
-        case "fund":
-          const { homepage } = data as tv_data_t<"fund">;
-          const scraped_data = await this.tv_data.scrape(
-            util.html.escape(html),
-          );
-          website = homepage;
-          asset_sector = scraped_data.asset_sector;
-          asset_industry = scraped_data.asset_industry;
-          break;
-        case "stock":
-          const { web_site_url, cfi_code } = data as tv_data_t<"stock">;
-          website = web_site_url;
-          cfi = cfi_code;
-          asset_sector = sector;
-          asset_industry = industry;
-          break;
-      }
-      const instrumnt = {
+      let instrumnt = {
         i_id,
         ticker,
         exchange,
@@ -152,12 +158,8 @@ export class TradingView {
         description,
         about_instrmnt,
         asset_class,
-        asset_industry,
-        asset_sector,
         isin,
-        cfi,
-        website,
-        svg_string,
+        svg_logo,
       };
       return Object.keys(instrumnt).reduce(
         (c, key) => {
@@ -165,7 +167,55 @@ export class TradingView {
           return c;
         },
         {} as { [key: string]: any },
-      ) as instrmnt_t;
+      ) as Partial<instrmnt_t>;
+    },
+    merge_instrmnt: async (
+      part_instrmnt: Partial<instrmnt_t>,
+      tv_data: tv_data_t,
+      html: string,
+    ) => {
+      let website!: string,
+        asset_sector!: string,
+        asset_industry!: string,
+        cfi: string | undefined = undefined;
+      let { asset_class, svg_logo } = part_instrmnt;
+      const { sector, industry } = tv_data;
+      switch (asset_class) {
+        case "fund":
+          const { homepage } = tv_data as tv_data_t<"fund">;
+          const scraped_data = await this.tv_data.eval(util.html.escape(html));
+          website = homepage;
+          asset_sector = scraped_data.asset_sector;
+          asset_industry = scraped_data.asset_industry;
+          break;
+        case "stock":
+          const { web_site_url, cfi_code } = tv_data as tv_data_t<"stock">;
+          website = web_site_url;
+          cfi = cfi_code;
+          asset_sector = sector;
+          asset_industry = industry;
+          break;
+      }
+      svg_logo = await this.instrmnts.svg(svg_logo);
+      return {
+        ...part_instrmnt,
+        ...{ website, asset_sector, asset_industry, cfi, svg_logo: svg_logo },
+      } as instrmnt_t;
+    },
+    location: (instrmnt?: Partial<instrmnt_t>) => {
+      if (!instrmnt) return undefined;
+      const { i_id, about_instrmnt } = instrmnt;
+      const { place_name, country_name } = util.parse_location(about_instrmnt);
+      return this.geo_location(i_id!, place_name, country_name).catch((err) =>
+        logger.error(err),
+      );
+    },
+    svg: async (svg_url: string | undefined) => {
+      if (!svg_url) return undefined;
+      let svg = await fetch(svg_url).then((svg) => svg.text());
+      svg = svg.replace("<!-- by TradingView -->", "");
+      svg = await this.tv_data.eval_logo(util.html.escape(svg));
+      return svg;
     },
   };
   private tv_data = {
@@ -187,7 +237,7 @@ export class TradingView {
         }, "");
       }
     },
-    scrape: async (html: string): Promise<meta_data_t> => {
+    eval: async (html: string): Promise<meta_data_t> => {
       const str = `((html) => this.q.query.data(html))(${html})`;
       const data = await wv.evaluate<scrape_data_raw_t>(str);
 
@@ -399,8 +449,8 @@ export class TradingView {
       }
       return [title, val];
     },
-    update_logo: async (svg_str: string) => {
-      const str = `((svg_string) => q.query.svg(svg_string, ${logo_size}))(${svg_str})`;
+    eval_logo: async (svg_str: string) => {
+      const str = `((svg_logo) => q.query.svg(svg_logo, ${logo_size}))(${svg_str})`;
       return await wv.evaluate<string>(str);
     },
     number_val: (val: string) => {
@@ -472,10 +522,10 @@ export class TradingView {
         return stat.querySelector(q)! as HTMLElement;
       }
     },
-    svg: (svg_string: string, size: number) => {
-      svg_string = util.html.unescape(svg_string);
+    svg: (svg_logo: string, size: number) => {
+      svg_logo = util.html.unescape(svg_logo);
       const logo = new DOMParser().parseFromString(
-        svg_string,
+        svg_logo,
         "image/svg+xml",
       ).documentElement;
       logo.setAttribute("viewBox", "0 0 18 18");
@@ -484,6 +534,8 @@ export class TradingView {
       return logo.outerHTML;
     },
   };
+
+  //private wd = new WikiData();
 }
 
 declare global {
@@ -731,3 +783,4 @@ namespace tv {
     volume: `${number}`;
   };
 }
+type tv_data_raw_t = [i_id_t, tv_data_t | undefined, string | undefined];

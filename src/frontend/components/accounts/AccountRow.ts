@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 import { BalanceRow } from "@frontend/components";
 
 export class AccountRow extends WebComponent {

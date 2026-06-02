@@ -10,6 +10,7 @@ import type {
   SelectComponent,
   SelectIndustry,
   SelectSector,
+  InsightRoot,
 } from "@frontend/components";
 
 export class Selector extends HTMLElement {
@@ -27,6 +28,7 @@ export class Selector extends HTMLElement {
         app: this.root_app,
         instrmnts: this.root_instrmnts,
         accnts: this.root_accnts,
+        stats: this.root_insight,
       },
       filter: {
         select: {
@@ -38,6 +40,9 @@ export class Selector extends HTMLElement {
         selects: this.select_selects,
         selects_names: this.select_selects_names,
         shown_instrmnts: this.filter_shown_instrmnts,
+        shown_instrmnts_reset: () => {
+          delete this._shown_instruments;
+        },
       },
     });
   }
@@ -68,6 +73,9 @@ export class Selector extends HTMLElement {
   private get root_accnts() {
     return document.querySelector<AccountsRoot>("app-root accounts-root")!;
   }
+  private get root_insight() {
+    return document.querySelector<InsightRoot>("app-root insight-wrapper")!;
+  }
 
   private get select_account() {
     return document.querySelector<SelectAccount>(
@@ -92,7 +100,7 @@ export class Selector extends HTMLElement {
   private get select_selects() {
     return document
       .querySelectorAll<SelectComponent>(
-        "app-root instrmnts-root .filter.wrapper .inner > [filter]",
+        "app-root instrmnts-root .filter.wrapper .inner > form [select]",
       )
       .values()
       .toArray();
@@ -102,12 +110,16 @@ export class Selector extends HTMLElement {
   };
 
   private filter_shown_instrmnts = () => {
-    return document
+    if (this._shown_instruments) return this._shown_instruments;
+    const shown_instruments = document
       .querySelectorAll<InstrumentRow>(
         "app-root instrmnts-root instrmnt-row[shown]",
       )
-      .values();
+      .values()
+      .toArray();
+    return (this._shown_instruments = shown_instruments);
   };
+  private _shown_instruments?: InstrumentRow[];
 }
 
 type selector_t = InstanceType<typeof Selector>;
@@ -122,6 +134,7 @@ declare global {
         app: selector_t["root_app"];
         instrmnts: selector_t["root_instrmnts"];
         accnts: selector_t["root_accnts"];
+        stats: selector_t["root_insight"];
       };
       filter: {
         select: {
@@ -133,6 +146,7 @@ declare global {
         selects: selector_t["select_selects"];
         selects_names: selector_t["select_selects_names"];
         shown_instrmnts: selector_t["filter_shown_instrmnts"];
+        shown_instrmnts_reset: () => void;
       };
     }
     type money_instruments_t = ReturnType<selector_t["money_instruments"]>;

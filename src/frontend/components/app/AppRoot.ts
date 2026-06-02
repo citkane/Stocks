@@ -1,19 +1,24 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 import type { ExpandingDrawer } from "@frontend/components";
 
 export class AppRoot extends WebComponent {
-  static observedAttributes = ["transactions", "instruments", "accounts"];
+  static observedAttributes = [
+    "transactions",
+    "instruments",
+    "accounts",
+    "init_live_data",
+  ];
 
   constructor() {
     super();
+    this.dom.query_select();
     this.props.watch("transactions", this.handlers.transactions);
     this.props.watch("instruments", this.handlers.instruments);
     this.props.watch("accounts", this.handlers.accounts);
-    [this.menu_instrmnts_el, this.menu_accounts_el].forEach(
-      (el) => (el.onclick = this.handlers.navigate),
-    );
-    this.dropdown_button_el.onclick = this.dropdown_drawer_el.toggle;
-    this.dropdown_els.forEach(this.props.menu_actions);
+    this.props.watch("init_live_data", () => (this.has_live_data = true));
+    this.els_nav.forEach((el) => (el.onclick = this.handlers.navigate));
+    this.el_button_dropdown.onclick = () => this.el_drawer_menu.toggle();
+    this.els_link_dropdown.forEach(this.props.menu_actions);
   }
 
   private handlers = {
@@ -25,6 +30,9 @@ export class AppRoot extends WebComponent {
     },
     instruments: (p: p.prop_callback) => {
       if (p.new === p.old) return;
+
+      if (this.has_live_data)
+        this.selector.root.stats.setAttribute("instruments", p.new);
       this.instruments = p.new;
       if (!this.transactions || !this.accounts) return;
       this.render_instrmnts();
@@ -37,14 +45,14 @@ export class AppRoot extends WebComponent {
       this.render_instrmnts();
     },
     navigate: (e: Event) => {
-      const name = (e.target as HTMLElement).getAttribute("name");
-      document.location.assign(`#${name}`);
+      const name = (e.target as HTMLElement).getAttribute("name")!;
+      this.router.navigate(name);
     },
   };
 
   private props = this.api.props({
-    menu_actions: (el: Element) => {
-      el.addEventListener("click", (e: Event) => {
+    menu_actions: (el: HTMLElement) => {
+      el.onclick = (e: Event) => {
         const name = (e.target as HTMLElement).getAttribute("name")!;
         switch (name) {
           case "login_ibkr":
@@ -57,7 +65,19 @@ export class AppRoot extends WebComponent {
             this.messenger.send("logout", "saxo");
             break;
         }
-      });
+      };
+    },
+  });
+  private dom = this.api.dom({
+    query_select: () => {
+      const qs_e = (query: string) => this.qs<HTMLElement>(query)!;
+      const qs_d = (query: string) => this.qs<ExpandingDrawer>(query)!;
+      const qsa_e = (query: string) => this.qsa<HTMLElement>(query)!;
+
+      this.els_link_dropdown = qsa_e(`menu [name="dropdown"] li`);
+      this.els_nav = qsa_e(`menu [link]`);
+      this.el_button_dropdown = qs_e(`menu [name="dropdown"] [button]`);
+      this.el_drawer_menu = qs_d(`menu [name="dropdown"] expanding-drawer`);
     },
   });
 
@@ -73,26 +93,13 @@ export class AppRoot extends WebComponent {
     );
   };
 
-  private get menu_instrmnts_el() {
-    return this.querySelector('menu [name="instruments"]')! as HTMLElement;
-  }
-  private get menu_accounts_el() {
-    return this.querySelector('menu [name="accounts"]')! as HTMLElement;
-  }
-  private get menu_dropdown_el() {
-    return this.querySelector('menu [name="dropdown"]')!;
-  }
-  private get dropdown_button_el() {
-    return this.menu_dropdown_el.querySelector(`[button]`)! as HTMLElement;
-  }
-  private get dropdown_drawer_el() {
-    return this.menu_dropdown_el.querySelector(
-      `expanding-drawer`,
-    )! as ExpandingDrawer;
-  }
-  private get dropdown_els() {
-    return this.menu_dropdown_el.querySelectorAll("li");
-  }
+  private el_button_dropdown!: HTMLElement;
+  private el_drawer_menu!: ExpandingDrawer;
+  private els_nav!: NodeListOf<HTMLElement>;
+  private els_link_dropdown!: NodeListOf<HTMLElement>;
+  private qs = this.querySelector;
+  private qsa = this.querySelectorAll;
+  private has_live_data = false;
 
   private transactions?: string;
   private instruments?: string;

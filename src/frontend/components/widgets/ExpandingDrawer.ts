@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 
 const transition_sec = 1;
 
@@ -10,9 +10,10 @@ export class ExpandingDrawer extends WebComponent {
     this.dom.template_to_self("expanding-drawer");
     this.props.watch("state", this.handlers.toggle);
     this.props.watch("height", this.handlers.height);
+    const trans = this.getAttribute("transition") || transition_sec;
 
     this.style.height = "0";
-    this.style.transition = `${transition_sec}s`;
+    this.style.transition = `${trans}s`;
 
     this.content.forEach((child) => this.inner.appendChild(child));
   }

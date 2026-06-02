@@ -5,6 +5,9 @@ import { SelectBroker } from "./SelectBroker";
 import { SelectAccount } from "./SelectAccount";
 import { SelectSector } from "./SelectSector";
 import { SelectIndustry } from "./SelectIndustry";
+import { SelectCountry } from "./SelectCountry";
+import { SelectRegion } from "./SelectRegion";
+import { SelectPlace } from "./SelectPlace";
 
 export {
   InstrumentRow,
@@ -14,6 +17,9 @@ export {
   SelectIndustry,
   SelectBroker,
   SelectAccount,
+  SelectCountry,
+  SelectRegion,
+  SelectPlace,
 };
 
 customElements.define("instrmnts-root", InstrumentsRoot);
@@ -23,3 +29,6 @@ customElements.define("select-broker", SelectBroker);
 customElements.define("select-account", SelectAccount);
 customElements.define("select-sector", SelectSector);
 customElements.define("select-industry", SelectIndustry);
+customElements.define("select-country", SelectCountry);
+customElements.define("select-region", SelectRegion);
+customElements.define("select-place", SelectPlace);

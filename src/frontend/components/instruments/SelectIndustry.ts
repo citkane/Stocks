@@ -5,63 +5,48 @@ export class SelectIndustry extends SelectComponent {
     super();
     this.dom.set_label("industry", "Industry:");
     this.props.watch("data-filter", this.handlers.render);
-    this.select_el.addEventListener("change", this.handlers.change);
+    this.el_select.addEventListener("change", this.handlers.change);
   }
-
-  public override enable = () => {
-    if (this.asset_sector === "all") return;
-    this.select_el.disabled = false;
-  };
 
   private handlers = {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
-      if (!p.old) this.dom.make_options();
 
-      const { a_id, broker, asset_sector } = this.cache.filter;
-      if (
-        this.a_id === a_id &&
-        this.broker === broker &&
-        this.asset_sector === asset_sector
-      )
+      const options = this.get_options("asset_industry");
+      if (!options) {
+        this.filter.set({
+          [this.name]: "all",
+          asset_sector: "all",
+        });
         return;
-      if (a_id) this.a_id = a_id;
-      if (broker) this.broker = broker;
-      if (asset_sector) this.asset_sector = asset_sector;
-      this.dom.make_options();
+      }
+
+      this.dom.make_options(options);
     },
     change: (e: Event) => {
       const { value } = e.target as HTMLSelectElement;
-      this.filter.handle([this.name, value]);
+      this.filter.set({
+        asset_industry: value,
+      });
     },
   };
   private dom = {
     ...this.base_dom,
-    make_options: () => {
-      this.select_el.innerHTML = "";
-      if (this.asset_sector === "all") {
-        this.dom.add_option("Select a sector");
-        this.disable();
-        return;
-      }
-      this.enable();
-      this.dom.add_option("all");
-      this.industries.forEach((industry) => {
-        this.dom.add_option(industry, industry);
+    make_options: (options: [string, string][]) => {
+      const { asset_sector, asset_industry } = this.cache.filter;
+      this.el_select.innerHTML = "";
+      options.forEach((option) => {
+        this.dom.add_option(...option);
       });
+      if (asset_sector === "all") {
+        this.el_select.value = "select";
+        this.disable();
+      } else {
+        this.el_select.value = asset_industry!;
+        this.enable();
+      }
     },
   };
 
   private props = this.api.props({});
-
-  private get industries() {
-    const industries = this.selector.filter.shown_instrmnts().map((el) => {
-      const industry = el.getAttribute("asset_industry");
-      const sector = el.getAttribute("asset_sector");
-      return this.asset_sector === sector ? industry : null;
-    });
-    return [...new Set(industries).values()]
-      .filter((s) => s !== null)
-      .sort((a, b) => a.localeCompare(b));
-  }
 }

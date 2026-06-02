@@ -1,35 +1,62 @@
 app-root {
   display: block;
+  [root] {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    padding: var(--size-padding-app);
+  }
   menu {
+    display: flex;
+    justify-content: center;
     position: sticky;
     top: 0;
     z-index: 200;
     background: var(--col-background-light);
-    display: flex;
-    justify-content: center;
     border-bottom: 1px solid var(--col-border);
     user-select: none;
-    > div {
-      padding: var(--size-padding-cell);
-    }
-    .menu.link {
+
+    [link],
+    [button] {
       cursor: pointer;
     }
-    expanding-drawer {
-      display: block;
+    [link] {
+      padding: var(--size-padding-cell);
+    }
+    [name="dropdown"] {
       position: absolute;
-      z-index: 300;
-      background: var(--col-background-light);
-      ul,
-      li {
-        padding: var(--size-padding-cell);
+      display: flex;
+      flex-direction: column;
+      top: 0;
+      bottom: 0;
+      width: 200px;
+      right: var(--size-padding-app);
+
+      [button] {
+        align-self: stretch;
+        text-align: center;
+        font-size: 20px;
+        flex-basis: 100%;
       }
-      li {
-        cursor: pointer;
-      }
-      .inner {
+      expanding-drawer {
+        display: block;
+        position: absolute;
+        top: 100%;
+        background: var(--col-background-light);
         border: 1px solid var(--col-border);
-        padding: var(--size-padding-cell);
+        border-top: none;
+        ul,
+        li {
+          padding: var(--size-padding-cell);
+        }
+        li {
+          cursor: pointer;
+          text-align: center;
+        }
+        .inner {
+          padding: var(--size-padding-cell);
+          border-top: 1px solid var(--col-border);
+        }
       }
     }
   }

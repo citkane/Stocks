@@ -1,8 +1,10 @@
-import { Filter } from "./Filter";
+import { Filter } from "@frontend/components/common/Filter";
 
 export class WebComponent extends Filter {
   constructor() {
     super();
+    this.component_id = `${this.constructor.name}_${WebComponent._component_id}`;
+    WebComponent._component_id++;
   }
 
   public connectedCallback() {
@@ -55,8 +57,8 @@ export class WebComponent extends Filter {
         this.removeAttribute("hidden");
       },
       hide: () => {
-        this.removeAttribute("shown");
         this.setAttribute("hidden", "");
+        this.removeAttribute("shown");
       },
     },
     dom: {
@@ -84,6 +86,9 @@ export class WebComponent extends Filter {
     data: {},
   };
 
+  protected get router() {
+    return frontend.router;
+  }
   protected get brokers() {
     return frontend.brokers;
   }
@@ -99,10 +104,12 @@ export class WebComponent extends Filter {
   protected get i_id() {
     return this.getAttribute("i_id") as i_id_t;
   }
-
   private get attribute_keys() {
     return [...this.attribute_changed.keys()] as const;
   }
+
+  public component_id = "";
+  private static _component_id = 0;
   private attribute_changed = new Map<string, watch_fnc_t>();
   private connected_callbacks = [] as Function[];
   private disconnected_callbacks = [] as Function[];

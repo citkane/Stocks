@@ -21,9 +21,9 @@ export class Money {
 
     return this.base_whole(currency, amount, price_diff / 100, fx_market);
   };
-  public percent_pl = (traded: number, market: number) => {
-    if (!traded || !market) return 0;
-    return ((market - traded) / traded) * 100;
+  public percent_pl = (traded_value: number, market_value: number) => {
+    if (!traded_value || !market_value) return 0;
+    return ((market_value - traded_value) / traded_value) * 100;
   };
   /**
    * Calculates fx Profit/Loss

@@ -16,7 +16,7 @@ export class BrokerSaxo extends Broker {
   constructor() {
     super(fetch_rate_limit, default_fetch_params);
     default_fetch_params.bind(this);
-    this.auth_err = this.auth_err.bind(this);
+    this.what_err = this.what_err.bind(this);
   }
   public override await_auth = async () => {
     return this.auth.auth_state

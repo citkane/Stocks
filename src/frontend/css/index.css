@@ -4,6 +4,7 @@
 @import "./app/app-root.css";
 @import "./accounts/index.css";
 @import "./instruments/index.css";
+@import "./insight/index.css";
 @import "./positions/positions-root.css";
 
 :root {
@@ -11,6 +12,8 @@
   --s: 0%;
   --text: var(--h), var(--s);
   --font-monospace: monospace;
+  --font-size-small: 14px;
+  --font-size-small: 12px;
 
   --col-pos: green;
   --col-neg: red;
@@ -23,9 +26,8 @@
   --col-border: grey;
   --col-border-light: rgb(195, 195, 195);
 
-  --size-padding-app: 2em;
+  --size-padding-app: 20px;
   --size-padding-cell: 5px;
-  --size-font-small: 14px;
   --size-button: 32px;
 }
 
@@ -41,7 +43,7 @@ body {
   position: relative;
   font-family: sans-serif;
   color: var(--col-text);
-  font-size: var(--size-font-small);
+  font-size: var(--font-size);
   pre {
     font-family: monospace;
   }
@@ -64,4 +66,7 @@ body {
 
 body {
   position: relative;
+}
+#login_succeeds {
+  padding: var(--size-padding-app);
 }

@@ -11,15 +11,6 @@ percent-str {
     color: var(--col-neg);
   }
 }
-select-broker {
-  label {
-    display: inline-block;
-    margin-right: var(--size-padding-cell);
-  }
-  display: inline-block;
-  margin: var(--size-padding-cell);
-  margin-left: none;
-}
 
 expanding-drawer {
   display: block;

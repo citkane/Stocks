@@ -21,9 +21,9 @@ export default class Api extends Global implements Api_t {
   setter = {
     push_live_data: () => this.brokers.push_live_data(),
     push_cache: () => this.brokers.push_cache(),
-    saxo_token: (code: auth_code_t) => this.saxo.fetch_token(code.code),
+    saxo_token: (code: auth_code_t) => this.action.saxo_token(code),
     logout: (broker: broker_t) => this[broker].logout(),
-    login: (broker: broker_t) => this.ibkr.login(),
+    login: (_broker: broker_t) => this.ibkr.login(),
     log_debug: (message: any[]) => this.action.log("debug", message),
     log_info: (message: any[]) => this.action.log("info", message),
     log_log: (message: any[]) => this.action.log("log", message),
@@ -53,7 +53,7 @@ export default class Api extends Global implements Api_t {
       this.brokers.chart
         .data(broker, ...pa)
         .then((data) => p.messenger.response(p.req_uid, data || []))
-        .catch(this[broker].auth_err);
+        .catch(this[broker].what_err);
     },
   };
   private action = {
@@ -64,6 +64,9 @@ export default class Api extends Global implements Api_t {
         logger.error(err);
         logger.error(message);
       }
+    },
+    saxo_token: (code: auth_code_t) => {
+      this.saxo.fetch_token(code.code).catch((err) => this.saxo.what_err(err));
     },
   };
 }

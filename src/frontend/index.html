@@ -9,29 +9,38 @@
   <pre id="bootstrap"></pre>
   <app-root hidden>
     <menu id="main_menu">
-      <div name="instruments" class="menu link">Instruments</div>
-      <div name="accounts" class="menu link">Accounts</div>
+      <div name="portfolio" link>Portfolio</div>
+      <div name="accounts" link>Accounts</div>
+      <div name="insight" link>Insight</div>
       <div name="dropdown">
-        <div button>X</div>
-        <expanding-drawer name="dropdown_menu">
-          <div class="inner">
-            <ul>
-              <li name="login_ibkr">login IBKR</li>
-              <li name="logout_ibkr">logout IBKR</li>
-              <li name="logout_saxo">logout SAXO</li>
-            </ul>
-          </div>
+        <div button>+</div>
+        <expanding-drawer name="dropdown_menu" transition="0.5">
+          <ul>
+            <li name="login_ibkr">login IBKR</li>
+            <li name="logout_ibkr">logout IBKR</li>
+            <li name="logout_saxo">logout SAXO</li>
+          </ul>
         </expanding-drawer>
       </div>
     </menu>
     <div class="wrapper">
-      <accounts-root> </accounts-root>
-      <instrmnts-root> </instrmnts-root>
+      <instrmnts-root root> </instrmnts-root>
+      <accounts-root root> </accounts-root>
+      <insight-wrapper root>
+        <insight-root
+          name="sectors"
+          data-keys='["asset_sector", "asset_industry"]'
+        ></insight-root>
+        <insight-root
+          name="locations"
+          data-keys='["country", "region", "place"]'
+        ></insight-root>
+      </insight-wrapper>
     </div>
   </app-root>
 
   <!-- TEMPLATES -->
-  <!-- account -->
+  <!-- ACCOUNTS -->
   <template id="accounts-root">
     <h1>Accounts</h1>
     <div class="grid header">
@@ -80,20 +89,29 @@
     </div>
   </template>
 
-  <!-- instruments -->
+  <!-- INSTRUMENTS -->
   <template id="instrmnts-root">
-    <h1>Instruments</h1>
+    <h1>Portfolio</h1>
     <div class="header wrapper">
       <div class="filter wrapper">
         <div class="inner">
-          <select-broker name="broker" filter select></select-broker>
-          <select-account name="a_id" filter select></select-account>
-          <select-sector name="asset_sector" filter select></select-sector>
-          <select-industry
-            name="asset_industry"
-            filter
-            select
-          ></select-industry>
+          <form>
+            <select-broker name="broker" filter select></select-broker>
+            <select-account name="a_id" filter select></select-account>
+          </form>
+          <form>
+            <select-sector name="asset_sector" filter select></select-sector>
+            <select-industry
+              name="asset_industry"
+              filter
+              select
+            ></select-industry>
+          </form>
+          <form>
+            <select-country name="country" filter select></select-country>
+            <select-region name="region" filter select></select-region>
+            <select-place name="place" filter select></select-place>
+          </form>
           <form>
             <label for="search">search:</label>
             <input type="search" name="search" filter />
@@ -171,9 +189,9 @@
   </template>
 
   <!-- instrument chart-->
-  <template id="instrmnt-chart"><inner></inner></template>
+  <template id="instrmnt-chart"></template>
 
-  <!-- position -->
+  <!-- POSITIONS -->
   <template id="position-root">
     <div class="wrapper positions">
       <div class="grid header">
@@ -212,8 +230,44 @@
     <div name="div_est"></div>
     <div name="div_yield"></div>
   </template>
+  <!-- INSIGHT -->
+  <!-- insight wrapper -->
+  <template id="insight-wrapper">
+    <h1>Insight</h1>
+    <div class="header">
+      <div class="grid insight">
+        <div name="topic"></div>
+        <div name="value">Market Value</div>
+        <div name="u_pl">u P/L</div>
+        <div name="percent">
+          <div class="buttons">
+            <button name="sectors">sectors</button
+            ><button name="locations">locations</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content"></div>
+  </template>
+  <!-- insight root -->
+  <template id="insight-root">
+    <div class="content"></div>
+  </template>
+  <!-- insight-row -->
+  <template id="insight-row">
+    <div class="grid">
+      <div name="topic"><a target="blank"></a></div>
+      <money-str name="value" currency="€"></money-str>
+      <percent-str name="u_pl" pl></percent-str>
+      <div name="percent">
+        <div class="bar"></div>
+        <div class="value"></div>
+      </div>
+    </div>
+    <div class="children"></div>
+  </template>
 
-  <!-- widgets -->
+  <!-- WIDGETS -->
   <template id="select-widget">
     <span>
       <label></label>

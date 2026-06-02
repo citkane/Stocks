@@ -1,7 +1,7 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { RootComponent } from "@frontend/components/RootComponent";
 import type { AccountsBroker } from "@frontend/components";
 
-export class AccountsRoot extends WebComponent {
+export class AccountsRoot extends RootComponent {
   static observedAttributes = ["accounts"];
 
   constructor() {

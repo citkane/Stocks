@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 import type {
   ExpandingDrawer,
   PositionsRoot,
@@ -15,7 +15,8 @@ export class InstrumentRow extends WebComponent {
     this.dom.query_select();
     this.props.watch("data-all", this.handlers.render);
     this.props.watch("data-filter", this.handlers.filter);
-    this.el_button_pos.oncontextmenu = this.handlers.pos_drawers;
+    this.el_button_ticker.oncontextmenu = this.handlers.drawers;
+    this.el_button_pos.oncontextmenu = this.handlers.drawers;
     this.el_button_pos.onclick = this.handlers.drawer;
     this.el_button_ticker.onclick = this.handlers.drawer;
   }
@@ -27,7 +28,7 @@ export class InstrumentRow extends WebComponent {
       if (!p.old) this.el_root_pos.setAttribute("i_id", this.i_id);
       const transctns_id = util.hash_id(this.transctns);
       this.el_root_pos.setAttribute("data-transctns", transctns_id);
-      this.el_button_pos.innerHTML = this.pos_count;
+      this.el_button_pos.innerHTML = String(this.pos_count);
       this.props.set_money();
       this.props.update();
       if (!!p.old) return;
@@ -41,11 +42,13 @@ export class InstrumentRow extends WebComponent {
 
       this.el_root_pos.setAttribute("data-filter", p.new);
       this.props.set_money();
-      this.el_button_pos.innerHTML = this.pos_count;
+      this.props.update();
+      this.el_button_pos.innerHTML = String(this.pos_count);
+
       const { search } = this.cache.filter;
       if (search) return this.handlers.search(search);
 
-      Number(this.pos_count) ? this.props.show() : this.props.hide();
+      this.pos_count ? this.props.show() : this.props.hide();
     },
     search: (search: string) => {
       const description = this.instrmnt.description.toLowerCase();
@@ -57,37 +60,58 @@ export class InstrumentRow extends WebComponent {
         about?.includes(search);
       found ? this.props.show() : this.props.hide();
     },
-
     drawer: (e: Event) => {
-      const name = (e.target! as HTMLElement).parentElement!.getAttribute(
-        "name",
-      )!;
+      const button = (e.target! as HTMLElement).parentElement!;
+      const name = button.getAttribute("name")!;
       switch (name) {
         case "ticker":
-          this.el_chart_instrmnt.setAttribute("i_id", this.i_id);
+          this.el_chart_instrmnt.setAttribute("init", "true");
           this.el_drawer_info.toggle();
           break;
         case "positions":
           this.el_drawer_pos.toggle();
       }
     },
-    pos_drawers: (e: Event) => {
+    drawers: (e: Event) => {
       e.preventDefault();
-      let state = this.el_drawer_pos.getAttribute("state")!;
-      state = state === "open" ? "closed" : "open";
-      const tos = this.handlers.pos_drawers_timeout;
-      while (tos.length) clearTimeout(tos.pop());
-      this.pos_drawers_below_els.forEach((drawer, i) =>
-        tos.push(setTimeout(() => drawer.setAttribute("state", state), i)),
-      );
+      let state: string;
+      const { pos, info } = this.drawer_time_outs;
+      const button = (e.target! as HTMLElement).parentElement!;
+      const name = button.getAttribute("name")!;
+      switch (name) {
+        case "ticker":
+          state = this.el_drawer_info.getAttribute("state")!;
+          state = state === "open" ? "closed" : "open";
+          while (info.length) clearTimeout(info.pop());
+          const fn = (drawer: ExpandingDrawer) => {
+            const chart = drawer.querySelector("instrmnt-chart")!;
+            chart.toggleAttribute("init");
+            drawer.setAttribute("state", state);
+          };
+          const info_drawers = this.dom.els_below_drawer("info");
+          info_drawers.forEach((drawer, i) => {
+            info.push(setTimeout(() => fn(drawer), i));
+          });
+          break;
+        case "positions":
+          state = this.el_drawer_pos.getAttribute("state")!;
+          state = state === "open" ? "closed" : "open";
+          while (pos.length) clearTimeout(pos.pop());
+          const pos_drawers = this.dom.els_below_drawer("pos");
+          pos_drawers.forEach((drawer, i) =>
+            pos.push(setTimeout(() => drawer.setAttribute("state", state), i)),
+          );
+          break;
+      }
     },
-    pos_drawers_timeout: [] as NodeJS.Timeout[],
   };
   private props = this.api.props({
     init: () => {
-      const { description, ticker } = this.instrmnt;
+      const { description, ticker, country, place } = this.instrmnt;
       this.setAttribute("description", description);
       this.setAttribute("ticker", ticker);
+      if (country) this.setAttribute("country", country);
+      if (place) this.setAttribute("place", place);
     },
     update: () => {
       this.setAttribute("positions", String(this.pos_count));
@@ -107,12 +131,12 @@ export class InstrumentRow extends WebComponent {
   });
   private dom = this.api.dom({
     init: () => {
-      const { svg_string, description, ticker, asset_sector, asset_industry } =
+      const { svg_logo, description, ticker, asset_sector, asset_industry } =
         this.instrmnt;
       const url = this.tv_url;
-      const logo = !svg_string
+      const logo = !svg_logo
         ? this.dom.make_el("span", "!", 'class="no_logo"')
-        : new DOMParser().parseFromString(svg_string, "image/svg+xml")
+        : new DOMParser().parseFromString(svg_logo, "image/svg+xml")
             .documentElement;
       if (url) {
         this.el_description.setAttribute("href", url);
@@ -138,6 +162,10 @@ export class InstrumentRow extends WebComponent {
       this.el_info_currency.innerHTML = currency;
       const about = util.string.p_html(about_instrmnt || "No Information");
       this.el_about_instmnt.innerHTML = about;
+      const sector_filter = { asset_sector, asset_industry: "all" };
+      const industry_filter = { asset_sector, asset_industry };
+      this.el_info_sector.onclick = () => this.filter.set(sector_filter);
+      this.el_info_industry.onclick = () => this.filter.set(industry_filter);
     },
     query_select: () => {
       const q_ed = (query: string) => this.qs<ExpandingDrawer>(query);
@@ -164,9 +192,19 @@ export class InstrumentRow extends WebComponent {
       this.el_description = q_ae(`[name="description"] a`)!;
       this.els_money = this.selector.money.instruments(this.el_instrument);
     },
+    els_below_drawer: (kind: "pos" | "info") => {
+      let index: number;
+      this.selector.filter.shown_instrmnts_reset();
+      return this.selector.filter.shown_instrmnts().reduce((c, row, i) => {
+        if (row.instrmnt.i_id === this.instrmnt.i_id) index = i;
+        if (index === undefined) return c;
+        c.push(row[`el_drawer_${kind}`]);
+        return c;
+      }, [] as ExpandingDrawer[]);
+    },
   });
 
-  private get instrmnt() {
+  public get instrmnt() {
     return this.cache.get.instrument(this.i_id);
   }
   private get transctns() {
@@ -177,16 +215,7 @@ export class InstrumentRow extends WebComponent {
     return `https://www.tradingview.com/symbols/${this.instrmnt.i_id}`;
   }
   private get pos_count() {
-    return this.el_root_pos.getAttribute("position_count")!;
-  }
-  private get pos_drawers_below_els() {
-    let index: number;
-    return this.selector.filter.shown_instrmnts().reduce((c, row, i) => {
-      if (row.instrmnt.i_id === this.instrmnt.i_id) index = i;
-      if (index === undefined) return c;
-      c.push(row.el_drawer_pos);
-      return c;
-    }, [] as ExpandingDrawer[]);
+    return this.el_root_pos.transctn_display_count;
   }
 
   public els_money!: f.money_instruments_t;
@@ -205,4 +234,8 @@ export class InstrumentRow extends WebComponent {
 
   private qs = this.querySelector;
   private i_qs!: typeof this.qs;
+  private drawer_time_outs = {
+    pos: [] as NodeJS.Timeout[],
+    info: [] as NodeJS.Timeout[],
+  };
 }

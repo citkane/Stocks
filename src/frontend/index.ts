@@ -44,4 +44,4 @@ try {
   logger.error(err);
 }
 
-new Router();
+(window as any).frontend.router = new Router();

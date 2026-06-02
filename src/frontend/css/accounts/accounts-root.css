@@ -1,7 +1,4 @@
 accounts-root {
-  display: block;
-  padding: var(--size-padding-app);
-
   --grid-columns: repeat(23, 1fr);
   --grid-col-1: 1/2;
   --grid-col-2: 2/5;

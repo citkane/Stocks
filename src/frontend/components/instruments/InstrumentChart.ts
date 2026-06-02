@@ -1,4 +1,4 @@
-import { WebComponent } from "@frontend/components/common/index";
+import { WebComponent } from "@frontend/components/WebComponent";
 import * as lwc from "lightweight-charts";
 
 const chart_span: period_t = [10, "y"];
@@ -6,13 +6,14 @@ const chart_granularity: period_t = [1, "d"];
 const visibility_start: period_t = [1, "y"];
 
 export class InstrumentChart extends WebComponent {
-  static observedAttributes = ["i_id", "ready"];
+  static observedAttributes = ["init", "ready", "i_id"];
 
   constructor() {
     super();
     this.dom.template_to_self("instrmnt-chart");
     this.style.height = "200px";
 
+    this.props.watch("init", this.handlers.set_i_id);
     this.props.watch("i_id", this.handlers.fetch_data);
     this.props.watch("ready", this.handlers.render);
   }
@@ -20,6 +21,7 @@ export class InstrumentChart extends WebComponent {
   private handlers = {
     render: async (p: p.prop_callback) => {
       if (p.old === p.new) return;
+
       try {
         const chart = this.dom.createChart();
         this.addEventListener("dblclick", () =>
@@ -48,6 +50,7 @@ export class InstrumentChart extends WebComponent {
     },
     fetch_data: (p: p.prop_callback) => {
       if (p.old === p.new) return;
+
       const { saxo_id, ibkr_id } = this.instrmnt;
       return this.brokers
         .chart_data(saxo_id, ibkr_id, chart_span, chart_granularity)
@@ -57,6 +60,11 @@ export class InstrumentChart extends WebComponent {
           this.setAttribute("ready", "true");
         })
         .catch((err) => logger.error(err));
+    },
+    set_i_id: () => {
+      const row = this.parentElement!.parentElement!.parentElement!;
+      const i_id = row.getAttribute("i_id")!;
+      this.setAttribute("i_id", i_id);
     },
   };
   private props = this.api.props({});

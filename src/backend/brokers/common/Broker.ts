@@ -35,17 +35,26 @@ export class Broker extends Fetch {
     transactions: () => Promise<void>;
   };
 
-  public auth_err(this: BrokerIbkr | BrokerSaxo, err: any) {
-    if (
+  public what_err(this: BrokerIbkr | BrokerSaxo, err: any) {
+    const status =
       err instanceof Object &&
       (err as Object).hasOwnProperty("status") &&
-      err.status === 401
-    ) {
-      this.revoke_auth();
-      console.error(err);
-      return;
+      typeof err.status === "number"
+        ? (err.status as number)
+        : 500;
+
+    switch (status) {
+      case 401:
+        this.revoke_auth();
+        console.error(err);
+        return;
+      case 500:
+        console.error(err);
+        throw Error(err);
+        break;
+      default:
+        console.error(err);
     }
-    throw Error(err);
   }
 
   protected auth_resolver?: Promise<void>;

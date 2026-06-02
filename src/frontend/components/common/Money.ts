@@ -29,7 +29,7 @@ export class Money extends Selector {
     },
     instruments: {
       collector: empty_collector,
-      tally: (rows: ArrayIterator<InstrumentRow> | PositionRow[]) => {
+      tally: (rows: (InstrumentRow | PositionRow)[]) => {
         const tally = this.money.instruments.collector();
         rows.forEach((row) => {
           tally.market_value += row.els_money.market?.money_value || 0;
