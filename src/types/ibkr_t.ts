@@ -50,7 +50,7 @@ declare global {
 
       type positn_t = {
         acctId: string;
-        conid: number;
+        conid: string;
         contractDesc: string;
         position: number;
         mktPrice: number;

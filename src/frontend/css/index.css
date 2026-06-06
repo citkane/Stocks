@@ -5,7 +5,8 @@
 @import "./accounts/index.css";
 @import "./instruments/index.css";
 @import "./insight/index.css";
-@import "./positions/positions-root.css";
+@import "./positions/index.css";
+@import "./map/index.css";
 
 :root {
   --h: 0;

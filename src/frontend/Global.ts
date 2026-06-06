@@ -53,11 +53,15 @@ export class Global {
   protected get el_insight_root() {
     return document.querySelector<InsightWrapper>("insight-wrapper")!;
   }
+  protected get el_map_root() {
+    return document.querySelector<InsightWrapper>("map-root")!;
+  }
   protected get els_root() {
     return [
       this.el_accounts_root,
       this.el_instruments_root,
       this.el_insight_root,
+      this.el_map_root,
     ];
   }
 

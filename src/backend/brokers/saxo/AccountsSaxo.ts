@@ -1,9 +1,17 @@
 import { Global } from "backend";
+import type { EndpointsSaxo as fetch_t } from "./EndpointsSaxo";
 
 export class AccountsSaxo extends Global {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
+    super();
+  }
   public update = async () => {
-    const query = this.saxo.endpoints.get.accounts();
-    const accounts = await this.saxo.fetch<b.s.data_t<b.s.account_t>>(query);
+    const req = this.get.accounts();
+    const accounts = await this.fetch<b.s.data_t<b.s.account_t>>(req);
     logger.json("SAXO accounts raw", accounts.Data);
     return accounts.Data.map(this.translate.account);
   };
@@ -11,10 +19,10 @@ export class AccountsSaxo extends Global {
     return Promise.all(
       accounts.map((account) => {
         const { saxo_key } = account;
-        const query = this.saxo.endpoints.get.balance(saxo_key!);
-        return this.saxo
-          .fetch<b.s.balance_t>(query)
-          .then((bal) => this.translate.balance(account, bal));
+        const req = this.get.balance(saxo_key!);
+        return this.fetch<b.s.balance_t>(req).then((bal) =>
+          this.translate.balance(account, bal),
+        );
       }),
     );
   };

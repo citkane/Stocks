@@ -1,4 +1,4 @@
-import { Broker } from "@backend/brokers/common";
+import { EndpointsSaxo } from "@backend/brokers/saxo/EndpointsSaxo";
 import {
   AccountsSaxo,
   AuthSaxo,
@@ -7,17 +7,12 @@ import {
   LiveDataSaxo,
   CacheSaxo,
   saxo_exchanges,
-  EndpointsSaxo,
 } from "@backend/brokers/index";
 
-const fetch_rate_limit = 250;
-
-export class BrokerSaxo extends Broker {
-  constructor() {
-    super(fetch_rate_limit, default_fetch_params);
-    default_fetch_params.bind(this);
-    this.what_err = this.what_err.bind(this);
-  }
+export class BrokerSaxo extends EndpointsSaxo {
+  //constructor() {
+  //  this.what_err = this.what_err.bind(this);
+  //}
   public override await_auth = async () => {
     return this.auth.auth_state
       ? Promise.resolve()
@@ -101,20 +96,11 @@ export class BrokerSaxo extends Broker {
       .then(() => this.bootstrap("Saxo is authorised")));
 
   public cache = new CacheSaxo();
-  public endpoints = new EndpointsSaxo();
 
-  private accounts = new AccountsSaxo();
-  private positions = new PositionsSaxo();
-  private transactions = new TransactionsSaxo();
-  private live_data = new LiveDataSaxo();
-  private auth = new AuthSaxo();
+  private accounts = new AccountsSaxo(this.fetch, this.get, this.post);
+  private positions = new PositionsSaxo(this.fetch, this.get, this.post);
+  private transactions = new TransactionsSaxo(this.fetch, this.get, this.post);
+  private live_data = new LiveDataSaxo(this.fetch, this.get, this.post);
+  private auth = new AuthSaxo(this.fetch, this.get, this.post);
   private _client_key?: string;
-}
-
-function default_fetch_params(this: BrokerSaxo): RequestInit {
-  return {
-    headers: {
-      Authorization: `Bearer ${this.auth_bearer}`,
-    },
-  };
 }

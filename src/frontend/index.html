@@ -12,6 +12,7 @@
       <div name="portfolio" link>Portfolio</div>
       <div name="accounts" link>Accounts</div>
       <div name="insight" link>Insight</div>
+      <div name="map" link>Map</div>
       <div name="dropdown">
         <div button>+</div>
         <expanding-drawer name="dropdown_menu" transition="0.5">
@@ -36,6 +37,7 @@
           data-keys='["country", "region", "place"]'
         ></insight-root>
       </insight-wrapper>
+      <map-root root></map-root>
     </div>
   </app-root>
 
@@ -231,7 +233,7 @@
     <div name="div_yield"></div>
   </template>
   <!-- INSIGHT -->
-  <!-- insight wrapper -->
+  <!-- insight-wrapper -->
   <template id="insight-wrapper">
     <h1>Insight</h1>
     <div class="header">
@@ -266,7 +268,11 @@
     </div>
     <div class="children"></div>
   </template>
-
+  <!-- MAP -->
+  <template id="map-root">
+    <h1>Map</h1>
+    <div id="map_container"></div>
+  </template>
   <!-- WIDGETS -->
   <template id="select-widget">
     <span>

@@ -52,6 +52,9 @@ export default class Router extends Global {
     "/insight": () => {
       this.el_insight_root.show();
     },
+    "/map": () => {
+      this.el_map_root.show();
+    },
   };
 }
 

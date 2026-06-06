@@ -1,23 +1,29 @@
 import { Auth } from "@backend/brokers/common/Auth";
+import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
+
 //import { $ } from "bun";
 
 const ping_auth_interval = 60000;
 
 export class AuthIbkr extends Auth {
-  constructor() {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
     super("ibkr", ping_auth_interval);
   }
 
   public is_authorised = () => this.renew_auth();
   public login = async () => {
-    let { url, params } = this.ibkr.endpoints.post.init_broker();
-    await this.ibkr.fetch(url, params).then((data) => logger.info(data));
+    const req = this.post.init_broker();
+    await this.fetch(req).then((data) => logger.info(data));
   };
   public logout = async () => {
     //if (!this.auth_state) return;
     {
-      let { url, params } = this.ibkr.endpoints.post.logout();
-      await this.ibkr.fetch(url, params);
+      const req = this.post.logout();
+      await this.fetch(req);
     }
 
     //{
@@ -54,9 +60,8 @@ export class AuthIbkr extends Auth {
   //};
   private renew_auth = () => {
     logger.debug("Renew auth", "ibkr");
-
-    return this.ibkr
-      .fetch<b.i.tickle_t>(this.ibkr.endpoints.get.tickle())
+    const req = this.get.tickle();
+    return this.fetch<b.i.tickle_t>(req)
       .then((tickle) => tickle.iserver.authStatus.authenticated)
       .catch((_err) => {
         return false;

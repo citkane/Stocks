@@ -31,8 +31,10 @@ export class AppRoot extends WebComponent {
     instruments: (p: p.prop_callback) => {
       if (p.new === p.old) return;
 
-      if (this.has_live_data)
-        this.selector.root.stats.setAttribute("instruments", p.new);
+      if (this.has_live_data) {
+        this.selector.root.insights.setAttribute("instruments", p.new);
+        this.selector.root.map.setAttribute("instruments", p.new);
+      }
       this.instruments = p.new;
       if (!this.transactions || !this.accounts) return;
       this.render_instrmnts();

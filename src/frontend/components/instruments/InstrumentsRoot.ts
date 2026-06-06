@@ -49,7 +49,6 @@ export class InstrumentsRoot extends RootComponent {
       try {
         Object.values(this.instrmnts)
           .sort((a, b) => {
-            //console.log({ a, b });
             return a.description.localeCompare(b.description);
           })
           .forEach((instrmnt) => {

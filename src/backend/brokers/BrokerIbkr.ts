@@ -1,4 +1,4 @@
-import { Broker } from "@backend/brokers/common";
+import { EndpointsIbkr } from "@backend/brokers/ibkr/EndpointsIbkr";
 import {
   AccountsIbkr,
   AuthIbkr,
@@ -7,20 +7,9 @@ import {
   LiveDataIbkr,
   CacheIbkr,
   ibkr_exchanges,
-  EndpointsIbkr,
 } from "@backend/brokers/index";
 
-const fetch_rate_limit = 100;
-const tls = {
-  tls: { rejectUnauthorized: false },
-};
-
-export class BrokerIbkr extends Broker {
-  constructor() {
-    super(fetch_rate_limit, default_fetch_params, tls);
-    this.what_err = this.what_err.bind(this);
-  }
-
+export class BrokerIbkr extends EndpointsIbkr {
   public override await_auth = () => {
     return this.auth.auth_state
       ? Promise.resolve()
@@ -30,19 +19,15 @@ export class BrokerIbkr extends Broker {
     await this.auth.logout();
     this.revoke_auth();
   };
-
   public login = () => this.auth.login();
-
   public override chart_data = (...p: p.chart_period) => {
     return this.live_data.fetch_chart_data(...p);
   };
-
   public override revoke_auth = () => {
     this.auth.auth_state = false;
     delete this.auth_resolver;
     this.ws.publish("logged_out", "ibkr");
   };
-
   public override update = {
     accounts: () => this._update.accounts(),
     positions: () => this._update.positions(),
@@ -76,6 +61,14 @@ export class BrokerIbkr extends Broker {
       this.bootstrap("IBKR accounts updated");
     },
     positions: async () => {
+      const ex_instrmnts = await this.db.select.instruments("ibkr");
+      this.cache.set_instruments(ex_instrmnts);
+      //console.log(
+      //  "ex_instrmnts:",
+      //  ex_instrmnts.length,
+      //  this.cache.instruments.keys(),
+      //);
+
       const acc_ids = await this.cache.a_ids;
       const positions = await this.positions.update(acc_ids);
       this.cache.positions = positions;
@@ -102,22 +95,15 @@ export class BrokerIbkr extends Broker {
       logger.json("IBKR balances", balances);
     },
   };
-
   private define_auth_resolver = () =>
     (this.auth_resolver = this.auth
       .await_auth()
       .then(() => this.bootstrap("IBKR is authorised")));
 
   public cache = new CacheIbkr();
-  public endpoints = new EndpointsIbkr();
-
-  private positions = new PositionsIbkr();
-  private transctns = new TransactionsIbkr();
-  private live_data = new LiveDataIbkr();
-  private accounts = new AccountsIbkr();
-  private auth = new AuthIbkr();
-}
-
-function default_fetch_params() {
-  return {} as RequestInit;
+  private positions = new PositionsIbkr(this.fetch, this.get, this.post);
+  private transctns = new TransactionsIbkr(this.fetch, this.get, this.post);
+  private live_data = new LiveDataIbkr(this.fetch, this.get, this.post);
+  private accounts = new AccountsIbkr(this.fetch, this.get, this.post);
+  private auth = new AuthIbkr(this.fetch, this.get, this.post);
 }

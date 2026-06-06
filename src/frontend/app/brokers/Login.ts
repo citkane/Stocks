@@ -7,11 +7,14 @@ const windowFeatures = `popup,innerWidth=${width},innerHeight=${height}`;
 export class Login extends Global {
   constructor(private broker: broker_t) {
     super();
+    console.error(broker);
+
     window.addEventListener("focus", () => this.popup.focus());
   }
   public popup = {
     open: async (url: string) => {
-      if (this.popup_window) return;
+      if (!url) return console.error("No url for login popup");
+      if (!!this.popup_window) return;
       const target = util.random_context();
       this.popup_window = window.open(url, target, windowFeatures);
       this.popup_window?.resizeTo(width, height);

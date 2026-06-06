@@ -1,153 +1,23 @@
 import { Global } from "@backend/Global";
+import Fetch, {
+  type frm_debug_data_t,
+  type frm_host_t,
+} from "@common/FetchRateManager";
 
-const req_per_min = 200;
-const search_res_limit = 1;
-const u_agent =
-  "Stocks/0.0 (https://github.com/citkane/Stocks/; noop@openpoint.ie)";
-const api = {
-  api: "https://www.wikidata.org/w/api.php",
-  query: "https://query.wikidata.org/sparql",
-  links: "https://www.wikidata.org/wiki/Special:EntityData",
-  commons: "https://commons.wikimedia.org/w/index.php",
-};
-
-class WikiFetch extends Global {
-  constructor(
-    private u_agent: string,
-    max_req_per_min = 200,
-    req_interval = 10,
-    max_concurrent = 3,
-  ) {
-    super();
-    WikiFetch.max_req_per_min = max_req_per_min;
-    WikiFetch.max_concurrent = max_concurrent;
-    const { dequeue } = WikiFetch;
-    setInterval(dequeue, req_interval);
-  }
-  protected get wiki_fetch() {
-    return WikiFetch._wiki_fetch;
-  }
-  protected wiki_headers = (...header: { [key: string]: string }[]) => {
-    const collector = {
-      "User-Agent": this.u_agent,
-    };
-    return header.reduce((c, header) => {
-      c = { ...c, ...header };
-      return c;
-    }, collector);
-  };
-  protected wiki_headers_sparql = (...header: { [key: string]: string }[]) => {
-    return this.wiki_headers(...header, {
-      Accept: "application/sparql-results+json",
-    });
+const req_per_min_max = 200,
+  concurrency_max = 3,
+  search_res_limit = 1,
+  u_agent =
+    "Stocks/0.0 (https://github.com/citkane/Stocks/; noop@openpoint.ie)",
+  api = {
+    api: "https://www.wikidata.org/w/api.php",
+    query: "https://query.wikidata.org/sparql",
+    links: "https://www.wikidata.org/wiki/Special:EntityData",
+    commons: "https://commons.wikimedia.org/w/index.php",
   };
 
-  private static _wiki_fetch = <T = any>(
-    req: Request | string,
-    retry = false,
-  ): Promise<T> => {
-    const req_promise = new Promise<T>((resolve, reject) => {
-      const fn = async () => {
-        const _req = req instanceof Request ? req.clone() : req;
-        const res = await fetch(_req);
-        this.concurrent--;
-        if (!res.ok) return reject({ res, req });
-
-        req = null as unknown as Request;
-        const data = await res.json();
-        resolve(data);
-      };
-      retry ? this.requeue(fn) : this.enqueue(fn);
-    }).catch((res_req) => {
-      const { res, req } = res_req;
-      const { status } = res;
-      const retry = status === 429 || status === 503;
-      if (retry) return this.retry_after<T>(res, req);
-      logger.error(res);
-      throw Error(res);
-    });
-
-    return req_promise;
-  };
-  private static retry_after = <T = any>(res: Response, req: Request) => {
-    start_interval();
-    return this._wiki_fetch<T>(req, true);
-
-    function start_interval() {
-      const self = WikiFetch;
-      clearInterval(self.retry_timer);
-      self.retry_pause = extract_secs(res);
-      self.retry_timer = setInterval(() => {
-        self.retry_pause = self.retry_pause - 1;
-        const rpm = WikiFetch.calc_rpm();
-        const { status, statusText } = res;
-        logger.warn(
-          `WikiData ${status} ${statusText}, wait for: ${self.retry_pause} seconds: rpm = ${rpm}`,
-        );
-        if (!self.retry_pause) clearInterval(self.retry_timer);
-      }, 1000);
-    }
-    function to_sec(date: string) {
-      const now = new Date().valueOf();
-      const when = new Date(date).valueOf();
-      return Math.ceil((when - now) / 1000);
-    }
-    function extract_secs(res: Response) {
-      let time: string | number | null = res.headers.get("retry-after");
-      if (!time) time = "5";
-      time = Number.isNaN(Number(time)) ? to_sec(time) : Number(time);
-      return time;
-    }
-  };
-  private static dequeue = () => {
-    const wait =
-      !this.queue.length ||
-      this.retry_pause > 0 ||
-      this.concurrent >= this.max_concurrent;
-    if (wait) return;
-
-    const rpm = this.calc_rpm();
-    if (rpm >= this.max_req_per_min) return;
-
-    const now = new Date().valueOf();
-    this.rpm_times.push(now);
-    const req_fn = this.queue.shift()!;
-    if (!req_fn) throw Error("No request function");
-    this.concurrent++;
-    req_fn();
-
-    logger.debug({
-      rpm,
-      queue: this.queue.length,
-      concurrency: this.concurrent,
-    });
-  };
-  private static enqueue = (fn: Function) => {
-    this.queue.push(fn);
-  };
-  private static requeue = (fn: Function) => {
-    this.queue.unshift(fn);
-  };
-  private static calc_rpm = () => {
-    const minute_ago = new Date().valueOf() - 60000;
-    this.rpm_times = this.rpm_times.filter((time) => time > minute_ago);
-    return this.rpm_times.length;
-  };
-
-  private static max_req_per_min: number;
-  private static retry_pause = 0;
-  private static max_concurrent: number;
-  private static concurrent = 0;
-  private static queue: Function[] = [];
-  private static rpm_times: number[] = [];
-  private static retry_timer?: any;
-}
-
-export class WikiData extends WikiFetch {
-  constructor() {
-    super(u_agent, req_per_min);
-  }
-  protected geo_location = async (
+export class WikiData extends Global {
+  public geo_location = async (
     i_id: i_id_t,
     place_search: string | undefined,
     country_search: string | undefined,
@@ -226,7 +96,7 @@ export class WikiData extends WikiFetch {
       if (!qids.place) return qids;
 
       const req = this.req.country(qids.place);
-      const data = await this.wiki_fetch<wiki_query_t>(req).then(
+      const data = await this.fetch<wiki_query_t>(req).then(
         this.data.reduce_query_res,
       );
       qids.country = data.country;
@@ -249,7 +119,7 @@ export class WikiData extends WikiFetch {
       }
 
       const req = this.req.country(qids.place);
-      const country_geo = await this.wiki_fetch<wiki_query_t>(req)
+      const country_geo = await this.fetch<wiki_query_t>(req)
         .then(this.data.reduce_query_res)
         .then(this.data.geo);
       country_db = this.data.geo_to_db("country", country_geo, country_search);
@@ -260,7 +130,7 @@ export class WikiData extends WikiFetch {
       if (!qids.place || !qids.country) return undefined;
 
       const req = this.req.region(qids.country, qids.place);
-      const wiki_geo = await this.wiki_fetch<wiki_query_t>(req).then(
+      const wiki_geo = await this.fetch<wiki_query_t>(req).then(
         this.data.reduce_query_res,
       );
       if (!wiki_geo.region) return undefined;
@@ -278,7 +148,7 @@ export class WikiData extends WikiFetch {
       if (!qids.place) return undefined;
 
       const req = this.req.place(qids.place);
-      const place_geo = await this.wiki_fetch(req)
+      const place_geo = await this.fetch<wiki_query_t>(req)
         .then(this.data.reduce_query_res)
         .then(this.data.geo);
       const place_db = this.data.geo_to_db("place", place_geo, place_search);
@@ -292,7 +162,7 @@ export class WikiData extends WikiFetch {
     ) => {
       logger.debug({ search_term });
       const req = this.req.search(search_term, statements, limit);
-      const result = await this.wiki_fetch<wiki_search_t>(req).then(
+      const result = await this.fetch<wiki_search_t>(req).then(
         this.data.parse_search_res,
       );
       return result;
@@ -300,13 +170,13 @@ export class WikiData extends WikiFetch {
     link: async (q_id: string) => {
       logger.debug("wiki link:", q_id);
       const req = this.req.wiki_links(q_id);
-      const res = await this.wiki_fetch<wiki_links_t>(req);
+      const res = await this.fetch<wiki_links_t>(req);
       return this.data.parse_links_res(res, q_id);
     },
     geo_shape: async (url: string) => {
       logger.debug("geo shape:", url);
       const req = this.req.geo_shape(url);
-      const shape = await this.wiki_fetch<Object>(req).catch((err) => {
+      const shape = await this.fetch<Object>(req).catch((err) => {
         logger.error(err);
         return undefined;
       });
@@ -484,7 +354,7 @@ export class WikiData extends WikiFetch {
       const vars = this.req.vars("country", "countryLabel", "countryShape");
       const query = encodeURIComponent(sparql());
       const url = `${api.query}?query=${query}`;
-      const headers = this.wiki_headers_sparql();
+      const headers = this.wiki.headers_sparql();
       return new Request(url, { headers });
 
       function sparql() {
@@ -507,7 +377,7 @@ LIMIT 1`;
       );
       const query = encodeURIComponent(sparql());
       const url = `${api.query}?query=${query}`;
-      const headers = this.wiki_headers_sparql();
+      const headers = this.wiki.headers_sparql();
       return new Request(url, { headers });
 
       function sparql() {
@@ -530,7 +400,7 @@ LIMIT 1`;
       const vars = this.req.vars("place", "placeLabel", "placePoint");
       const query = encodeURIComponent(sparql());
       const url = `${api.query}?query=${query}`;
-      const headers = this.wiki_headers_sparql();
+      const headers = this.wiki.headers_sparql();
       return new Request(url, { headers });
 
       function sparql() {
@@ -543,7 +413,7 @@ LIMIT 1`;
       }
     },
     search: (term: string, _statements: string[] = [], limit: number = 5) => {
-      const headers = this.wiki_headers();
+      const headers = this.wiki.headers();
       const url = new URL(api.api);
       url.search = params();
       return new Request(url, { headers });
@@ -562,12 +432,12 @@ LIMIT 1`;
       }
     },
     wiki_links: (...q_ids: string[]) => {
-      const headers = this.wiki_headers();
+      const headers = this.wiki.headers();
       const url = `${api.api}/?action=wbgetentities&ids=${q_ids.join("|")}&format=json&props=sitelinks/urls`;
       return new Request(url, { headers });
     },
     geo_shape: (url: string) => {
-      const headers = this.wiki_headers();
+      const headers = this.wiki.headers();
       url = url.replaceAll("+", " ");
       return new Request(url, { headers });
     },
@@ -594,18 +464,75 @@ LIMIT 1`;
       is_country: () => `${this.wiki._is_a}=${this.wiki._country}`,
       in_country: (country_qid: string) =>
         `${this.wiki._in_country}=${country_qid}`,
-      is_place: () => this._place_statement,
+      is_place: () => this.place_statement,
     },
     _country: "Q3624078",
     _country_region: "Q10864048",
     _in_country: "P17",
     _is_a: "P31",
+    place_statement_init: () => {
+      const places = Object.values(this.wiki.places);
+      return places.map((place) => `${this.wiki._is_a}=${place}`).join("|");
+    },
+    headers: (...header: { [key: string]: string }[]) => {
+      const collector = {
+        "User-Agent": u_agent,
+      };
+      return header.reduce((c, header) => {
+        c = { ...c, ...header };
+        return c;
+      }, collector);
+    },
+    headers_sparql: (...header: { [key: string]: string }[]) => {
+      return this.wiki.headers(...header, {
+        Accept: "application/sparql-results+json",
+      });
+    },
   };
-  private place_statement_init() {
-    const places = Object.values(this.wiki.places);
-    return places.map((place) => `${this.wiki._is_a}=${place}`).join("|");
-  }
-  private _place_statement = this.place_statement_init();
+  private fetcher = {
+    should_retry: (res: Response) => {
+      return [429, 503].includes(res.status);
+    },
+    set_retry_timeout_ms: (res: Response) => {
+      let time: string | number | null = res.headers.get("retry-after");
+      if (!time) return 5000;
+      if (!Number.isNaN(Number(time))) return Number(time) * 1000;
+      const now = new Date().valueOf();
+      const when = new Date(time).valueOf();
+      return when - now;
+    },
+    data_resolver: async (res: Response) => {
+      const type = res.headers.get("content-type");
+      const data = type?.includes("json") ? await res.json() : await res.text();
+      return data;
+    },
+    debug_callback: (data: frm_debug_data_t, message?: string) => {
+      if (message) console.warn(message);
+      console.debug(data);
+    },
+    hosts: () =>
+      [...new Set(Object.values(api).map((url) => new URL(url).hostname))].map(
+        (hostname) => {
+          return {
+            hostname,
+            should_retry: this.fetcher.should_retry,
+            set_retry_timeout_ms: this.fetcher.set_retry_timeout_ms,
+          } as frm_host_t;
+        },
+      ),
+    constructor: () =>
+      [
+        req_per_min_max,
+        concurrency_max,
+        "min",
+        this.fetcher.hosts(),
+        this.fetcher.data_resolver,
+        this.fetcher.debug_callback,
+      ] as const,
+  };
+
+  private place_statement = this.wiki.place_statement_init();
+  private fetch = new Fetch(...this.fetcher.constructor()).fetch;
 }
 
 type convert_key_t = "country" | "region" | "place";

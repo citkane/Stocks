@@ -27,6 +27,12 @@ export class Global {
   protected get http() {
     return this.app.http;
   }
+  protected get tv() {
+    return this.app.tv;
+  }
+  protected get wd() {
+    return this.app.wd;
+  }
   protected get saxo() {
     return this.broker.saxo;
   }

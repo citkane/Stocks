@@ -9,9 +9,18 @@ export class CacheIbkr extends Global {
     return [...this.positn_map.keys()].map((conid) => String(conid));
   }
 
-  public position = (conid: number) => {
-    if (!this.positn_map) throw Error(err_m("positions"));
-    return this.positn_map.get(conid);
+  public get instruments() {
+    return this.instrmnt_map;
+  }
+
+  public get = {
+    position: (conid: number) => {
+      if (!this.positn_map) throw Error(err_m("positions"));
+      return this.positn_map.get(conid);
+    },
+    instrument: (conid: number) => {
+      return this.instrmnt_map.get(conid);
+    },
   };
   public get accounts() {
     if (!this._accounts) throw Error(err_m("accounts"));
@@ -26,11 +35,19 @@ export class CacheIbkr extends Global {
     });
     this.brokers.cache.positions = positns;
   }
+  public set_instruments(instrmnts: instrmnt_t[]) {
+    this.brokers.cache.set_instruments(instrmnts);
+    instrmnts.forEach((instrmnt) => {
+      const { ibkr_id } = instrmnt;
+      this.instrmnt_map.set(ibkr_id!, instrmnt);
+    });
+  }
   public set accounts(accounts: cache_t["accounts"]) {
     this._accounts = accounts;
     this.brokers.cache.accounts = accounts;
   }
 
+  private instrmnt_map = new Map<number, instrmnt_t>();
   private positn_map?: Map<number, b.positn_t>;
   private _accounts?: cache_t["accounts"];
 }

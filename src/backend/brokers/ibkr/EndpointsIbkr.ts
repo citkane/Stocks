@@ -1,40 +1,56 @@
-import { Global } from "@backend/Global";
+import { Broker } from "@backend/brokers/common";
+import Fetch, { type frm_host_t } from "@common/FetchRateManager";
 
-const base = conf.ibkr.base;
-const endpoints = {
-  api: "v1/api",
-};
-const url = {
-  api: `${base}/${endpoints.api}`,
-};
+const req_max_per_s = 100,
+  req_max_concurrent = 10,
+  base = conf.ibkr.base,
+  endpoints = {
+    api: "v1/api",
+  },
+  url = {
+    api: `${base}/${endpoints.api}`,
+  },
+  req_init = {
+    tls: { rejectUnauthorized: false },
+  } as RequestInit;
 
-export class EndpointsIbkr extends Global {
-  public get = {
-    accounts: () => `${url.api}/portfolio/accounts`,
-    balance: (a_id: string) => `${url.api}/portfolio/${a_id}/ledger`,
-    tickle: () => `${url.api}/tickle`,
+export class EndpointsIbkr extends Broker {
+  protected get = {
+    accounts: () => new Request(`${url.api}/portfolio/accounts`, req_init),
+    balance: (a_id: string) =>
+      new Request(`${url.api}/portfolio/${a_id}/ledger`, req_init),
+    tickle: () => new Request(`${url.api}/tickle`, req_init),
     fx_rate: (source: currency_t, target: currency_t) => {
-      return `${url.api}/iserver/exchangerate?Source=${source}&Target=${target}`;
+      return new Request(
+        `${url.api}/iserver/exchangerate?Source=${source}&Target=${target}`,
+        req_init,
+      );
     },
     bar_data: (conid: string, period: string, granularity: string) => {
-      const params = [
-        `conid=${conid}`,
-        `period=${period}`,
-        `bar=${granularity}`,
-      ].join("&");
-      return `${url.api}/iserver/marketdata/history?${params}`;
+      const params = new URLSearchParams({
+        conid,
+        period,
+        bar: granularity,
+      }).toString();
+      return new Request(
+        `${url.api}/iserver/marketdata/history?${params}`,
+        req_init,
+      );
     },
     positions: (a_id: string) => {
-      return `${url.api}/portfolio2/${a_id}/positions`;
+      return new Request(`${url.api}/portfolio2/${a_id}/positions`, req_init);
     },
-    position: (a_id: string, con_id: string) => {
-      return `${url.api}/portfolio/${a_id}/position/${con_id}`;
+    position: (a_id: string, con_id: number) => {
+      return new Request(
+        `${url.api}/portfolio/${a_id}/position/${con_id}`,
+        req_init,
+      );
     },
     validate_sso: () => {
-      return `${url.api}/sso/validate`;
+      return new Request(`${url.api}/sso/validate`, req_init);
     },
   };
-  public post = {
+  protected post = {
     transactions: (p: b.i.transactions_p) => {
       const body = JSON.stringify({
         acctIds: p.acc_ids,
@@ -42,33 +58,64 @@ export class EndpointsIbkr extends Global {
         currency: p.curr,
         days: p.days_ago,
       });
-      return {
-        url: `${url.api}/pa/transactions`,
-        params: {
+      return new Request(`${url.api}/pa/transactions`, {
+        ...req_init,
+        ...{
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body,
         },
-      };
+      });
     },
     logout: () => {
-      return { url: `${url.api}/logout`, params: { method: "POST" } };
+      return new Request(`${url.api}/logout`, { ...req_init, method: "POST" });
     },
     auth_status: () => {
-      return {
-        url: `${url.api}/iserver/auth/status`,
-        params: { method: "POST" },
-      };
+      return new Request(`${url.api}/iserver/auth/status`, {
+        ...req_init,
+        method: "POST",
+      });
     },
     init_broker: () => {
-      const params = {
+      return new Request(`${url.api}/iserver/auth/ssodh/init`, {
+        ...req_init,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publish: true, compete: true }),
-      };
-      return { url: `${url.api}/iserver/auth/ssodh/init`, params };
+      });
     },
   };
+  private fetcher = {
+    should_retry: (_res: Response) => true,
+    set_retry_ms: (_res: Response) => 1000,
+    hosts: () => {
+      return [new URL(conf.ibkr.base).hostname].map(
+        (hostname) =>
+          ({
+            hostname,
+            should_retry: this.fetcher.should_retry,
+            set_retry_timeout_ms: this.fetcher.set_retry_ms,
+          }) as frm_host_t,
+      );
+    },
+    data_resolver: async (res: Response) => {
+      const type = res.headers.get("content-type");
+      const data = type?.includes("json") ? await res.json() : await res.text();
+      return data;
+    },
+    error_handler: (err: Response | Error | undefined, message?: string) => {
+      console.error(err);
+    },
+    constructor: () =>
+      [
+        req_max_per_s,
+        req_max_concurrent,
+        "sec",
+        this.fetcher.hosts(),
+        this.fetcher.data_resolver,
+      ] as const,
+  };
+  protected fetch = new Fetch(...this.fetcher.constructor()).fetch;
 }
 
 declare global {

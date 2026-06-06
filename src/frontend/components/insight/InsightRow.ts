@@ -39,6 +39,7 @@ export class InsightRow extends WebComponent {
       if (location_link) this.el_topic.href = `${location_link}#Economy`;
 
       setTimeout(() => {
+        this.dom.bar_opacity();
         this.el_percent_value.innerText = this.dom.percent_string();
       });
     },
@@ -55,6 +56,22 @@ export class InsightRow extends WebComponent {
       const percent = Math.round(this.percent * 100) / 100;
       const name = this.parent?.row_data.topic || this.name;
       return `${percent}% of ${name}`;
+    },
+    bar_opacity: () => {
+      const { u_pl_high, u_pl_low, u_pl_perc } = this.row_data;
+      let opacity = 0;
+      if (u_pl_high >= 0 && u_pl_perc >= 0) opacity = u_pl_perc / u_pl_high;
+      if (u_pl_low < 0 && u_pl_perc < 0) opacity = u_pl_perc / u_pl_low;
+      if (u_pl_high <= 0 || u_pl_low >= 0)
+        opacity = Math.abs(u_pl_perc) / Math.abs(u_pl_high);
+
+      const current_color = window.getComputedStyle(
+        this.el_percent_bar,
+      ).backgroundColor;
+      const [r, g, b] = current_color.match(/[\d\.]+/g)!;
+      const rgba = `rgba(${r},${g},${b},${opacity})`;
+      this.el_percent_bar.style.backgroundColor = rgba;
+      //const high = 0 + Math.abs(u_pl_high);
     },
   });
   private props = this.api.props({});

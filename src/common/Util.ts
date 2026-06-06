@@ -47,25 +47,4 @@ export class Util {
     }
     return id.substring(0, length);
   };
-
-  static parse_location = (
-    about_instrmnt: string | undefined,
-  ): { [key in "country_name" | "place_name"]: string | undefined } => {
-    if (!about_instrmnt) return undef();
-
-    let pars = about_instrmnt.replace(/.$/, "").split(". ");
-    pars = pars.splice(pars.length - 2);
-    if (pars[0]?.endsWith(pars[1] || "")) pars.pop();
-    const location = pars.join()?.split(" headquartered in ")[1]?.trim();
-    if (!location) return undef();
-
-    let [place_name, country_name] = location.split(", ") as [string, string];
-    //if (!country_name && place_name === "Hong Kong") country_name = "China";
-    //if (!country_name) country_name = place_name;
-    return { country_name, place_name };
-
-    function undef() {
-      return { country_name: undefined, place_name: undefined };
-    }
-  };
 }

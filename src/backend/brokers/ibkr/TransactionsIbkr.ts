@@ -1,6 +1,14 @@
 import { Global } from "@backend/Global";
+import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
 
 export class TransactionsIbkr extends Global {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
+    super();
+  }
   public async update(acc_ids: string[], con_ids: string[], days_ago: number) {
     const curr = this.base_currency;
     const p = { acc_ids, con_ids, curr, days_ago };
@@ -28,10 +36,11 @@ export class TransactionsIbkr extends Global {
           const transactions = try_fetch()
             .catch(() => {
               const err_mess = `Failed to fetch IBKR transactions for ${conid}`;
-              return this.ibkr.retry_fetch<b.i.transactions_t>(
-                try_fetch,
-                err_mess,
-              );
+              throw err_mess;
+              //return this.ibkr.retry_fetch<b.i.transactions_t>(
+              //  try_fetch,
+              //  err_mess,
+              //);
             })
             .then((data) => (data.transactions ? data.transactions : []));
 
@@ -48,11 +57,10 @@ export class TransactionsIbkr extends Global {
 
       function fetch_fn(this: TransactionsIbkr, conid: string) {
         const _p = { ...p, ...{ con_ids: [conid] } };
-        let { url, params } = this.ibkr.endpoints.post.transactions(_p);
+        const req = this.post.transactions(_p);
         return () => {
-          const fetch = this.ibkr.fetch<b.i.transactions_t>(url, params);
+          const fetch = this.fetch<b.i.transactions_t>(req);
           _p.days_ago++;
-          params = this.ibkr.endpoints.post.transactions(_p).params;
           return fetch;
         };
       }
@@ -105,7 +113,7 @@ export class TransactionsIbkr extends Global {
         amt,
         type,
       } = transaction;
-      let positn = this.ibkr.cache.position(conid);
+      let positn = this.ibkr.cache.get.position(conid);
       if (!positn) {
         logger.error("No position found for transaction", "ibkr", conid);
         positn = {

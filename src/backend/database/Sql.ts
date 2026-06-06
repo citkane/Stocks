@@ -90,7 +90,11 @@ export class Sql extends Global {
     condition_sql: (condition?: db.condition_t<any>) => {
       if (!condition) return sql(``);
       const [col, value] = condition;
-      return sql`WHERE ${sql(col)} IN ${sql([value])}`;
+      if (typeof value !== "boolean")
+        return sql`WHERE ${sql(col)} IN ${sql([value])}`;
+      return value === true
+        ? sql`WHERE ${sql(col)} IS NOT NULL`
+        : sql`WHERE ${sql(col)} IS NULL`;
     },
 
     columns_sql: <T extends keyof db.tables_t>(

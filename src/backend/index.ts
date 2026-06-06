@@ -11,6 +11,8 @@ declare global {
       var brokers: Brokers_t;
       var http: Http_t;
       var ws: Ws_t;
+      var tv: TradingView;
+      var wd: WikiData;
     }
     namespace broker {
       var saxo: Saxo_t;
@@ -27,6 +29,7 @@ import { Database } from "./database";
 import { Brokers, BrokerSaxo, BrokerIbkr } from "./brokers";
 import Api from "./Api.ts";
 import App from "./App.ts";
+import { TradingView, WikiData } from "./metadata";
 
 (globalThis as any).backend.app = {
   http: new ServerHttp(),
@@ -34,6 +37,8 @@ import App from "./App.ts";
   brokers: new Brokers(),
   api: new Api(),
   db: new Database(),
+  tv: new TradingView(),
+  wd: new WikiData(),
 };
 
 (globalThis as any).backend.broker = {

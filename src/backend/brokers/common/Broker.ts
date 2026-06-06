@@ -1,16 +1,9 @@
-import { Auth, Fetch } from "@backend/brokers/common";
+import { Auth } from "@backend/brokers/common";
+import { Global } from "@backend/Global";
 import type { BrokerIbkr } from "../BrokerIbkr";
 import type { BrokerSaxo } from "../BrokerSaxo";
 
-export class Broker extends Fetch {
-  constructor(
-    rate_limit: number,
-    params_factory: () => RequestInit,
-    tls?: { tls: { [key: string]: any } },
-  ) {
-    super(rate_limit, params_factory, tls);
-  }
-
+export class Broker extends Global {
   public await_auth!: () => Promise<void>;
   public revoke_auth!: () => void;
   public logout!: () => Promise<void>;

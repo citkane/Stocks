@@ -1,49 +1,52 @@
-import { Global } from "@backend/Global";
+import { Broker } from "@backend/brokers/common";
+import Fetch, {
+  type frm_constructor_t,
+  type frm_host_t,
+} from "@common/FetchRateManager";
+import "@common/FetchRateManager";
 
-const { redirect, app_key, app_secret } = conf.saxo;
-const auth_string = btoa(`${app_key}:${app_secret}`);
+const { redirect, app_key, app_secret } = conf.saxo,
+  auth_string = btoa(`${app_key}:${app_secret}`),
+  req_max_per_s = 250,
+  req_max_concurrent = 20,
+  base = "https://gateway.saxobank.com",
+  auth = "https://live.logonvalidation.net",
+  api = {
+    base: `${base}/openapi/port/v1`,
+    chart: `${base}/openapi/chart/v3`,
+    history: `${base}/openapi/hist/v1`,
+    ref: `${base}/openapi/ref/v1`,
+    trade: `${base}/openapi/trade/v1`,
+    client_services: `${base}/openapi/cs/v1`,
+    auth_url: `${auth}/authorize`,
+    auth_token: `${auth}/token`,
+    auth_logout: `${auth}/logout`,
+  };
 
-const base = "https://gateway.saxobank.com";
-const auth = "https://live.logonvalidation.net";
-const endpoints = {
-  api: "openapi/port/v1",
-  chart: "openapi/chart/v3",
-  history: "openapi/hist/v1",
-  ref: "openapi/ref/v1",
-  trade: "openapi/trade/v1",
-  client_services: "openapi/cs/v1",
-  client_services2: "openapi/cs/v2",
-};
-const url = {
-  api: `${base}/${endpoints.api}`,
-  auth,
-  chart: `${base}/${endpoints.chart}`,
-  history: `${base}/${endpoints.history}`,
-  ref: `${base}/${endpoints.ref}`,
-  trade: `${base}/${endpoints.trade}`,
-  client_services: `${base}/${endpoints.client_services}`,
-};
-
-export class EndpointsSaxo extends Global {
-  public get = {
-    accounts: () => `${url.api}/accounts`,
-    balance: (key: string) => {
-      const params = [
-        `AccountKey=${key}`,
-        `ClientKey=${this.saxo.client_key}`,
-      ].join("&");
-      return `${url.api}/balances?${params}`;
+export class EndpointsSaxo extends Broker {
+  protected get = {
+    accounts: () => {
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.base}/accounts`, req_init);
     },
-    code_url: () => {
+    balance: (key: string) => {
+      const params = new URLSearchParams({
+        AccountKey: key,
+        ClientKey: this.saxo.client_key,
+      }).toString();
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.base}/balances?${params}`, req_init);
+    },
+    auth_url: () => {
       const _redirect = encodeURI(`${this.http.url}${redirect}`);
-      const params = [
-        "response_type=code",
-        `client_id=${app_key}`,
-        `state=${this.context}`,
-        `redirect_uri=${_redirect}`,
-      ].join("&");
-
-      return `${url.auth}/authorize?${params}`;
+      const params = new URLSearchParams({
+        response_type: "code",
+        client_id: app_key,
+        state: this.context,
+        redirect_uri: _redirect,
+      }).toString();
+      //const req_init = this.fetcher.default_headers();
+      return new Request(`${api.auth_url}?${params}`); //, req_init);
     },
     bar_data: (
       asset_type: string,
@@ -52,52 +55,70 @@ export class EndpointsSaxo extends Global {
       granularity_min: number,
       bar_data_limit: number,
     ) => {
-      const params = [
-        `Mode=From`,
-        `AssetType=${asset_type}`,
-        `Time=${from}`,
-        `Horizon=${granularity_min}`,
-        `Uic=${conid}`,
-        `Count=${bar_data_limit}`,
-      ];
-      return `${url.chart}/charts?${params.join("&")}`;
+      const params = new URLSearchParams({
+        Mode: "From",
+        AssetType: asset_type,
+        Time: from,
+        Horizon: String(granularity_min),
+        Uic: conid,
+        Count: String(bar_data_limit),
+      }).toString();
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.chart}/charts?${params}`, req_init);
     },
     open_positions: (skip: number) => {
       const grps = "PositionView,PositionBase,DisplayAndFormat";
-      const params = [`$skip=${skip}`, `fieldGroups=${grps}`].join("&");
-      return `${url.api}/positions/me?${params}`;
+      const params = new URLSearchParams({
+        $skip: String(skip),
+        fieldGroups: grps,
+      }).toString();
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.base}/positions/me?${params}`, req_init);
     },
     closed_positions: (skip: number) => {
       const to = util.time.epoch.to_iso_date();
       const from = conf.saxo.start_date;
       const key = this.saxo.client_key;
-      return `${url.client_services}/reports/closedPositions/${key}/${from}/${to}?$skip=${skip}`;
+      const params = new URLSearchParams({
+        $skip: String(skip),
+      }).toString();
+      const req_init = this.fetcher.default_headers();
+      const _url = `${api.client_services}/reports/closedPositions/${key}/${from}/${to}?${params}`;
+      return new Request(_url, req_init);
     },
     trades: (skip: number) => {
-      const to = util.time.epoch.to_iso_date();
-      const from = conf.saxo.start_date;
       const key = this.saxo.client_key;
-      return `${url.client_services}/reports/trades/${key}/?$skip=${skip}&FromDate=${from}&ToDate=${to}`;
+      const params = new URLSearchParams({
+        $skip: String(skip),
+        FromDate: conf.saxo.start_date,
+        ToDate: util.time.epoch.to_iso_date(),
+      }).toString();
+      const req_init = this.fetcher.default_headers();
+      const _url = `${api.client_services}/reports/trades/${key}/?${params}`;
+      return new Request(_url, req_init);
     },
     transactions: (skip: number, start_date: string) => {
       const transaction_types = "All";
-      const params = [
-        `FromDate=${start_date}`,
-        `ToDate=${util.time.epoch.to_iso_date()}`,
-        `TransactionType=${transaction_types}`,
-        `ClientKey=${this.saxo.client_key}`,
-        `$skip=${skip}`,
-      ].join("&");
-      return `${url.history}/transactions?${params}`;
+      const params = new URLSearchParams({
+        FromDate: start_date,
+        ToDate: util.time.epoch.to_iso_date(),
+        TransactionType: transaction_types,
+        ClientKey: this.saxo.client_key,
+        $skip: String(skip),
+      }).toString();
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.history}/transactions?${params}`, req_init);
     },
     client: () => {
-      return `${url.api}/clients/me`;
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.base}/clients/me`, req_init);
     },
     logout: () => {
-      return `${url.auth}/logout`; //oidclogout
+      const req_init = this.fetcher.default_headers();
+      return new Request(`${api.auth_logout}`, req_init);
     },
   };
-  public post = {
+  protected post = {
     token: (
       code: string,
       grant_type: "authorization_code" | "refresh_token",
@@ -105,20 +126,57 @@ export class EndpointsSaxo extends Global {
       const redirect_uri = `${this.http.url}${redirect}`;
       const code_key =
         grant_type === "authorization_code" ? "code" : "refresh_token";
-      const params = {
-        method: "POST",
-        body: [
-          `grant_type=${grant_type}`,
-          `${code_key}=${code}`,
-          `redirect_uri=${redirect_uri}`,
-        ].join("&"),
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${auth_string}`,
-        },
+      const body = new URLSearchParams({
+        grant_type,
+        [code_key]: code,
+        redirect_uri,
+      }).toString();
+      const headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${auth_string}`,
       };
-      return { url: `${url.auth}/token`, params };
+      const req_init = {
+        method: "POST",
+        body,
+        headers,
+      };
+      return new Request(`${api.auth_token}`, req_init);
     },
+  };
+  private fetcher = {
+    //should_retry: (_res: Response) => false,
+    //set_retry_timeout_ms: (_res: Response) => 500,
+    hosts: (): frm_host_t[] => {
+      const urls = Object.values(api).map((url) => new URL(url).hostname);
+      const hostnames = [...new Set(urls)];
+      //const { should_retry, set_retry_timeout_ms } = this.fetcher;
+      return hostnames.map((hostname) => ({
+        hostname,
+        //should_retry,
+        //set_retry_timeout_ms,
+      }));
+    },
+    data_handler: async (_req: Request, res: Response) => {
+      //const { origin, pathname } = new URL(req.url);
+      //if (`${origin}${pathname}` === api.auth_url) return res;
+
+      const type = res.headers.get("content-type");
+      const data = type?.includes("json") ? await res.json() : await res.text();
+      return data;
+    },
+    default_headers: (): RequestInit => ({
+      headers: {
+        Authorization: `Bearer ${this.saxo.auth_bearer}`,
+      },
+    }),
+    constructor: (): frm_constructor_t =>
+      [
+        req_max_per_s,
+        req_max_concurrent,
+        "sec",
+        this.fetcher.hosts(),
+        this.fetcher.data_handler,
+      ] as const,
   };
 
   private get context() {
@@ -126,5 +184,7 @@ export class EndpointsSaxo extends Global {
       ? this._context
       : (this._context = util.random_context());
   }
+
+  protected fetch = new Fetch(...this.fetcher.constructor()).fetch;
   private _context?: string;
 }

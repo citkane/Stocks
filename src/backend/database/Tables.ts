@@ -210,7 +210,7 @@ declare global {
     type table_t<T extends table_n> = tables_t[T];
     type col_n<T extends table_n> = (tables_t[T] &
       readonly (readonly [string, string?])[])[number][0];
-    type condition_t<T extends table_n> = [col_n<T>, string | number];
+    type condition_t<T extends table_n> = [col_n<T>, string | number | boolean];
     type sort_t<T extends table_n> = [col_n<T>, "ASC" | "DESC"];
     type ignore_t<T extends table_n> = col_n<T>[];
 

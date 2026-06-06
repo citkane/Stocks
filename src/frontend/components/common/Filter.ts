@@ -217,9 +217,7 @@ export class Filter extends Money {
       }, parent_branch);
 
       function has_transactions(a_id: string) {
-        //if (!instrmnt) return false;
         const { transactions } = frontend.cache;
-        //console.log({ instrmnt });
         const transctns = transactions[instrmnt.i_id]!;
         return !!transctns.find((t) => a_id === `${broker}_${t.a_id}`);
       }

@@ -38,15 +38,15 @@ export default class Api extends Global implements Api_t {
     wait_for_ready: (p: req_t, broker: broker_t) => {
       this.brokers[broker]
         .await_auth()
-        .then(() => p.messenger.response(p.req_uid))
-        .catch((err) => server_error(p, err));
+        .then(() => p.messenger.response(p.req_uid));
+      //.catch((err) => server_error(p, err));
     },
 
     saxo_fetch_auth_url: (p: req_t) => {
       this.brokers["saxo"]
         .fetch_auth_url()
-        .then((url) => p.messenger.response(p.req_uid, url))
-        .catch((err) => server_error(p, err));
+        .then((url) => p.messenger.response(p.req_uid, url));
+      //.catch((err) => server_error(p, err));
     },
 
     chart_data: (p: req_t, broker: broker_t, ...pa: p.chart_period) => {
@@ -66,7 +66,7 @@ export default class Api extends Global implements Api_t {
       }
     },
     saxo_token: (code: auth_code_t) => {
-      this.saxo.fetch_token(code.code).catch((err) => this.saxo.what_err(err));
+      this.saxo.fetch_token(code.code); //.catch((err) => this.saxo.what_err(err));
     },
   };
 }

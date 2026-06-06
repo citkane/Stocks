@@ -26,9 +26,11 @@ insight-row {
         height: 20px;
         &[pl="profit"] {
           background: var(--col-pos);
+          border: 2px solid var(--col-pos);
         }
         &[pl="loss"] {
           background: var(--col-neg);
+          border: 2px solid var(--col-neg);
         }
       }
       .value {

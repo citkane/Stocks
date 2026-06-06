@@ -94,10 +94,10 @@ type instrmnt_t = {
   asset_industry?: string;
   asset_sector?: string;
   isin?: string;
-  cfi?: string;
+  //cfi?: string;
   website?: string;
   svg_logo?: string;
-  div_yield?: number;
+  //div_yield?: number;
   saxo_id?: number;
   ibkr_id?: number;
 } & geo_data_t;

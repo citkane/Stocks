@@ -1,7 +1,12 @@
 import { Global } from "backend";
+import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
 
 export class LiveDataIbkr extends Global {
-  constructor() {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
     super();
   }
 
@@ -31,11 +36,8 @@ export class LiveDataIbkr extends Global {
       return fx;
     },
     fetch_pair: (source: currency_t) => {
-      const endpoint = this.ibkr.endpoints.get.fx_rate(
-        source,
-        this.base_currency,
-      );
-      return this.ibkr.fetch<b.i.fx_rate_t>(endpoint).then((rate) => {
+      const req = this.get.fx_rate(source, this.base_currency);
+      return this.fetch<b.i.fx_rate_t>(req).then((rate) => {
         return { [source]: rate.rate } as fx_pair_t;
       });
     },
@@ -48,14 +50,14 @@ export class LiveDataIbkr extends Global {
   };
   private chart = {
     fetch_data: (conid: string, period: period_t, granularity: period_t) => {
-      const endpoint = this.ibkr.endpoints.get.bar_data(
+      const req = this.get.bar_data(
         conid,
         util.time.period.to_string(period),
         util.time.period.to_string(granularity),
       );
-      return this.ibkr
-        .fetch<b.i.bar_data_t>(endpoint)
-        .then((data) => this.chart.map_data(data, granularity));
+      return this.fetch<b.i.bar_data_t>(req).then((data) =>
+        this.chart.map_data(data, granularity),
+      );
     },
     map_data: (data: b.i.bar_data_t, granularity: period_t) => {
       return data.data.reduce((c, point) => {

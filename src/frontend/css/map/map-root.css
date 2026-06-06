@@ -1,0 +1,7 @@
+map-root {
+  display: block;
+
+  #map_container {
+    height: 900px;
+  }
+}

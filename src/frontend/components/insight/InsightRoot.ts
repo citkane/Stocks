@@ -34,9 +34,9 @@ export class InsightRoot extends WebComponent {
     render: (p: p.prop_callback) => {
       if (p.old === p.new) return;
 
-      const keys = this.keys;
+      const keys = this.insight_keys;
       const data = new InsightData(...keys).root;
-      const root = new InsightBranch("root");
+      const root = new InsightBranch("root", this.name);
       this.data.append_branches(data, root, keys);
       root.collect();
 
@@ -114,8 +114,8 @@ export class InsightRoot extends WebComponent {
         const instrmnt = data_child.instrmnt;
 
         const new_branch = is_leaf
-          ? new InsightCollector(topic)
-          : new InsightBranch(topic);
+          ? new InsightCollector(topic, this.name)
+          : new InsightBranch(topic, this.name);
 
         branch.append(key, topic, new_branch);
         new_branch.set_filter(keys, index, instrmnt);
@@ -128,13 +128,13 @@ export class InsightRoot extends WebComponent {
         }
 
         const instrmnts = data_type<"leaf">(data_child).children;
-        instrmnts.reduce((collector, instrmnt) => {
+        instrmnts.reduce((new_branch, instrmnt) => {
           const money_data = this.data.calc_money(instrmnt);
           const { market_value, traded_value, u_pl } = money_data;
-          collector.market_value += market_value;
-          collector.traded_value += traded_value;
-          collector.u_pl += u_pl;
-          return collector;
+          new_branch.market_value += market_value;
+          new_branch.traded_value += traded_value;
+          new_branch.u_pl += u_pl;
+          return new_branch;
         }, new_branch);
       }
     },
@@ -189,7 +189,7 @@ export class InsightRoot extends WebComponent {
     },
   });
 
-  private get keys() {
+  private get insight_keys() {
     return JSON.parse(this.dataset.keys!) as f.insight_key_t[];
   }
   private get els_row() {
@@ -221,6 +221,8 @@ declare global {
       market_value: number;
       u_pl: number;
       u_pl_perc: number;
+      u_pl_high: number;
+      u_pl_low: number;
       traded_value: number;
       filter: f.filter_t;
       location_link?: string;

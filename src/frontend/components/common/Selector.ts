@@ -11,6 +11,7 @@ import type {
   SelectIndustry,
   SelectSector,
   InsightRoot,
+  MapRoot,
 } from "@frontend/components";
 
 export class Selector extends HTMLElement {
@@ -28,7 +29,8 @@ export class Selector extends HTMLElement {
         app: this.root_app,
         instrmnts: this.root_instrmnts,
         accnts: this.root_accnts,
-        stats: this.root_insight,
+        insights: this.root_insight,
+        map: this.root_map,
       },
       filter: {
         select: {
@@ -75,6 +77,9 @@ export class Selector extends HTMLElement {
   }
   private get root_insight() {
     return document.querySelector<InsightRoot>("app-root insight-wrapper")!;
+  }
+  private get root_map() {
+    return document.querySelector<MapRoot>("app-root map-root")!;
   }
 
   private get select_account() {
@@ -134,7 +139,8 @@ declare global {
         app: selector_t["root_app"];
         instrmnts: selector_t["root_instrmnts"];
         accnts: selector_t["root_accnts"];
-        stats: selector_t["root_insight"];
+        insights: selector_t["root_insight"];
+        map: selector_t["root_map"];
       };
       filter: {
         select: {

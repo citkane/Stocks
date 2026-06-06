@@ -21,12 +21,18 @@ export class Database extends Sql {
         .then((data) => data[0]?.date) as Promise<number | undefined>;
     },
     chart: (id: string) => {
-      console.log("select chart");
-
       return this.sql.select_chart(id) as Promise<chart_data_t[]>;
     },
-    instruments: () => {
-      return this.sql.select("instruments") as Promise<instrmnt_t[]>;
+    instruments: (broker?: broker_t) => {
+      return this.sql.select(
+        "instruments",
+        broker ? [`${broker}_id`, true] : undefined,
+      ) as Promise<instrmnt_t[]>;
+    },
+    instrument: (broker: broker_t, broker_id: number) => {
+      return this.sql
+        .select("instrument", [`${broker}_id`, broker_id])
+        .then((res) => res[0]) as Promise<Partial<instrmnt_t> | undefined>;
     },
     location_search: (search: string) => {
       return this.sql
@@ -117,7 +123,6 @@ export class Database extends Sql {
         asset_industry,
         website,
         isin,
-        cfi,
         svg_logo,
       } = instrmnt;
       collect.instrmnt.push({
@@ -137,7 +142,6 @@ export class Database extends Sql {
         asset_industry,
         website,
         isin,
-        cfi,
         svg_logo,
       });
       return collect;

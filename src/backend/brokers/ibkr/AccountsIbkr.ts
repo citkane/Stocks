@@ -1,9 +1,17 @@
 import { Global } from "backend";
+import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
 
 export class AccountsIbkr extends Global {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
+    super();
+  }
   public update = async () => {
-    const query = this.ibkr.endpoints.get.accounts();
-    const accounts = await this.ibkr.fetch<b.i.account_t[]>(query);
+    const req = this.get.accounts();
+    const accounts = await this.fetch<b.i.account_t[]>(req);
     logger.json("IBKR accounts raw", accounts);
     return accounts.map(this.translate.account);
   };
@@ -11,12 +19,10 @@ export class AccountsIbkr extends Global {
     const balances = await Promise.all(
       accounts.map((account) => {
         const { a_id_original, alias } = account;
-        const query = this.ibkr.endpoints.get.balance(a_id_original);
-        return this.ibkr
-          .fetch<{
-            [currency: currency_t]: b.i.balance_t;
-          }>(query)
-          .then((balances) => this.map_balances(balances, alias));
+        const query = this.get.balance(a_id_original);
+        return this.fetch<{
+          [currency: currency_t]: b.i.balance_t;
+        }>(query).then((balances) => this.map_balances(balances, alias));
       }),
     );
     return balances.flat();

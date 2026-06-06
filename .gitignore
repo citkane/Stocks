@@ -41,3 +41,5 @@ conf.jsonc
 .temp
 .logs
 *.sqlite
+.playpen
+

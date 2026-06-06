@@ -1,6 +1,14 @@
 import { Global } from "backend";
+import type { EndpointsSaxo as fetch_t } from "./EndpointsSaxo";
 
 export class PositionsSaxo extends Global {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
+    super();
+  }
   public update = () => this.positions.fetch();
 
   private format = {
@@ -102,8 +110,8 @@ export class PositionsSaxo extends Global {
       skip = 0,
       data_array: b.s.positn_t[] = [],
     ): Promise<b.s.positn_t[]> => {
-      const query = this.saxo.endpoints.get.open_positions(skip);
-      return this.saxo.fetch<b.s.data_t<b.s.positn_t>>(query).then((data) => {
+      const req = this.get.open_positions(skip);
+      return this.fetch<b.s.data_t<b.s.positn_t>>(req).then((data) => {
         const count = !!data.Data ? data.Data.length : 0;
         data_array = [...data_array, ...(data.Data || [])];
 
@@ -115,23 +123,21 @@ export class PositionsSaxo extends Global {
       skip = 0,
       data_array: b.s.positn_closed_t[] = [],
     ): Promise<b.s.positn_closed_t[]> => {
-      const query = this.saxo.endpoints.get.closed_positions(skip);
-      return this.saxo
-        .fetch<b.s.data_t<b.s.positn_closed_t>>(query)
-        .then((data) => {
-          const count = !!data.Data ? data.Data.length : 0;
-          data_array = [...data_array, ...(data.Data || [])];
+      const req = this.get.closed_positions(skip);
+      return this.fetch<b.s.data_t<b.s.positn_closed_t>>(req).then((data) => {
+        const count = !!data.Data ? data.Data.length : 0;
+        data_array = [...data_array, ...(data.Data || [])];
 
-          if (!data.__next) return data_array;
-          return this.positions.fetch_closed(skip + count, data_array);
-        });
+        if (!data.__next) return data_array;
+        return this.positions.fetch_closed(skip + count, data_array);
+      });
     },
     fetch_trades: (
       skip = 0,
       data_array: b.s.trade_t[] = [],
     ): Promise<b.s.trade_t[]> => {
-      const query = this.saxo.endpoints.get.trades(skip);
-      return this.saxo.fetch<b.s.data_t<b.s.trade_t>>(query).then((data) => {
+      const req = this.get.trades(skip);
+      return this.fetch<b.s.data_t<b.s.trade_t>>(req).then((data) => {
         const count = !!data.Data ? data.Data.length : 0;
         data_array = [...data_array, ...(data.Data || [])];
 

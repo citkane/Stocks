@@ -22,18 +22,11 @@ export class CacheBrokers extends Global {
   }
   public get instruments() {
     if (this._instrumnts) return Promise.resolve(this._instrumnts);
-
     return this.db.select.instruments().then((instrmnts) => {
       if (!instrmnts.length) throw Error(err_m("Instruments"));
 
-      return (this._instrumnts = instrmnts.reduce(
-        (c, instrmnt) => {
-          const { i_id } = instrmnt;
-          c[i_id] = instrmnt;
-          return c;
-        },
-        {} as { [i_id: i_id_t]: instrmnt_t },
-      ));
+      this.set_instruments(instrmnts);
+      return this._instrumnts!;
     });
   }
   public get positions() {
@@ -60,6 +53,16 @@ export class CacheBrokers extends Global {
     );
     currencies = [...new Set(currencies).values()] as currency_t[];
     return (this._currencies = currencies);
+  }
+
+  public set_instruments(instruments: instrmnt_t[]) {
+    if (!this._instrumnts) this._instrumnts = {};
+    instruments.forEach((instrmnt) => {
+      const { i_id } = instrmnt;
+      const ex_instrmnt = this._instrumnts![i_id] || {};
+      instrmnt = { ...ex_instrmnt, ...instrmnt };
+      this._instrumnts![i_id] = instrmnt;
+    });
   }
   public set positions(positns: cache_posns_t) {
     if (!this._positns) this._positns = {};

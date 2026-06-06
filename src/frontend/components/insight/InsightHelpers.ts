@@ -1,7 +1,10 @@
 import { Filter } from "@frontend/components";
 
 export class InsightCollector {
-  constructor(public topic: string) {}
+  constructor(
+    public topic: string,
+    private name: string,
+  ) {}
 
   public market_value = 0;
   public u_pl = 0;
@@ -14,6 +17,8 @@ export class InsightCollector {
     this.to_collect.forEach((child) => child.collect(this));
     const { traded_value, market_value, u_pl } = this;
     this.u_pl_perc = util.money.percent_pl(traded_value, market_value);
+    this.pl_high_low = this.u_pl_perc;
+
     if (!this.parent) return;
 
     this.parent.traded_value += traded_value;
@@ -47,6 +52,8 @@ export class InsightCollector {
       filter,
       location_link,
     } = this;
+    const { high: u_pl_high, low: u_pl_low } =
+      InsightCollector.pl_high_low[this.name]!;
     return {
       topic,
       root_value: this.parent?.market_value || this.market_value,
@@ -54,16 +61,28 @@ export class InsightCollector {
       traded_value,
       u_pl,
       u_pl_perc,
+      u_pl_high,
+      u_pl_low,
       filter,
       location_link,
     };
   }
+  private set pl_high_low(u_pl: number) {
+    const { pl_high_low } = InsightCollector;
+    if (!pl_high_low[this.name]) pl_high_low[this.name] = { high: 0, low: 0 };
+    const high_low = pl_high_low[this.name]!;
+    if (u_pl < high_low.low) high_low.low = u_pl;
+    if (u_pl > high_low.high) high_low.high = u_pl;
+  }
   public filter = Filter.default_filter();
   private location_link?: string;
+  private static pl_high_low = {} as {
+    [name: string]: { high: number; low: number };
+  };
 }
 export class InsightBranch extends InsightCollector {
-  constructor(topic: string) {
-    super(topic);
+  constructor(topic: string, name: string) {
+    super(topic, name);
   }
   public append = (
     key: f.insight_key_t,

@@ -1,6 +1,14 @@
 import { Global } from "@backend/Global";
+import type { EndpointsSaxo as fetch_t } from "./EndpointsSaxo";
 
 export class TransactionsSaxo extends Global {
+  constructor(
+    private fetch: fetch_t["fetch"],
+    private get: fetch_t["get"],
+    private post: fetch_t["post"],
+  ) {
+    super();
+  }
   public update = (start_date = conf.saxo.start_date) => {
     return this.transactions
       .fetch(start_date)
@@ -20,8 +28,8 @@ export class TransactionsSaxo extends Global {
       skip = 0,
       transactions: b.s.transaction_t[] = [],
     ): Promise<b.s.transaction_t[]> => {
-      const query = this.saxo.endpoints.get.transactions(skip, date);
-      const _data = await this.saxo.fetch<b.s.transactions_t>(query);
+      const req = this.get.transactions(skip, date);
+      const _data = await this.fetch<b.s.transactions_t>(req);
       logger.json("SAXO transactions raw", _data);
       const data = [...transactions, ..._data.Data];
       const len = _data.Data.length;
