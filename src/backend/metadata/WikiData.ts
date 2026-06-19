@@ -1,247 +1,213 @@
-import { Global } from "@backend/Global";
-import Fetch, {
-  type frm_debug_data_t,
-  type frm_host_t,
-} from "@common/FetchRateManager";
+Error.stackTraceLimit = 20;
 
-const req_per_min_max = 200,
-  concurrency_max = 3,
-  search_res_limit = 1,
-  u_agent =
-    "Stocks/0.0 (https://github.com/citkane/Stocks/; noop@openpoint.ie)",
-  api = {
-    api: "https://www.wikidata.org/w/api.php",
-    query: "https://query.wikidata.org/sparql",
-    links: "https://www.wikidata.org/wiki/Special:EntityData",
-    commons: "https://commons.wikimedia.org/w/index.php",
-  };
+import { Global } from "@backend/Global";
+import { WikiDataApi, type wd } from "@backend/metadata/WikiDataApi";
+
+const P = Promise.all.bind(Promise);
 
 export class WikiData extends Global {
-  public geo_location = async (
-    i_id: i_id_t,
-    place_search: string | undefined,
-    country_search: string | undefined,
-  ) => {
-    let qids: b.qids_t = {
-      place: undefined,
-      region: undefined,
-      country: undefined,
-    };
-    const { insert_location } = this.data;
-    if (place_search === "Northlands") place_search = "Illovo";
-    if (!place_search) return insert_location(qids, i_id);
+  public location_lookup = async (
+    instrmnt: instrmnt_t,
+  ): Promise<instrmnt_t> => {
+    const { db_insert_locatn, format, db } = this;
+    const { hacky_loctn_fix, merge_instrmt_geo } = format;
+    instrmnt = { ...instrmnt };
+    instrmnt = hacky_loctn_fix(instrmnt);
+    Object.freeze(instrmnt);
+    const { i_id, place } = instrmnt;
 
-    let geo_data = await this.db.select.location_search(place_search);
-    if (geo_data) {
-      const {
-        place_qid: place,
-        region_qid: region,
-        country_qid: country,
-      } = geo_data;
-      await insert_location({ place, region, country }, i_id);
-      return geo_data;
+    if (!i_id) throw `[${this.constructor.name}] Instrument i_id required`;
+    if (!place) return db_insert_locatn(instrmnt);
+
+    const geo = await db.select.locatn_search(place);
+    return geo
+      ? merge_instrmt_geo(instrmnt, geo).then(db_insert_locatn)
+      : this.enqueue(instrmnt);
+  };
+
+  private enqueue = (instrmnt: instrmnt_t) => {
+    const { i_id, place: srch_p, country: srch_c } = instrmnt;
+    const { db_insrt_geo, db_insert_locatn } = this;
+    const { country_search, country, place, region_search, region } = this.find;
+    const { merge_instrmt_geo } = this.format;
+
+    return new Promise<instrmnt_t>((resolve, reject) => {
+      WikiData.resolvers.set(i_id, () => location_lookup(resolve, reject));
+      WikiData.queue.push(i_id);
+      this.dequeue();
+    });
+
+    async function location_lookup(resolve: resolve_t, reject: reject_t) {
+      return await country_search(instrmnt)
+        .then((geo?) => country(instrmnt, geo))
+        .then((geo) => P([geo, db_insrt_geo("country", geo, srch_c)]))
+        .then(([geo]) => place(geo))
+        .then(([reg, geo]) => P([reg, geo, db_insrt_geo("place", geo, srch_p)]))
+        .then(([regn, geo]) => region_search(regn, geo))
+        .then(([regn, geo]) => region(regn, geo))
+        .then((geo) => P([geo, db_insrt_geo("region", geo)]))
+        .then(([geo]) => merge_instrmt_geo(instrmnt, geo))
+        .then(db_insert_locatn)
+        .then(resolve)
+        .catch((err) => reject(err));
     }
+  };
+  private dequeue = async () => {
+    if (!WikiData.queue.length || WikiData.resolving) return;
+    WikiData.resolving = true;
+    const i_id = WikiData.queue.shift()!;
+    const resolver = WikiData.resolvers.get(i_id)!;
+    await resolver().then(() => WikiData.resolvers.delete(i_id));
+    WikiData.resolving = false;
+    this.dequeue();
+  };
+  private db_insrt_geo = <T extends wd.convert_key_t>(
+    key: T,
+    geo: Partial<geo_data_t>,
+    search?: string,
+  ) => {
+    const { geo_to_db } = this.format;
+    const { insert } = this.db;
+    const db_data = geo_to_db<T>(key, geo, search);
 
-    qids = await this.find.place_qid(qids, place_search, country_search);
-    if (!qids.place) return insert_location(qids, i_id);
-
-    const place = await this.find.place(qids, place_search);
-    if (!place) return insert_location(qids, i_id);
-    logger.debug("place", place.place);
-
-    const country = await this.find.country(qids, country_search);
-    qids.country = country?.country_qid;
-    if (!country) return insert_location(qids, i_id);
-    logger.debug("country", country.country);
-
-    const region = await this.find.region(qids);
-    qids.region = region?.region_qid;
-    if (!region) return insert_location(qids, i_id);
-    logger.debug("region", region.region);
-
-    await insert_location(qids, i_id);
-    return { ...place, ...region, ...country } as geo_data_t;
+    return insert[`instrmnts_${key}`](db_data as any);
+  };
+  private db_insert_locatn = async (instrmnt: instrmnt_t) => {
+    const { i_id, country_qid, region_qid, place_qid } = instrmnt;
+    await this.db.insert.instrmnts_location({
+      i_id,
+      country_qid,
+      region_qid,
+      place_qid,
+    });
+    return instrmnt as instrmnt_t;
   };
   private find = {
-    place_qid: async (
-      qids: b.qids_t,
-      place_search: string,
-      country_search?: string,
-    ) => {
-      const { statement: stmnt } = this.wiki;
-      qids = await this.find.country_qid(qids, country_search);
-
-      const statements = qids.country
-        ? [stmnt.in_country(qids.country), stmnt.is_place()]
-        : [stmnt.is_place()];
-      qids.place = await this.find.search(place_search, statements);
-      return qids;
-    },
-    country_qid: async (qids: b.qids_t, cntry_search?: string) => {
+    country_search: async (instrmnt: instrmnt_t) => {
+      const { country } = instrmnt;
       const { country_search } = this.db.select;
-      const { country_qid_from_place } = this.find;
-      if (qids.country) return qids;
-      if (!cntry_search && !qids.place) return qids;
-      if (!cntry_search) return country_qid_from_place(qids);
-
-      qids.country = (await country_search(cntry_search))?.qid;
-      if (qids.country) return qids;
-
-      const { statement: stmnt } = this.wiki;
-      const statements = [stmnt.is_country()];
-      qids.country = await this.find.search(cntry_search, statements);
-      return qids;
+      const { db_to_geo } = this.format;
+      return country
+        ? country_search(country).then((db_d) => db_to_geo("country", db_d))
+        : undefined;
     },
-    country_qid_from_place: async (qids: b.qids_t) => {
-      if (!qids.place) return qids;
+    country: async (instrmnt: instrmnt_t, geo?: Partial<geo_data_t>) => {
+      const { country, place } = instrmnt;
 
-      const req = this.req.country(qids.place);
-      const data = await this.fetch<wiki_query_t>(req).then(
-        this.data.reduce_query_res,
-      );
-      qids.country = data.country;
-      return qids;
+      const { fetch_geo_dets } = this;
+      const { qid_country, qid_place } = this.find;
+      const { resolve_query, merge_geo } = this.format;
+      const { request, fetch } = this.api;
+      const place_qid = geo
+        ? await qid_place(place, geo.country_qid)
+        : await qid_country(country).then((c_qid) => qid_place(place, c_qid));
+      return geo
+        ? merge_geo(geo, { place, place_qid })
+        : request
+            .country(place_qid)
+            .then((req) => fetch<wd.query_t>(req))
+            .then((res) => resolve_query(res))
+            .then(fetch_geo_dets)
+            .then((geo) => merge_geo(geo, { place, place_qid }));
     },
-    country: async (qids: b.qids_t, country_search?: string) => {
-      let country_db = await this.db.select.country_search(country_search);
-      if (country_db) return this.data.db_to_geo("country", country_db);
+    place: async (geo: Partial<geo_data_t>) => {
+      const { country_qid, place_qid } = geo;
+      const { fetch_geo_dets } = this;
+      const { fetch, request } = this.api;
+      const { resolve_query, merge_geo } = this.format;
 
-      qids = await this.find.country_qid(qids, country_search);
-      if (!qids.country || !qids.place) return undefined;
+      return request
+        .place_region(place_qid!, country_qid!)
+        .then((req) => fetch<wd.query_t>(req))
+        .then((res) => resolve_query(res))
+        .then(split_plce_regn)
+        .then((geo) => P([geo.region, fetch_geo_dets(geo.place)]))
+        .then(([regn, p_geo]) => P([regn, merge_geo(geo, p_geo)]));
 
-      country_db = await this.db.select.country(qids.country);
-      if (country_db) {
-        if (!country_db.search && country_search) {
-          country_db.search = country_search;
-          await this.db.update.instrmnts_country(country_db);
-        }
-        return this.data.db_to_geo("country", country_db);
+      function split_plce_regn(geo: Partial<wd.geo_t>): {
+        [key in "place" | "region"]: Partial<wd.geo_t>;
+      } {
+        const {
+          place,
+          placeLabel,
+          placePoint,
+          region,
+          regionLabel,
+          regionPoint,
+          regionShape,
+        } = geo;
+        return {
+          place: { place, placeLabel, placePoint },
+          region: {
+            region,
+            regionLabel,
+            regionPoint,
+            regionShape,
+          },
+        };
       }
-
-      const req = this.req.country(qids.place);
-      const country_geo = await this.fetch<wiki_query_t>(req)
-        .then(this.data.reduce_query_res)
-        .then(this.data.geo);
-      country_db = this.data.geo_to_db("country", country_geo, country_search);
-      await this.db.insert.instrmnts_country([country_db]);
-      return country_geo;
     },
-    region: async (qids: b.qids_t) => {
-      if (!qids.place || !qids.country) return undefined;
-
-      const req = this.req.region(qids.country, qids.place);
-      const wiki_geo = await this.fetch<wiki_query_t>(req).then(
-        this.data.reduce_query_res,
-      );
-      if (!wiki_geo.region) return undefined;
-
-      let region_db = await this.db.select.region(wiki_geo.region);
-      if (region_db) return this.data.db_to_geo("region", region_db);
-
-      const region_geo = await this.data.geo(wiki_geo);
-      region_db = this.data.geo_to_db("region", region_geo);
-
-      await this.db.insert.instrmnts_region([region_db]);
-      return region_geo;
+    region_search: (regn: Partial<wd.geo_t>, geo: Partial<geo_data_t>) => {
+      const { region: region_qid } = regn;
+      const { region } = this.db.select;
+      const { merge_geo, db_to_geo } = this.format;
+      return region(region_qid)
+        .then((db_d) => db_to_geo("region", db_d))
+        .then((r_geo) =>
+          r_geo ? P([regn, merge_geo(geo, r_geo)]) : P([regn, geo]),
+        );
     },
-    place: async (qids: b.qids_t, place_search: string) => {
-      if (!qids.place) return undefined;
+    region: async (
+      regn: Partial<wd.geo_t>,
+      geo: Partial<geo_data_t>,
+    ): Promise<geo_data_t> => {
+      if (geo.region_qid) return geo as geo_data_t;
 
-      const req = this.req.place(qids.place);
-      const place_geo = await this.fetch<wiki_query_t>(req)
-        .then(this.data.reduce_query_res)
-        .then(this.data.geo);
-      const place_db = this.data.geo_to_db("place", place_geo, place_search);
-      await this.db.insert.instrmnts_place([place_db]);
-      return place_geo;
+      const { fetch_geo_dets } = this;
+      const { merge_geo } = this.format;
+
+      return fetch_geo_dets(regn).then((r_geo) => merge_geo(geo, r_geo));
     },
-    search: async (
-      search_term: string,
-      statements: string[],
-      limit = search_res_limit,
-    ) => {
-      logger.debug({ search_term });
-      const req = this.req.search(search_term, statements, limit);
-      const result = await this.fetch<wiki_search_t>(req).then(
-        this.data.parse_search_res,
-      );
-      return result;
+    qid_country: async (country?: string) => {
+      if (!country) return undefined;
+      const { is_country } = this.api.wiki.statement;
+      const { search } = this;
+      return search(country, [is_country()]);
+    },
+    qid_place: async (place: string, country_qid?: string) => {
+      const { in_country, is_place } = this.api.wiki.statement;
+      const { search } = this;
+      const statement = country_qid
+        ? ([in_country(country_qid), is_place()] as string[])
+        : ([is_place()] as string[]);
+      return (await search(place, statement))!;
     },
     link: async (q_id: string) => {
-      logger.debug("wiki link:", q_id);
-      const req = this.req.wiki_links(q_id);
-      const res = await this.fetch<wiki_links_t>(req);
-      return this.data.parse_links_res(res, q_id);
+      const { fetch, request } = this.api;
+
+      const req = request.wiki_links(q_id);
+      const res = await fetch<wiki_links_t>(req);
+      return this.format.parse_links_res(res, q_id);
     },
     geo_shape: async (url: string) => {
       logger.debug("geo shape:", url);
-      const req = this.req.geo_shape(url);
-      const shape = await this.fetch<Object>(req).catch((err) => {
+      const { fetch, request } = this.api;
+
+      const req = request.geo_shape(url);
+      const shape = await fetch<Object>(req).catch((err) => {
         logger.error(err);
         return undefined;
       });
       return shape ? JSON.stringify(shape) : undefined;
     },
   };
-  private data = {
-    geo: async (wiki_geo: wiki_geo_t): Promise<Partial<geo_data_t>> => {
-      let {
-        country: country_qid,
-        region: region_qid,
-        place: place_qid,
-        countryLabel: country,
-        regionLabel: region,
-        placeLabel: place,
-        placePoint: place_point,
-        regionPoint: region_point,
-        countryShape: country_shape,
-        regionShape: region_shape,
-      } = wiki_geo;
-      region_shape = region_shape
-        ? await this.find.geo_shape(region_shape)
-        : undefined;
-      country_shape = country_shape
-        ? await this.find.geo_shape(country_shape)
-        : undefined;
-      const country_link = country_qid
-        ? await await this.find.link(country_qid)
-        : undefined;
-      const region_link = region_qid
-        ? await await this.find.link(region_qid)
-        : undefined;
-      const place_link = place_qid
-        ? await await this.find.link(place_qid)
-        : undefined;
-
-      const geo_data = {
-        place,
-        region,
-        country,
-        place_qid,
-        country_qid,
-        region_qid,
-        place_link,
-        region_link,
-        country_link,
-        place_point,
-        region_point,
-        country_shape,
-        region_shape,
-      } as Partial<geo_data_t>;
-
-      return Object.keys(geo_data).reduce((data, key) => {
-        const val = geo_data[key as keyof geo_data_t];
-        if (!val) return data;
-        data[key as keyof geo_data_t] = val;
-        return data;
-      }, {} as Partial<geo_data_t>);
-    },
-    reduce_query_res: (res: wiki_query_t) => {
-      const geo_data = {} as wiki_geo_t;
+  private format = {
+    resolve_query: (res: wd.query_t) => {
+      const geo_data = {} as wd.geo_t;
       const data = res.results.bindings[0];
       if (!data) return geo_data;
 
-      return (Object.keys(data) as wiki_geo_key_t[]).reduce((c, key) => {
+      return (Object.keys(data) as wd.geo_key_t[]).reduce((c, key) => {
         let val: string | undefined = data[key].value;
         if (["country", "place", "region"].includes(key)) {
           val = val?.split("/").pop()!;
@@ -255,27 +221,15 @@ export class WikiData extends Global {
         return c;
       }, geo_data);
     },
-    parse_search_res: (res: wiki_search_t) => {
-      return res.query.search[0]?.title || undefined;
-    },
     parse_links_res: (links: wiki_links_t, q_id: string) => {
       return links.entities[q_id]!.sitelinks.enwiki.url;
     },
-    insert_location: async (qids: b.qids_t, i_id: i_id_t) => {
-      const {
-        country: country_qid,
-        region: region_qid,
-        place: place_qid,
-      } = qids;
-      await this.db.insert.instrmnts_location([
-        { i_id, country_qid, region_qid, place_qid },
-      ]);
-      return undefined;
-    },
-    db_to_geo: <T extends convert_key_t>(
+    db_to_geo: <T extends wd.convert_key_t>(
       location_key: T,
-      data: db_to_geo_t<T>,
+      data?: db_to_geo_t<T>,
     ) => {
+      if (!data) return undefined;
+
       const keys = ["name", "qid", "geo_shape", "geo_point", "wiki_link"];
       const geo_data = {} as Partial<geo_data_t>;
       return keys.reduce((geo_data, key) => {
@@ -308,17 +262,18 @@ export class WikiData extends Global {
         return geo_data;
       }, geo_data);
     },
-    geo_to_db: <T extends convert_key_t>(
+    geo_to_db: <T extends wd.convert_key_t>(
       location_key: T,
       geo_data: Partial<geo_data_t>,
       search?: string,
     ) => {
       const db_data = {} as db_to_geo_t<T>;
       if (["country", "place"].includes(location_key)) {
-        (db_data as any).search = search;
+        (db_data as any).search = search ? [search] : [];
       }
       return Object.keys(geo_data).reduce((db_data, geo_key) => {
-        const val = geo_data[geo_key as keyof geo_data_t];
+        let val = geo_data[geo_key as keyof geo_data_t];
+        if (typeof val === "object") val = JSON.stringify(val);
         let key: string | undefined;
         switch (geo_key) {
           case location_key:
@@ -344,208 +299,104 @@ export class WikiData extends Global {
         return db_data;
       }, db_data);
     },
-  };
-  private req = {
-    vars: (...vars: wiki_geo_key_t[]) => {
-      logger.debug("sparql", vars);
-      return vars.map((v) => `?${v}`).join(" ");
+    merge_instrmt_geo: async (
+      instrmnt: Partial<instrmnt_t>,
+      geo: Partial<geo_data_t>,
+    ) => {
+      return { ...instrmnt, ...geo } as instrmnt_t;
     },
-    country: (place_qid: string) => {
-      const vars = this.req.vars("country", "countryLabel", "countryShape");
-      const query = encodeURIComponent(sparql());
-      const url = `${api.query}?query=${query}`;
-      const headers = this.wiki.headers_sparql();
-      return new Request(url, { headers });
-
-      function sparql() {
-        return `SELECT DISTINCT ${vars} WHERE {
-  BIND(wd:${place_qid} AS ?place)
-  ?place (wdt:P131+) ?country.
-  ?country wdt:P31 wd:Q6256.
-  OPTIONAL { ?country wdt:P3896 ?countryShape. }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
-LIMIT 1`;
-      }
+    merge_geo: <
+      T extends Partial<geo_data_t> | geo_data_t = Partial<geo_data_t>,
+    >(
+      ex_geo: Partial<geo_data_t>,
+      add_geo: Partial<geo_data_t>,
+    ) => {
+      return Object.entries(add_geo).reduce((geo, entry) => {
+        const [key, val] = entry as [keyof geo_data_t, any];
+        if (!val) return geo;
+        geo[key] = val;
+        return geo;
+      }, ex_geo) as T;
     },
-    region: (country_qid: string, place_qid: string) => {
-      const vars = this.req.vars(
-        "region",
-        "regionLabel",
-        "regionPoint",
-        "regionShape",
-      );
-      const query = encodeURIComponent(sparql());
-      const url = `${api.query}?query=${query}`;
-      const headers = this.wiki.headers_sparql();
-      return new Request(url, { headers });
-
-      function sparql() {
-        return `SELECT DISTINCT ${vars} WHERE {
-  BIND(wd:${country_qid} AS ?country)
-  BIND(wd:${place_qid} AS ?place)
-  OPTIONAL {
-    ?place (wdt:P131+) ?region.
-    ?region wdt:P131 ?country.
-  }
-  BIND(IF(BOUND(?region), ?region, ?place) AS ?region)
-  OPTIONAL { ?region wdt:P625 ?regionPoint. }
-  OPTIONAL { ?region wdt:P3896 ?regionShape. }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
-LIMIT 1`;
-      }
-    },
-    place: (place_qid: string) => {
-      const vars = this.req.vars("place", "placeLabel", "placePoint");
-      const query = encodeURIComponent(sparql());
-      const url = `${api.query}?query=${query}`;
-      const headers = this.wiki.headers_sparql();
-      return new Request(url, { headers });
-
-      function sparql() {
-        return `SELECT DISTINCT ${vars} WHERE {
-  BIND(wd:${place_qid} AS ?place)
-  OPTIONAL { ?place wdt:P625 ?placePoint. }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
-LIMIT 1`;
-      }
-    },
-    search: (term: string, _statements: string[] = [], limit: number = 5) => {
-      const headers = this.wiki.headers();
-      const url = new URL(api.api);
-      url.search = params();
-      return new Request(url, { headers });
-
-      function params() {
-        const statements = _statements
-          .map((s) => `haswbstatement:${s}`)
-          .join(" ");
-        return new URLSearchParams({
-          action: "query",
-          list: "search",
-          format: "json",
-          srlimit: String(limit),
-          srsearch: `${term} ${statements}`,
-        }).toString();
-      }
-    },
-    wiki_links: (...q_ids: string[]) => {
-      const headers = this.wiki.headers();
-      const url = `${api.api}/?action=wbgetentities&ids=${q_ids.join("|")}&format=json&props=sitelinks/urls`;
-      return new Request(url, { headers });
-    },
-    geo_shape: (url: string) => {
-      const headers = this.wiki.headers();
-      url = url.replaceAll("+", " ");
-      return new Request(url, { headers });
+    hacky_loctn_fix: (instrmnt: instrmnt_t) => {
+      if (instrmnt.place === "Northlands") instrmnt.place = "Illovo";
+      return instrmnt;
     },
   };
-  private wiki = {
-    places: {
-      city_mega: "Q174844",
-      city_million: "Q1637706",
-      city_large: "Q129676344",
-      city_big: "Q1549591",
-      city_average: "Q896881",
-      city_county: "Q1070990",
-      small_city: "Q18466176",
-      city: "Q515",
-      town: "Q3957",
-      village_large: "Q26714626",
-      village: "Q532",
-      hamlet: "Q5084",
-      settlement: "Q486972",
-      settlement_rural: "Q129676371",
-    },
-    statement: {
-      is_region: () => `${this.wiki._is_a}=${this.wiki._country}`,
-      is_country: () => `${this.wiki._is_a}=${this.wiki._country}`,
-      in_country: (country_qid: string) =>
-        `${this.wiki._in_country}=${country_qid}`,
-      is_place: () => this.place_statement,
-    },
-    _country: "Q3624078",
-    _country_region: "Q10864048",
-    _in_country: "P17",
-    _is_a: "P31",
-    place_statement_init: () => {
-      const places = Object.values(this.wiki.places);
-      return places.map((place) => `${this.wiki._is_a}=${place}`).join("|");
-    },
-    headers: (...header: { [key: string]: string }[]) => {
-      const collector = {
-        "User-Agent": u_agent,
-      };
-      return header.reduce((c, header) => {
-        c = { ...c, ...header };
-        return c;
-      }, collector);
-    },
-    headers_sparql: (...header: { [key: string]: string }[]) => {
-      return this.wiki.headers(...header, {
-        Accept: "application/sparql-results+json",
-      });
-    },
+  private search = async (
+    search_term: string,
+    statements: string[],
+    limit = 1,
+  ) => {
+    const { fetch, request } = this.api;
+    return request
+      .search(search_term, statements, limit)
+      .then((req) => fetch<wd.search_t>(req))
+      .then((res) => res.query.search[0]?.title || undefined);
   };
-  private fetcher = {
-    should_retry: (res: Response) => {
-      return [429, 503].includes(res.status);
-    },
-    set_retry_timeout_ms: (res: Response) => {
-      let time: string | number | null = res.headers.get("retry-after");
-      if (!time) return 5000;
-      if (!Number.isNaN(Number(time))) return Number(time) * 1000;
-      const now = new Date().valueOf();
-      const when = new Date(time).valueOf();
-      return when - now;
-    },
-    data_resolver: async (res: Response) => {
-      const type = res.headers.get("content-type");
-      const data = type?.includes("json") ? await res.json() : await res.text();
+  private fetch_geo_dets = async (
+    wiki_geo: Partial<wd.geo_t>,
+  ): Promise<Partial<geo_data_t>> => {
+    const { geo_shape, link } = this.find;
+    let {
+      country: country_qid,
+      region: region_qid,
+      place: place_qid,
+      countryLabel: country,
+      regionLabel: region,
+      placeLabel: place,
+      placePoint: place_point,
+      regionPoint: region_point,
+      countryShape: country_shape,
+      regionShape: region_shape,
+    } = wiki_geo;
+    region_shape = region_shape ? await geo_shape(region_shape) : undefined;
+    country_shape = country_shape ? await geo_shape(country_shape) : undefined;
+    const country_link = country_qid
+      ? await await link(country_qid)
+      : undefined;
+    const region_link = region_qid ? await await link(region_qid) : undefined;
+    const place_link = place_qid ? await await link(place_qid) : undefined;
+
+    const geo_data = {
+      place,
+      region,
+      country,
+      place_qid,
+      country_qid,
+      region_qid,
+      place_link,
+      region_link,
+      country_link,
+      place_point,
+      region_point,
+      country_shape,
+      region_shape,
+    } as Partial<geo_data_t>;
+
+    return Object.keys(geo_data).reduce((data, key) => {
+      const val = geo_data[key as keyof geo_data_t];
+      if (!val) return data;
+      data[key as keyof geo_data_t] = val;
       return data;
-    },
-    debug_callback: (data: frm_debug_data_t, message?: string) => {
-      if (message) console.warn(message);
-      console.debug(data);
-    },
-    hosts: () =>
-      [...new Set(Object.values(api).map((url) => new URL(url).hostname))].map(
-        (hostname) => {
-          return {
-            hostname,
-            should_retry: this.fetcher.should_retry,
-            set_retry_timeout_ms: this.fetcher.set_retry_timeout_ms,
-          } as frm_host_t;
-        },
-      ),
-    constructor: () =>
-      [
-        req_per_min_max,
-        concurrency_max,
-        "min",
-        this.fetcher.hosts(),
-        this.fetcher.data_resolver,
-        this.fetcher.debug_callback,
-      ] as const,
+    }, {} as Partial<geo_data_t>);
   };
-
-  private place_statement = this.wiki.place_statement_init();
-  private fetch = new Fetch(...this.fetcher.constructor()).fetch;
+  private api = new WikiDataApi();
+  private static queue: i_id_t[] = [];
+  private static resolvers = new Map<i_id_t, () => Promise<instrmnt_t>>();
+  private static resolving = false;
 }
 
-type convert_key_t = "country" | "region" | "place";
-type db_to_geo_t<T extends convert_key_t> = T extends "place"
-  ? db.data_t<"instrument_place">
+type db_to_geo_t<T extends wd.convert_key_t> = T extends "place"
+  ? db.data<"instrument_place">
   : T extends "country"
-    ? db.data_t<"instrument_country">
+    ? db.data<"instrument_country">
     : T extends "region"
-      ? db.data_t<"instrument_region">
+      ? db.data<"instrument_region">
       :
-          | db.data_t<"instrument_place">
-          | db.data_t<"instrument_country">
-          | db.data_t<"instrument_region">;
+          | db.data<"instrument_place">
+          | db.data<"instrument_country">
+          | db.data<"instrument_region">;
 
 type wiki_links_t = {
   entities: {
@@ -564,64 +415,3 @@ type wiki_links_t = {
   };
   success: number;
 };
-type wiki_geo_key_t =
-  | "region"
-  | "country"
-  | "place"
-  | "regionLabel"
-  | "countryLabel"
-  | "placeLabel"
-  | "placePoint"
-  | "regionPoint"
-  | "regionShape"
-  | "countryShape";
-
-type wiki_query_t<K extends wiki_geo_key_t = wiki_geo_key_t> = {
-  head: {
-    vars: string[];
-  };
-  results: {
-    bindings: wiki_geo_val_t<K>[];
-  };
-};
-type wiki_geo_val_t<K extends wiki_geo_key_t = wiki_geo_key_t> = {
-  [key in K]: {
-    type: string;
-    value: string;
-    datatype?: string;
-    "xml:lang"?: string;
-  };
-};
-type wiki_geo_t = { [key in wiki_geo_key_t]: string | undefined };
-
-type wiki_search_t = {
-  batchcomplete: string;
-  continue: {
-    sroffset: number;
-    continue: string;
-  };
-  query: {
-    searchinfo: {
-      totalhits: number;
-    };
-    search: {
-      ns: number;
-      title: string;
-      pageid: number;
-      size: null;
-      wordcount: number;
-      snippet: string;
-      timestamp: string;
-    }[];
-  };
-};
-
-declare global {
-  namespace b {
-    export type qids_t = {
-      place: string | undefined;
-      region: string | undefined;
-      country: string | undefined;
-    };
-  }
-}

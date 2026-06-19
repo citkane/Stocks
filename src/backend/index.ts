@@ -5,19 +5,15 @@ export * from "./metadata";
 
 declare global {
   namespace backend {
-    namespace app {
-      var api: Api_t;
-      var db: Database_t;
-      var brokers: Brokers_t;
-      var http: Http_t;
-      var ws: Ws_t;
-      var tv: TradingView;
-      var wd: WikiData;
-    }
-    namespace broker {
-      var saxo: Saxo_t;
-      var ibkr: Ibkr_t;
-    }
+    var api: Api_t;
+    var db: Database_t;
+    var brokers: Brokers_t;
+    var http: Http_t;
+    var ws: Ws_t;
+    var tv: TradingView;
+    var wd: WikiData;
+    var saxo: Saxo_t;
+    var ibkr: Ibkr_t;
   }
 }
 
@@ -31,7 +27,7 @@ import Api from "./Api.ts";
 import App from "./App.ts";
 import { TradingView, WikiData } from "./metadata";
 
-(globalThis as any).backend.app = {
+(globalThis as any).backend = {
   http: new ServerHttp(),
   ws: new ServerWs(),
   brokers: new Brokers(),
@@ -39,9 +35,6 @@ import { TradingView, WikiData } from "./metadata";
   db: new Database(),
   tv: new TradingView(),
   wd: new WikiData(),
-};
-
-(globalThis as any).backend.broker = {
   saxo: new BrokerSaxo(),
   ibkr: new BrokerIbkr(),
 };

@@ -21,12 +21,12 @@ declare global {
         "PrepaidCrypto-P": boolean;
         brokerageAccess: boolean;
         accountId: string;
-        accountVan: currency_t;
+        accountVan: string;
         accountTitle: string;
         displayName: string;
         accountAlias?: string;
         accountStatus: number;
-        currency: currency_t;
+        currency: string;
         type: string;
         tradingType: string;
         businessType: string;
@@ -55,7 +55,7 @@ declare global {
         position: number;
         mktPrice: number;
         mktValue: number;
-        currency: currency_t;
+        currency: string;
         avgCost: number;
         avgPrice: number;
         realizedPnl: number;
@@ -109,7 +109,7 @@ declare global {
         | "Dividend Payment";
       type transaction_t = {
         uid?: string;
-        cur: currency_t;
+        cur: string;
         date: string;
         rawDate: string;
         fxRate: number;
@@ -128,7 +128,7 @@ declare global {
           data: [];
           amt: number;
         };
-        currency: currency_t;
+        currency: string;
         from: number;
         id: string;
         to: number;
@@ -220,7 +220,7 @@ declare global {
         unrealizedpnl: number;
         stockmarketvalue: number;
         moneyfunds: number;
-        currency: currency_t;
+        currency: string;
         realizedpnl: number;
         funds: number;
         acctcode: string;
@@ -233,7 +233,7 @@ declare global {
         tbondsmarketvalue: number;
         futureoptionmarketvalue: number;
         cashbalancefxsegment: number;
-        secondkey: currency_t;
+        secondkey: string;
         tbillsmarketvalue: number;
         endofbundle: number;
         dividends: number;

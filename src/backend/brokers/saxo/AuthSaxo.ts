@@ -1,56 +1,66 @@
+import { Global } from "@backend/Global";
 import { Auth } from "@backend/brokers";
-import type { EndpointsSaxo as fetch_t } from "./EndpointsSaxo";
 
 const ping_auth_interval = 300000;
 const token_file = Bun.file(".temp/saxo.token.json");
 
-class Oauth extends Auth {
-  constructor(
-    protected fetch: fetch_t["fetch"],
-    protected get: fetch_t["get"],
-    protected post: fetch_t["post"],
-  ) {
-    super("saxo", ping_auth_interval);
+export class AuthSaxo extends Global {
+  constructor() {
+    super();
+    this.auth = new Auth("saxo", ping_auth_interval);
   }
+  public await_auth = async () => {
+    return this.auth_state
+      ? Promise.resolve()
+      : this.auth.resolver || this.auth.define_resolver();
+  };
+  public is_authorised = async () => {
+    const token = await this.token.read();
+    return !!token ? this.token.refresh(token.refresh_token) : false;
+  };
+  public fetch_code_url = <T = string>(): Promise<T> => {
+    const { get, fetch } = this.saxo.api;
+    const req = get.auth_url();
+    const response_cb = (res: Response) => res.url;
+    return fetch<T>(req, { response_cb })
+      .then((url) => url)
+      .catch((err) => {
+        console.error(err);
+        throw Error(err);
+      });
+  };
   public fetch_token = (code: string): Promise<boolean> => {
-    const req = this.post.token(code, "authorization_code");
+    const { post, fetch } = this.saxo.api;
+    const req = post.token(code, "authorization_code");
     logger.debug("Fetch auth token", "saxo");
-    return this.fetch<b.s.auth_token_t>(req).then(this.token.store);
+    return fetch<b.s.auth_token_t>(req).then(this.token.store);
   };
   public fetch_client_key = () => {
-    const req = this.get.client();
-    return this.fetch<b.s.client_t>(req).then((data) => data.ClientKey);
+    const { get, fetch } = this.saxo.api;
+    const req = get.client();
+    return fetch<b.s.client_t>(req).then((data) => data.ClientKey);
   };
-  public logout = () => {
+  public logout = async () => {
     if (!this.auth_state) return;
-    const req = this.get.logout();
-    this.fetch(req).then(() => logger.info("SAXO logged out"));
+    const { get, fetch } = this.saxo.api;
+    const req = get.logout();
+    await fetch(req).then(() => logger.info("SAXO logged out"));
+    this.auth.revoke_auth();
   };
 
-  protected token = {
+  private token = {
     read: (): Promise<b.s.auth_token_t | false> =>
       token_file.json().catch(() => false),
 
     refresh: (refresh_token: string) => {
       logger.debug("Refresh auth token", "saxo");
-      const req = this.post.token(refresh_token, "refresh_token");
-      console.log(req);
-      return this.fetch<b.s.auth_token_t>(
-        req,
-        (req: Request, res: Response) => {
-          console.log(res);
-          return res.json();
-        },
-      )
-        .then((token) => {
-          console.log({ token });
-          return token;
-        })
+      const { post, fetch } = this.saxo.api;
+      const req = post.token(refresh_token, "refresh_token");
+      return fetch<b.s.auth_token_t>(req)
         .then(this.token.store)
         .catch((err) => this.token.remove(err).then(() => false));
     },
     store: (token: b.s.auth_token_t) => {
-      console.log({ token });
       this.auth_token = token;
       return token_file.write(JSON.stringify(token)).then(() => true);
     },
@@ -59,33 +69,13 @@ class Oauth extends Auth {
       return token_file.delete().catch(() => Promise.resolve());
     },
   };
+
+  public get auth_state() {
+    return this.auth.auth_state;
+  }
   public auth_token = {
     access_token: "",
     refresh_token: "",
   } as b.s.auth_token_t;
-}
-
-export class AuthSaxo extends Oauth {
-  constructor(
-    fetch: fetch_t["fetch"],
-    get: fetch_t["get"],
-    post: fetch_t["post"],
-  ) {
-    super(fetch, get, post);
-  }
-  public fetch_code_url = (): Promise<string> => {
-    const req = this.get.auth_url();
-    const { resolve } = Promise;
-    const data_handler = (_req: Request, res: Response) => resolve(res.url);
-    return this.fetch<string>(req, data_handler)
-      .then((url) => url)
-      .catch((err) => {
-        console.error(err);
-        throw Error(err);
-      });
-  };
-  public is_authorised = async () => {
-    const token = await this.token.read();
-    return !!token ? this.token.refresh(token.refresh_token) : false;
-  };
+  private auth: Auth;
 }

@@ -1,14 +1,7 @@
 import { Global } from "@backend/Global";
-import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
+import type { IbkrApi as fetch_t } from "./IbkrApi";
 
 export class PositionsIbkr extends Global {
-  constructor(
-    private fetch: fetch_t["fetch"],
-    private get: fetch_t["get"],
-    private post: fetch_t["post"],
-  ) {
-    super();
-  }
   public update = (acc_ids: string[]) => {
     return this.positions.fetch_new(acc_ids).then(this.format.data);
   };
@@ -78,16 +71,15 @@ export class PositionsIbkr extends Global {
       ).then((ps) => ps.flat());
     },
     fetch_position: async (a_id: string, conid: number) => {
-      const req = this.get.position(a_id, conid);
-      const positn = await this.fetch<b.i.positn_t>(req);
-      console.log(positn);
+      const { url, req_init } = this.get.position(a_id, conid);
+      const positn = await this.fetch<b.i.positn_t>(url, req_init);
       return positn;
     },
     // The IBKR positions endpoint does not reliably return a full data payload for each position.
     // We extract all new conids, and then fetch each position individually.
     get_new_conids: (a_id: string) => {
-      const req = this.get.positions(a_id);
-      return this.fetch<b.i.positn_t[]>(req).then(
+      const { url, req_init } = this.get.positions(a_id);
+      return this.fetch<b.i.positn_t[]>(url, req_init).then(
         reduce_to_new_conids.bind(this),
       );
 

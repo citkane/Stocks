@@ -2,14 +2,12 @@ import { Global } from "@frontend/Global";
 
 export class Brokers extends Global {
   await_login = () => {
-    return Promise.all([
-      this.saxo
+    const promises = conf.brokers.map((broker) =>
+      this[broker]
         .await_login()
-        .then(() => this.bootstrap_mess("Saxo authorised")),
-      this.ibkr
-        .await_login()
-        .then(() => this.bootstrap_mess("IBKR authorised")),
-    ]);
+        .then(() => this.bootstrap_mess(`${broker} authorised`)),
+    );
+    return Promise.all(promises);
   };
 
   cache_init = () => {

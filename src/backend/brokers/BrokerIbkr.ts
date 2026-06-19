@@ -1,59 +1,56 @@
-import { EndpointsIbkr } from "@backend/brokers/ibkr/EndpointsIbkr";
-import {
-  AccountsIbkr,
-  AuthIbkr,
-  PositionsIbkr,
-  TransactionsIbkr,
-  LiveDataIbkr,
-  CacheIbkr,
-  ibkr_exchanges,
-} from "@backend/brokers/index";
+import { Global } from "@backend/Global";
+import * as lib from "@backend/brokers/ibkr/index";
 
-export class BrokerIbkr extends EndpointsIbkr {
-  public override await_auth = () => {
-    return this.auth.auth_state
-      ? Promise.resolve()
-      : this.auth_resolver || this.define_auth_resolver();
-  };
-  public override logout = async () => {
-    await this.auth.logout();
-    this.revoke_auth();
-  };
+export class BrokerIbkr extends Global {
+  constructor() {
+    super();
+    this.cache = new lib.CacheIbkr();
+    this.api = new lib.IbkrApi();
+    this.positions = new lib.PositionsIbkr();
+    this.transctns = new lib.TransactionsIbkr();
+    this.live_data = new lib.LiveDataIbkr();
+    this.accounts = new lib.AccountsIbkr();
+    this.auth = new lib.AuthIbkr();
+  }
+
+  public await_auth = () => this.auth.await_auth();
+
   public login = () => this.auth.login();
-  public override chart_data = (...p: p.chart_period) => {
+  public logout = () => this.auth.logout();
+
+  public chart_data = (...p: p.chart_period) => {
     return this.live_data.fetch_chart_data(...p);
   };
-  public override revoke_auth = () => {
-    this.auth.auth_state = false;
-    delete this.auth_resolver;
-    this.ws.publish("logged_out", "ibkr");
+  public acc_balances = async () => {
+    if (!this.auth_state) return {};
+    return {} as { [a_id: string]: balance_t };
+    //const accounts = await this.cache.accounts;
+    //return this.accounts.balances(accounts);
   };
-  public override update = {
+
+  public update = {
     accounts: () => this._update.accounts(),
-    positions: () => this._update.positions(),
+    instruments: () => this._update.positions(),
     transactions: () => this._update.transactions(),
-    account_balances: () => this._update.balances(),
-    fx: () => this._update.fx(),
+    //account_balances: () => this._update.balances(),
+    //fx: () => this._update.fx(),
   };
-  public override get auth_state() {
+  public get auth_state() {
     return this.auth.auth_state;
   }
-  public override get broker_auth() {
-    return this.auth;
-  }
-  public tv_exchange(exch: string, country: string) {
-    const postfix = [...exch].pop();
-    exch = isNaN(Number(postfix)) ? exch : exch.slice(0, -1);
-    const key = `${exch}.${country}` as keyof typeof ibkr_exchanges;
-    if (!ibkr_exchanges[key]) logger.error("ibkr", key);
-
-    return (ibkr_exchanges[key] as any)?.id || exch;
-  }
-  protected override _update = {
-    fx: async () => {
-      const fx = await this.live_data.update_fx();
-      this.brokers.cache.fx = fx;
-    },
+  //public tv_exchange(exch: string, country: string) {
+  //  const postfix = [...exch].pop();
+  //  exch = isNaN(Number(postfix)) ? exch : exch.slice(0, -1);
+  //  const key = `${exch}.${country}` as keyof typeof ibkr_exchanges;
+  //  if (!ibkr_exchanges[key]) logger.error("ibkr", key);
+  //
+  //  return (ibkr_exchanges[key] as any)?.id || exch;
+  //}
+  protected _update = {
+    //fx: async () => {
+    //  const fx = await this.live_data.update_fx();
+    //  this.brokers.cache.fx = fx;
+    //},
     accounts: async () => {
       //this.live_data.subscribe();
       const accounts = await this.accounts.update();
@@ -95,15 +92,12 @@ export class BrokerIbkr extends EndpointsIbkr {
       logger.json("IBKR balances", balances);
     },
   };
-  private define_auth_resolver = () =>
-    (this.auth_resolver = this.auth
-      .await_auth()
-      .then(() => this.bootstrap("IBKR is authorised")));
 
-  public cache = new CacheIbkr();
-  private positions = new PositionsIbkr(this.fetch, this.get, this.post);
-  private transctns = new TransactionsIbkr(this.fetch, this.get, this.post);
-  private live_data = new LiveDataIbkr(this.fetch, this.get, this.post);
-  private accounts = new AccountsIbkr(this.fetch, this.get, this.post);
-  private auth = new AuthIbkr(this.fetch, this.get, this.post);
+  public cache: lib.CacheIbkr;
+  public auth: lib.AuthIbkr;
+  public api: lib.IbkrApi;
+  private positions: lib.PositionsIbkr;
+  private transctns: lib.TransactionsIbkr;
+  private live_data: lib.LiveDataIbkr;
+  private accounts: lib.AccountsIbkr;
 }

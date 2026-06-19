@@ -1,61 +1,54 @@
 import { Global } from "backend";
-import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
 
 export class LiveDataIbkr extends Global {
-  constructor(
-    private fetch: fetch_t["fetch"],
-    private get: fetch_t["get"],
-    private post: fetch_t["post"],
-  ) {
-    super();
-  }
-
   public fetch_chart_data = (...p: p.chart_period) =>
     this.chart.fetch_data(...p);
-  public update_fx = () => this.fx.fetch_pairs();
+  //public update_fx = () => this.fx.fetch_pairs();
 
-  private fx = {
-    fetch_pairs: async () => {
-      let fx = await Promise.all(this.currencies.map(this.fx.fetch_pair)).then(
-        this.fx.merge_pairs,
-      );
-      Object.keys(fx).forEach((currency) => {
-        if (!util.money.currency_minor.includes(currency)) return;
-        switch (currency) {
-          case "ZAC":
-            fx.ZAC = fx.ZAR!;
-            break;
-          case "GBp":
-            fx.GBp = fx.GBP!;
-            break;
-          case "GBX":
-            fx.GBX = fx.GBP!;
-            break;
-        }
-      });
-      return fx;
-    },
-    fetch_pair: (source: currency_t) => {
-      const req = this.get.fx_rate(source, this.base_currency);
-      return this.fetch<b.i.fx_rate_t>(req).then((rate) => {
-        return { [source]: rate.rate } as fx_pair_t;
-      });
-    },
-    merge_pairs: (pairs: fx_pair_t[]) => {
-      let collector = { [this.base_currency]: 1 } as fx_rates_t;
-      return pairs.reduce((c, pair) => {
-        return { ...c, ...pair };
-      }, collector);
-    },
-  };
+  //private fx = {
+  //  fetch_pairs: async () => {
+  //    let fx = await Promise.all(this.currencies.map(this.fx.fetch_pair)).then(
+  //      this.fx.merge_pairs,
+  //    );
+  //    Object.keys(fx).forEach((currency) => {
+  //      if (!util.money.currency_minor.includes(currency)) return;
+  //      switch (currency) {
+  //        case "ZAC":
+  //          fx.ZAC = fx.ZAR!;
+  //          break;
+  //        case "GBp":
+  //          fx.GBp = fx.GBP!;
+  //          break;
+  //        case "GBX":
+  //          fx.GBX = fx.GBP!;
+  //          break;
+  //      }
+  //    });
+  //    return fx;
+  //  },
+  //  fetch_pair: (source: string) => {
+  //    const { get, fetch } = this.ibkr.api;
+  //    const { url, req_init } = get.fx_rate(source, this.base_currency);
+  //    return fetch<b.i.fx_rate_t>(url, req_init).then((rate) => {
+  //      return { [source]: rate.rate } as fx_pair_t;
+  //    });
+  //  },
+  //  merge_pairs: (pairs: fx_pair_t[]) => {
+  //    let collector = { [this.base_currency]: 1 } as fx_rates_t;
+  //    return pairs.reduce((c, pair) => {
+  //      return { ...c, ...pair };
+  //    }, collector);
+  //  },
+  //};
   private chart = {
     fetch_data: (conid: string, period: period_t, granularity: period_t) => {
-      const req = this.get.bar_data(
+      const { get, fetch } = this.ibkr.api;
+      const { url, req_init } = get.bar_data(
         conid,
         util.time.period.to_string(period),
         util.time.period.to_string(granularity),
       );
-      return this.fetch<b.i.bar_data_t>(req).then((data) =>
+      return fetch<b.i.bar_data_t>(url, req_init).then((data) =>
         this.chart.map_data(data, granularity),
       );
     },
@@ -90,7 +83,7 @@ export class LiveDataIbkr extends Global {
       }
       c.push(currency);
       return [...new Set(c).values()];
-    }, [] as currency_t[]);
+    }, [] as string[]);
 
     return currencies;
   }

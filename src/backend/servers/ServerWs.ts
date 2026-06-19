@@ -66,7 +66,7 @@ export class ServerWs extends Ws {
   }
 
   private get api() {
-    return backend.app.api;
+    return backend.api;
   }
   private ws: Bun.Server<undefined>;
   private target_topics?: frontend.send_topic_t[];

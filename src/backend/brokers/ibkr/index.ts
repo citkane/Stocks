@@ -3,5 +3,5 @@ export { AccountsIbkr } from "./AccountsIbkr";
 export { PositionsIbkr } from "./PositionsIbkr";
 export { LiveDataIbkr } from "./LiveDataIbkr";
 export { TransactionsIbkr } from "./TransactionsIbkr";
-export { EndpointsIbkr } from "./EndpointsIbkr";
+export { IbkrApi } from "./IbkrApi";
 export { CacheIbkr } from "./CacheIbkr";

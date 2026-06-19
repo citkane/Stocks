@@ -61,7 +61,7 @@ declare global {
 
       type positn_t = {
         DisplayAndFormat: {
-          Currency: currency_t;
+          Currency: string;
           Decimals: number;
           Description: string;
           Format: string;
@@ -109,7 +109,7 @@ declare global {
           CurrentPriceLastTraded: string;
           CurrentPriceType: string;
           Exposure: number;
-          ExposureCurrency: currency_t;
+          ExposureCurrency: string;
           ExposureInBaseCurrency: number;
           InstrumentPriceDayPercentChange: number;
           MarketState: string;
@@ -127,19 +127,19 @@ declare global {
       };
 
       type positn_closed_t = {
-        AccountCurrency: currency_t;
+        AccountCurrency: string;
         AccountCurrencyDecimals: number;
         AccountId: string;
         Amount: number;
         AmountClose: number;
         AmountOpen: number;
         AssetType: string;
-        ClientCurrency: currency_t;
+        ClientCurrency: string;
         ClosePositionId: string;
         ClosePrice: number;
         CloseType: string;
         ExchangeDescription: string;
-        InstrumentCurrency: currency_t;
+        InstrumentCurrency: string;
         InstrumentDescription: string;
         InstrumentSymbol: string;
         OpenPositionId: string;
@@ -164,7 +164,7 @@ declare global {
         AffiliateInfoRequired: boolean;
         AmountDecimals: number;
         AssetType: string;
-        CurrencyCode: currency_t;
+        CurrencyCode: string;
         DefaultAmount: number;
         DefaultSlippage: number;
         DefaultSlippageType: string;
@@ -241,7 +241,7 @@ declare global {
       };
 
       type trade_t = {
-        AccountCurrency: currency_t;
+        AccountCurrency: string;
         AccountCurrencyDecimals: number;
         AccountId: string;
         AdjustedTradeDate: string;
@@ -250,7 +250,7 @@ declare global {
         BookedAmountAccountCurrency: number;
         BookedAmountClientCurrency: number;
         BookedAmountUSD: number;
-        ClientCurrency: currency_t;
+        ClientCurrency: string;
         Direction: string;
         ExchangeDescription: string;
         FinancingLevel: number;
@@ -327,7 +327,7 @@ declare global {
         };
         ConversionCost: number;
         ConversionRate: number;
-        Currency: currency_t;
+        Currency: string;
         CurrencyDecimals: number;
         Date: string;
         Event:
@@ -346,7 +346,7 @@ declare global {
         FundingSubTypeDisplay: string;
         Instrument: {
           AssetType: "Cash" | "Stock";
-          Currency: currency_t;
+          Currency: string;
           CurrencyDecimals: number;
           Description: string;
           ExchangeDescription: string;
@@ -417,7 +417,7 @@ declare global {
         };
         CorporateActionUnrealizedAmounts: number;
         CostToClosePositions: number;
-        Currency: currency_t;
+        Currency: string;
         CurrencyDecimals: number;
         ExtendedTradingHoursData: {
           CostToClosePositions: number;
@@ -548,7 +548,7 @@ declare global {
         CurrencyDecimals: number;
         DefaultAccountId: string;
         DefaultAccountKey: string;
-        DefaultCurrency: currency_t;
+        DefaultCurrency: string;
         ForceOpenDefaultValue: boolean;
         IsMarginTradingAllowed: boolean;
         IsVariationMarginEligible: boolean;
@@ -565,6 +565,19 @@ declare global {
         ReduceExposureOnly: boolean;
         SecurityLendingEnabled: string;
         SupportsAccountValueProtectionLimit: boolean;
+      };
+      type positn_det_t = {
+        AssetType: string;
+        CurrencyCode: string;
+        Description: string;
+        ExchangeId: string;
+        GroupId: number;
+        Identifier: number;
+        IssuerCountry: string;
+        PrimaryListing: number;
+        SummaryType: string;
+        Symbol: string;
+        TradableAs: string[];
       };
     }
   }

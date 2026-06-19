@@ -1,20 +1,9 @@
 import { Global } from "@backend/Global";
-import type { EndpointsSaxo as fetch_t } from "./EndpointsSaxo";
 
 export class TransactionsSaxo extends Global {
-  constructor(
-    private fetch: fetch_t["fetch"],
-    private get: fetch_t["get"],
-    private post: fetch_t["post"],
-  ) {
-    super();
-  }
   public update = (start_date = conf.saxo.start_date) => {
-    return this.transactions
-      .fetch(start_date)
-      .then((t) => logger.json("SAXO transactions raw", t))
-      .then(this.transactions.categorise)
-      .then(this.transactions.transform);
+    const { fetch, categorise, transform } = this.transactions;
+    return fetch(start_date).then(categorise).then(transform);
   };
   public transctns_update_date = async () => {
     let last_date = await this.db.select.transctns_update_date("saxo");
@@ -28,8 +17,9 @@ export class TransactionsSaxo extends Global {
       skip = 0,
       transactions: b.s.transaction_t[] = [],
     ): Promise<b.s.transaction_t[]> => {
-      const req = this.get.transactions(skip, date);
-      const _data = await this.fetch<b.s.transactions_t>(req);
+      const { get, fetch } = this.saxo.api;
+      const req = get.transactions(skip, date);
+      const _data = await fetch<b.s.transactions_t>(req);
       logger.json("SAXO transactions raw", _data);
       const data = [...transactions, ..._data.Data];
       const len = _data.Data.length;
@@ -51,7 +41,7 @@ export class TransactionsSaxo extends Global {
       }, {} as categorised_t);
       return this.transactions.reduce.transfers(categorised);
     },
-    format: (transaction: b.s.transaction_t): transctn_t => {
+    format: async (transaction: b.s.transaction_t): Promise<transctn_t> => {
       let {
         Event,
         ConversionRate: fx_traded,
@@ -64,7 +54,7 @@ export class TransactionsSaxo extends Global {
         Trades,
         Date,
       } = transaction;
-      let { Symbol, Uic, Currency: currency } = Instrument;
+      let { Uic, Currency: currency, Symbol } = Instrument;
       currency = currency === "ZAR" ? "ZAC" : currency;
 
       const trade = this.transactions.reduce.trades(Trades);
@@ -105,19 +95,21 @@ export class TransactionsSaxo extends Global {
           price_traded = (BookedAmount * 100) / fx_traded / 100;
           break;
       }
-      let positn = this.saxo.cache.position(Uic);
-      if (!positn) {
-        logger.warn("No position found for transaction", "saxo", Uic);
+      let instrmnt = await this.saxo.cache.get.instrument(Uic);
+      if (!instrmnt) {
+        logger.warn("No instrument found for transaction", "saxo", Uic);
+        console.log({ transaction });
+
         let [ticker, exchange] = Symbol.split(":") as [string, string];
         exchange = exchange!.toUpperCase();
-        exchange = this.saxo.tv_exchange(exchange);
+        //exchange = this.saxo.tv_exchange(exchange);
         if (exchange === "HKEX") ticker = util.string.unpad_hk_ticker(ticker);
-        positn = {
+        instrmnt = {
           i_id: `${exchange}-${ticker}`,
-        } as unknown as b.positn_t;
+        } as unknown as instrmnt_t;
       }
 
-      const { i_id } = positn;
+      const { i_id } = instrmnt;
       const broker = "saxo";
       const p_id: p_id_t = `${broker}_${Uic}`;
       return {
@@ -134,10 +126,9 @@ export class TransactionsSaxo extends Global {
         broker,
       };
     },
-    transform: (transactions: categorised_t): transctn_t[] => {
-      return this.transactions.reduce
-        .transform(transactions)
-        .map(this.transactions.format);
+    transform: (transactions: categorised_t): Promise<transctn_t[]> => {
+      const { reduce, format } = this.transactions;
+      return Promise.all(reduce.transform(transactions).map(format));
     },
 
     ids: {

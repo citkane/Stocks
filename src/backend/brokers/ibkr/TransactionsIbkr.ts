@@ -1,14 +1,6 @@
 import { Global } from "@backend/Global";
-import type { EndpointsIbkr as fetch_t } from "./EndpointsIbkr";
 
 export class TransactionsIbkr extends Global {
-  constructor(
-    private fetch: fetch_t["fetch"],
-    private get: fetch_t["get"],
-    private post: fetch_t["post"],
-  ) {
-    super();
-  }
   public async update(acc_ids: string[], con_ids: string[], days_ago: number) {
     const curr = this.base_currency;
     const p = { acc_ids, con_ids, curr, days_ago };
@@ -56,12 +48,13 @@ export class TransactionsIbkr extends Global {
       return transctns;
 
       function fetch_fn(this: TransactionsIbkr, conid: string) {
+        const { post, fetch } = this.ibkr.api;
         const _p = { ...p, ...{ con_ids: [conid] } };
-        const req = this.post.transactions(_p);
+        const { url, req_init } = post.transactions(_p);
         return () => {
-          const fetch = this.fetch<b.i.transactions_t>(req);
+          const fetcher = fetch<b.i.transactions_t>(url, req_init);
           _p.days_ago++;
-          return fetch;
+          return fetcher;
         };
       }
     },

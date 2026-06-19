@@ -1,16 +1,8 @@
 import { Global } from "backend";
-import type { EndpointsSaxo as fetch_t } from "./EndpointsSaxo";
 
 const bar_data_limit = 1200;
 
 export class LiveDataSaxo extends Global {
-  constructor(
-    private fetch: fetch_t["fetch"],
-    private get: fetch_t["get"],
-    private post: fetch_t["post"],
-  ) {
-    super();
-  }
   public fetch_chart_data = async (
     conid: string,
     period: period_t,
@@ -57,15 +49,16 @@ export class LiveDataSaxo extends Global {
     starts: number[],
     i: number,
   ) => {
+    const { get, fetch } = this.saxo.api;
     const asset_type = "Stock";
-    const req = this.get.bar_data(
+    const req = get.bar_data(
       asset_type,
       conid,
       from,
       granularity_min,
       bar_data_limit,
     );
-    const data = (await this.fetch<b.s.bar_data_t>(req)).Data;
+    const data = (await fetch<b.s.bar_data_t>(req)).Data;
     return data.filter((p) => {
       if (!starts[i + 1]) return true;
       return util.time.ms(p.Time) < starts[i + 1]!;

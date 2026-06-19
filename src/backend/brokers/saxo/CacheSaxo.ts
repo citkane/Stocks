@@ -1,46 +1,63 @@
 import { Global } from "@backend/Global";
 
 export class CacheSaxo extends Global {
-  public get a_ids() {
-    return this.accounts.map((a) => a.a_id_original);
-  }
-  public get a_keys() {
-    return this.accounts.map((a) => ({
-      key: a.saxo_key!,
-      a_id: a.a_id,
-    }));
-  }
+  // public get saxo_a_ids() {
+  //   return this.accounts.then((accs) => accs.map((a) => a.a_id.split("_")[1]!));
+  // }
+  //public get broker_keys() {
+  //  return this.accounts.then((accs) =>
+  //    accs.map((a) => ({
+  //      key: a.broker_key!,
+  //      a_id: a.a_id,
+  //    })),
+  //  );
+  //}
   public get accounts() {
-    if (!this._accounts) throw Error(err_m("accounts"));
-    return this._accounts;
+    const { mem, set } = this;
+    return !mem.accounts ? set.accounts() : Promise.resolve(mem.accounts);
+  }
+  public get instruments() {
+    const { mem, set } = this;
+    return !mem.instruments
+      ? set.instruments()
+      : Promise.resolve(mem.instruments);
   }
 
-  public position = (uic: number) => {
-    if (!this.positn_map) throw Error(err_m("positions"));
-    return this.positn_map.get(uic);
+  public get = {
+    instrument: async (saxo_id: number) =>
+      this.instruments.then((i) => i.get(saxo_id)),
   };
-
-  public set positions(positns: { [p_id: p_id_t]: b.positn_t }) {
-    if (!this.positn_map) this.positn_map = new Map();
-    Object.values(positns).forEach((positn) => {
-      const saxo_id = positn.saxo_id!;
-      this.positn_map!.set(saxo_id, positn);
-    });
-    this.brokers.cache.positions = positns;
-  }
-  public set accounts(accounts: cache_t["accounts"]) {
-    this._accounts = accounts;
-    this.brokers.cache.accounts = accounts.map((a) => {
-      const account = structuredClone(a);
-      delete account.saxo_key;
-      return account;
-    });
-  }
-
-  private positn_map?: Map<number, b.positn_t>;
-  private _accounts?: cache_t["accounts"];
-}
-
-function err_m(subject: string) {
-  return `SAXO ${subject} must be set before proceeding`;
+  private set = {
+    instruments: async () => {
+      const { mem, db } = this;
+      const instrmnts = await db.select.instruments();
+      mem.instruments = instrmnts.reduce((cache, instrmnt) => {
+        const { saxo_id } = instrmnt;
+        cache.set(saxo_id!, instrmnt);
+        return cache;
+      }, mem.instruments || new Map());
+      return mem.instruments;
+    },
+    accounts: async () => {
+      const { mem, db } = this;
+      mem.accounts = await db.select.accounts("saxo");
+      return mem.accounts;
+    },
+  };
+  public invalidate = {
+    instruments: () => {
+      delete this.mem.instruments;
+      this.brokers.cache.invalidate.instruments();
+      return true;
+    },
+    accounts: () => {
+      delete this.mem.accounts;
+      this.brokers.cache.invalidate.accounts();
+      return true;
+    },
+  };
+  private mem = {} as {
+    instruments?: Map<number, instrmnt_t>;
+    accounts?: cache_t["accounts"];
+  };
 }

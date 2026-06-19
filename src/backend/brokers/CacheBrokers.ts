@@ -1,134 +1,175 @@
 import { Global } from "@backend/Global";
 
 export class CacheBrokers extends Global {
+  public live_ready = () => {
+    return !!this.mem.forex && !!this.mem.instrument_data;
+  };
+
   public get accounts() {
-    if (!this._accounts) throw Error(err_m("Accounts"));
-    return this._accounts;
+    const { mem, set } = this;
+    return !mem.accounts ? set.accounts() : Promise.resolve(mem.accounts);
   }
   public get transactions() {
-    if (this._transctns) return Promise.resolve(this._transctns);
-    return this.db.select.transctns().then((transctns) => {
-      if (!transctns.length) throw Error(err_m("Transactions"));
-      return (this._transctns = transctns.reduce(
-        (c, transctn) => {
-          const { i_id } = transctn;
-          if (!c[i_id]) c[i_id] = [];
-          c[i_id].push(transctn);
-          return c;
-        },
-        {} as { [i_id: i_id_t]: transctn_t[] },
-      ));
-    });
+    const { mem, set } = this;
+    return !mem.transactions
+      ? set.transactns()
+      : Promise.resolve(mem.transactions);
   }
   public get instruments() {
-    if (this._instrumnts) return Promise.resolve(this._instrumnts);
-    return this.db.select.instruments().then((instrmnts) => {
-      if (!instrmnts.length) throw Error(err_m("Instruments"));
-
-      this.set_instruments(instrmnts);
-      return this._instrumnts!;
-    });
-  }
-  public get positions() {
-    if (!this._positns) throw Error(err_m("Positions"));
-    return this._positns;
-  }
-  public get i_ids() {
-    return Object.keys(this.positions) as i_id_t[];
-  }
-  public get live_data() {
-    if (!this._live_data?.data || !this._live_data?.balances)
-      throw Error(err_m("Live data"));
-    this._live_data.fx = this.fx;
-    return this._live_data;
-  }
-  public get fx() {
-    if (!this._fx) throw Error(err_m("FX"));
-    return this._fx;
+    const { mem, set } = this;
+    return !mem.instruments
+      ? set.instruments()
+      : Promise.resolve(mem.instruments);
   }
   public get currencies() {
-    if (this._currencies) return this._currencies;
-    let currencies: currency_t[] = Object.values(this.positions).map(
-      (p) => p.currency,
-    );
-    currencies = [...new Set(currencies).values()] as currency_t[];
-    return (this._currencies = currencies);
+    const { mem, set } = this;
+    return !mem.currencies ? set.currencies() : Promise.resolve(mem.currencies);
+  }
+  public get forex() {
+    const { mem, set } = this;
+    return !mem.forex ? set.forex() : Promise.resolve(mem.forex);
+  }
+  public get instrument_data() {
+    const { mem, set } = this;
+    return !mem.instrument_data
+      ? set.instrument_data()
+      : Promise.resolve(mem.instrument_data);
+  }
+  public get balances() {
+    const { mem, set } = this;
+    return !mem.balances ? set.balances() : Promise.resolve(mem.balances);
+  }
+  public get live_data(): Promise<cache_t["live_data"]> {
+    const promise = [this.forex, this.instrument_data, this.balances] as const;
+    return Promise.all(promise)
+      .then(merge_fx)
+      .then(([instrmnts, balances]) => {
+        return { instrmnts, balances } as cache_t["live_data"];
+      });
+
+    function merge_fx([forex, ins_data, balances]: [
+      cache_t["forex"],
+      cache_t["instrument_data"],
+      cache_t["balances"],
+    ]) {
+      return Promise.all(
+        [ins_data, balances].map((data) => merge(data, forex)),
+      );
+    }
+
+    function merge<
+      T extends "instrument_data" | "balances",
+      D extends live_data_t["balances" | "instrmnts"] = T extends "balances"
+        ? live_data_t["balances"]
+        : live_data_t["instrmnts"],
+    >(data: cache_t[T], forex: cache_t["forex"]): D {
+      const merged = structuredClone(data) as unknown as D;
+      const entries = Object.entries(merged);
+      return entries.reduce((merged_data, entry) => {
+        const [id, data] = entry as [string, { currency: string; fx: number }];
+        const { currency } = data;
+        data.fx = forex[currency]?.close || 1;
+        (merged_data as any)[id] = data;
+        return merged_data;
+      }, merged);
+    }
   }
 
-  public set_instruments(instruments: instrmnt_t[]) {
-    if (!this._instrumnts) this._instrumnts = {};
-    instruments.forEach((instrmnt) => {
-      const { i_id } = instrmnt;
-      const ex_instrmnt = this._instrumnts![i_id] || {};
-      instrmnt = { ...ex_instrmnt, ...instrmnt };
-      this._instrumnts![i_id] = instrmnt;
-    });
+  public set forex(forex: Promise<cache_t["forex"]>) {
+    forex.then((f) => (this.mem.forex = f));
   }
-  public set positions(positns: cache_posns_t) {
-    if (!this._positns) this._positns = {};
-    Object.keys(positns).forEach((i_id) => {
-      let pos = positns[i_id as i_id_t]!;
-      const ex_pos = this._positns![i_id as i_id_t]
-        ? this._positns![i_id as i_id_t]
-        : {};
-      pos = { ...pos, ...ex_pos };
-      this._positns![i_id as i_id_t] = pos;
-    });
+  public set instrument_data(data: Promise<cache_t["instrument_data"]>) {
+    data.then((d) => (this.mem.instrument_data = d));
   }
-  public set live_data_data(data: cache_t["live_data"]["data"]) {
-    if (!this._live_data) this._live_data = {};
-    this._live_data!.data = data;
-  }
-  public set live_data_balances(balances: balance_t[]) {
-    if (!this._live_data) this._live_data = {};
-    if (!this._live_data.balances) this._live_data!.balances = {};
-    const ex_balances = this._live_data!.balances!;
-    const new_balances = balances.reduce(
-      (c, balance) => {
-        const { a_id } = balance;
-        if (!c[a_id]) c[a_id] = [];
-        c[a_id].push(balance);
-        return c;
-      },
-      {} as { [a_id: string]: balance_t[] },
-    );
 
-    this._live_data!.balances = { ...ex_balances, ...new_balances };
-  }
-  public set accounts(accounts: cache_t["accounts"]) {
-    this._accounts = [
-      ...new Set([...(this._accounts || []), ...accounts]).values(),
-    ];
-  }
-  public set fx(fx: fx_rates_t) {
-    this._fx = fx;
-  }
-  public set_transctns = async (transactions: transctn_t[]) => {
-    this.invalidate.fx();
-    await this.db.insert.transactions(transactions);
+  public set = {
+    currencies: async () => {
+      const { mem } = this;
+      const instrmnts = await this.instruments;
+      let currencies = Object.values(instrmnts).map((i) => i.currency);
+      mem.currencies = [...new Set(currencies).values()];
+      return mem.currencies;
+    },
+    instruments: async () => {
+      const { mem } = this;
+      const instrmnts = await Promise.all(
+        conf.brokers.map((b) => this[b].cache.instruments),
+      )
+        .then((maps) => maps.map((i) => [...i.values()]))
+        .then((i) => i.flat());
+
+      mem.instruments = instrmnts.reduce((cache, instrmnt) => {
+        const { i_id } = instrmnt;
+        const ex_instrmnt = cache[i_id] || {};
+        instrmnt = { ...ex_instrmnt, ...instrmnt };
+        cache[i_id] = instrmnt;
+        return cache;
+      }, mem.instruments || {});
+      return mem.instruments;
+    },
+    transactns: async () => {
+      const { mem, db } = this;
+      const transctns = await db.select.transactions();
+      mem.transactions = transctns.reduce((cache, transctn) => {
+        const { i_id } = transctn;
+        if (!cache[i_id]) cache[i_id] = [];
+        cache[i_id].push(transctn);
+        return cache;
+      }, mem.transactions || {});
+      return mem.transactions;
+    },
+    accounts: async () => {
+      const { mem } = this;
+      const accounts = await Promise.all(
+        conf.brokers.map((b) => this[b].cache.accounts),
+      ).then((a) => a.flat());
+      mem.accounts = accounts.map((account) => {
+        account = structuredClone(account);
+        delete account.broker_key;
+        return account;
+      });
+      return mem.accounts;
+    },
+    forex: async () => {
+      const { mem, db } = this;
+      mem.forex = await db.select.forex();
+      return mem.forex;
+    },
+    instrument_data: async () => {
+      const { mem, db } = this;
+      mem.instrument_data = await db.select.instrument_data();
+      return mem.instrument_data;
+    },
+    balances: async () => {
+      const { mem, db } = this;
+      mem.balances = await db.select.balances();
+      return mem.balances;
+    },
   };
 
   public invalidate = {
     instruments: () => {
-      delete this._instrumnts;
-      delete this._currencies;
+      console.warn("instruments invalidated");
+      delete this.mem.instruments;
+      this.invalidate.currencies();
     },
-    fx: () => {
-      delete this._transctns;
+    transactions: () => {
+      delete this.mem.transactions;
+    },
+    currencies: () => {
+      delete this.mem.currencies;
+    },
+    accounts: () => {
+      delete this.mem.accounts;
     },
   };
-
-  private _transctns?: cache_t["transactions"];
-  private _instrumnts?: cache_t["instruments"];
-  private _accounts?: cache_t["accounts"];
-  private _live_data?: cache_t["live_data"];
-  private _positns?: cache_posns_t;
-  private _currencies?: currency_t[];
-  private _fx?: fx_rates_t;
+  private mem = {} as {
+    transactions?: cache_t["transactions"];
+    instruments?: cache_t["instruments"];
+    accounts?: cache_t["accounts"];
+    currencies?: string[];
+    instrument_data?: cache_t["instrument_data"];
+    forex?: cache_t["forex"];
+    balances?: cache_t["balances"];
+  };
 }
-
-function err_m(subject: string) {
-  return `${subject} must be set before proceeding`;
-}
-
-type cache_posns_t = { [i_id: i_id_t]: b.positn_t };

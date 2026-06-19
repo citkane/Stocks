@@ -13,7 +13,8 @@ export class Login extends Global {
   }
   public popup = {
     open: async (url: string) => {
-      if (!url) return console.error("No url for login popup");
+      if (!this.is_url(url)) return console.error("No url for login popup");
+
       if (!!this.popup_window) return;
       const target = util.random_context();
       this.popup_window = window.open(url, target, windowFeatures);
@@ -35,6 +36,10 @@ export class Login extends Global {
     await_auth: () => this.request<null>("wait_for_auth", this.broker),
     url: () => this.request<string>("saxo_auth_url"),
     auth_state: () => this.request<boolean>("auth_state", this.broker),
+  };
+  private is_url = (url: string) => {
+    if (!url || url === null) return false;
+    return url.startsWith("http://") || url.startsWith("https://");
   };
   private popup_window?: window_t;
 }

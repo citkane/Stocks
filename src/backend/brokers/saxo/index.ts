@@ -4,4 +4,4 @@ export { AccountsSaxo } from "./AccountsSaxo";
 export { PositionsSaxo } from "./PositionsSaxo";
 export { TransactionsSaxo } from "./TransactionsSaxo";
 export { LiveDataSaxo } from "./LiveDataSaxo";
-export { EndpointsSaxo } from "./EndpointsSaxo";
+export { SaxoApi } from "./SaxoApi";

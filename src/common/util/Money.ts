@@ -2,7 +2,7 @@ const money_round = 100;
 const fx_round = 1000000;
 
 export class Money {
-  public currency_minor: currency_t[] = ["ZAC", "GBp", "GBX"];
+  public currency_minor: string[] = ["ZAC", "GBp", "GBX"];
 
   /**
    * Calculates unrealised Profit/Loss
@@ -65,7 +65,7 @@ export class Money {
    * @returns Money value in whole number
    */
   public base_whole = (
-    currency: currency_t,
+    currency: string,
     amount?: number,
     price?: number,
     fx_rate?: number,

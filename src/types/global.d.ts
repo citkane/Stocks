@@ -1,8 +1,26 @@
+type broker_t = "ibkr" | "saxo";
 type window_t = ReturnType<typeof window.open>;
 type p_id_t = `${broker_t}_${string}`;
 type i_id_t = `${string}-${string}`;
+type a_id_t = `${broker_t}_${string}`;
 type resolve_t = Promise.resolve;
 type reject_t = Promise.reject;
+type conf_t = {
+  base_currency: string;
+  brokers: broker_t[];
+  http_port: number;
+  ws_port: number;
+  saxo: {
+    start_date: `${string}-${string}-${string}`;
+    app_key: string;
+    app_secret: string;
+    redirect: string;
+  };
+  ibkr: {
+    start_date: `${string}-${string}-${string}`;
+    base: string;
+  };
+};
 type resolver_t = {
   resolve: resolve_t;
   reject: resolve_t;
@@ -19,12 +37,12 @@ type transctn_t = {
   a_id: string;
   i_id: i_id_t;
   broker: broker_t;
-  currency: currency_t;
-  amount: number;
+  currency: string;
+  amount?: number;
   date: number;
   kind: "buy" | "sell" | "dividend" | "unbooked";
-  price_traded: number;
-  fx_traded: number;
+  price_traded?: number;
+  fx_traded?: number;
   price_market?: number;
   fx_market?: number;
   dividend?: number;
@@ -39,28 +57,16 @@ type transctn_t = {
     sales?: number | string;
   };
 };
-type live_data_t = {
-  i_id: i_id_t;
-  price_market: number;
-  //fx_market: number;
-  div_yield?: number;
-};
-type account_t = {
-  a_id: string;
-  a_id_original: string;
-  broker: broker_t;
-  alias?: string;
-  currency: currency_t;
-  saxo_key?: string;
-};
-type balance_t = Omit<account_t, "saxo_key"> & {
-  assets_val: number;
-  cash: number;
-};
 
-type fx_pair_t = {
-  currency_t: number;
+type account_t = {
+  a_id: a_id_t;
+  //a_id_original: string;
+  broker: broker_t;
+  currency: string;
+  alias?: string;
+  broker_key?: string;
 };
+type balance_t = db.data<"balances">;
 
 interface Api_t {
   requests: {
@@ -87,7 +93,7 @@ type instrmnt_t = {
   i_id: i_id_t;
   ticker: string;
   exchange: string;
-  currency: currency_t;
+  currency: string;
   description: string;
   about_instrmnt?: string;
   asset_class?: string;
@@ -106,13 +112,15 @@ type cache_t = {
   accounts: account_t[];
   instruments: { [i_id: i_id_t]: instrmnt_t };
   transactions: { [i_id: i_id_t]: transctn_t[] };
-  live_data: {
-    data?: live_data_t[];
-    balances?: { [a_id: string]: balances_t[] };
-    fx?: fx_rates_t;
-  };
+  instrument_data: { [i_id: i_id_t]: db.data<"instrument_data"> };
+  forex: { [currency: string]: db.data<"forex"> };
+  balances: { [a_id: string]: db.data<"balances"> };
+  live_data: live_data_t;
 };
-
+type live_data_t = {
+  instrmnts: { [i_id: string]: db.data<"instrument_data"> & { fx: number } };
+  balances: { [a_id: string]: db.data<"balances"> & { fx: number } };
+};
 type iso_date_t = `${string}-${string}-${string}`;
 
 type geo_data_t = {
@@ -134,21 +142,21 @@ type geo_data_t = {
 namespace f {
   type positn_t = { [key in `${transctn_t["kind"]}s`]: transctn_t[] };
 }
-namespace b {
-  type positn_t = {
-    saxo_id?: number;
-    ibkr_id?: number;
-    i_id: i_id_t;
-    currency: currency_t;
-    description: string;
-  };
-  type exchange_t = { tv: string | null; mic: string | null };
-  type exchg_map_t = {
-    [key in broker_t]: {
-      [key: string]: exchange_t;
-    };
-  };
-}
+//namespace b {
+//  type positn_t = {
+//    saxo_id?: number;
+//    ibkr_id?: number;
+//    i_id: i_id_t;
+//    currency: string;
+//    description: string;
+//  };
+//  type exchange_t = { tv: string | null; mic: string | null };
+//  type exchg_map_t = {
+//    [key in broker_t]: {
+//      [key: string]: exchange_t;
+//    };
+//  };
+//}
 
 /**
  * Function parameter types

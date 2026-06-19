@@ -33,12 +33,12 @@ export class AccountRow extends WebComponent {
     },
   });
   private dom = this.api.dom({
-    find_balance_row: (currency: currency_t) => {
+    find_balance_row: (currency: string) => {
       return this.querySelector<BalanceRow>(
         `balance-row[currency=${currency}]`,
       );
     },
-    make_balance_row: (currency: currency_t) => {
+    make_balance_row: (currency: string) => {
       return this.dom.make_el<BalanceRow>(
         "balance-row",
         "",

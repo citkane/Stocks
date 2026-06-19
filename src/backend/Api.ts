@@ -19,7 +19,7 @@ export default class Api extends Global implements Api_t {
     },
   };
   setter = {
-    push_live_data: () => this.brokers.push_live_data(),
+    push_live_data: () => {}, //this.brokers.push_live_data(),
     push_cache: () => this.brokers.push_cache(),
     saxo_token: (code: auth_code_t) => this.action.saxo_token(code),
     logout: (broker: broker_t) => this[broker].logout(),
@@ -53,7 +53,9 @@ export default class Api extends Global implements Api_t {
       this.brokers.chart
         .data(broker, ...pa)
         .then((data) => p.messenger.response(p.req_uid, data || []))
-        .catch(this[broker].what_err);
+        .catch((err) => {
+          throw Error(err);
+        });
     },
   };
   private action = {
@@ -71,12 +73,12 @@ export default class Api extends Global implements Api_t {
   };
 }
 
-function server_error(p: req_t, err: any) {
-  let { status, statusText } = err as Response;
-  status = status ? status : 500;
-  statusText = statusText ? statusText : "Internal server error";
-  const error = p.messenger.error(p.req_uid, err);
-  logger.warn("API server error", error);
-}
+//function server_error(p: req_t, err: any) {
+//  let { status, statusText } = err as Response;
+//  status = status ? status : 500;
+//  statusText = statusText ? statusText : "Internal server error";
+//  const error = p.messenger.error(p.req_uid, err);
+//  logger.warn("API server error", error);
+//}
 
 type level_t = "debug" | "info" | "log" | "warn" | "error";
