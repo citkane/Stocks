@@ -8,49 +8,48 @@ export class AccountsSaxo extends Global {
     logger.json("SAXO accounts raw", accounts.Data);
     return accounts.Data.map(this.translate.account);
   };
-  public balances = async (accnts: account_t[]) => {
+  public balances = async (accnts: g.account[]) => {
     const { get, fetch } = this.saxo.api;
     const { balance } = this.translate;
     return Promise.all(accnts.map(fetch_balance)).then(reduce_balances);
 
-    function fetch_balance(acc: account_t) {
+    function fetch_balance(acc: g.account) {
       const { broker_key } = acc;
       const req = get.balance(broker_key!);
       return fetch<b.s.balance_t>(req).then((bal) => balance(acc, bal));
     }
-    function reduce_balances(bals: balance_t[]) {
+    function reduce_balances(bals: lv.balance[]) {
       return bals.reduce(
         (bals, b) => {
           const { a_id } = b;
           bals[a_id] = b;
           return bals;
         },
-        {} as { [a_id: string]: balance_t },
+        {} as { [a_id: string]: lv.balance },
       );
     }
   };
   private translate = {
-    account: (account: b.s.account_t): account_t => {
+    account: (account: b.s.account_t): g.account => {
       const { AccountId, DisplayName, Currency, AccountKey } = account;
       return {
         a_id: `saxo_${AccountId}`,
-        //a_id_original: AccountId,
         broker: "saxo",
         alias: DisplayName,
-        currency: Currency,
+        currency: util.money.patch_currency(Currency),
         broker_key: AccountKey,
       };
     },
-    balance: (account: account_t, balance: b.s.balance_t): balance_t => {
+    balance: (account: g.account, balance: b.s.balance_t): lv.balance => {
       const { a_id } = account;
       let {
-        Currency: currency,
+        Currency,
         UnrealizedPositionsValueExcludingCostToClosePositions: assets_val,
         CashBalance: cash,
       } = balance;
       return {
         a_id,
-        currency,
+        currency: util.money.patch_currency(Currency),
         assets_val,
         cash,
       };

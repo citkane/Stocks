@@ -10,10 +10,6 @@ export class Brokers extends Global {
     return Promise.all(promises);
   };
 
-  cache_init = () => {
-    this.messenger.send("push_cache");
-  };
-
   chart_data = (
     saxo_id: number | undefined,
     ibkr_id: number | undefined,
@@ -21,7 +17,7 @@ export class Brokers extends Global {
     granularity: period_t,
   ) => {
     const [broker, id] = !!saxo_id ? ["saxo", saxo_id] : ["ibkr", ibkr_id];
-    return this.request<chart_data_t[]>("chart_data", broker, [
+    return this.request<lv.chart_data[]>("chart_data", broker, [
       id,
       period,
       granularity,

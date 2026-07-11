@@ -45,13 +45,13 @@ instrmnt-row {
       justify-content: center;
     }
   }
-  [name="positions"] {
+  [name="transctns"] {
     display: flex;
     justify-content: center;
     align-items: center;
   }
   expanding-drawer {
-    [name="header"] {
+    .header {
       display: flex;
       border-bottom: 1px solid var(--col-border);
       border-top: 1px solid var(--col-border-light);

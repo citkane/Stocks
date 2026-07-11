@@ -1,124 +1,97 @@
 import { Global } from "@backend/Global";
 
 export class TransactionsIbkr extends Global {
-  public async update(acc_ids: string[], con_ids: string[], days_ago: number) {
-    const curr = this.base_currency;
-    const p = { acc_ids, con_ids, curr, days_ago };
+  public update = async (days_ago: number) => {
+    if (!days_ago) return [];
 
-    return this.transactions
-      .fetch(p)
-      .then((t) => logger.json("IBKR transactions raw", t))
-      .then(this.transactions.categorise)
-      .then(this.transactions.transform);
-  }
-  public transctns_update_date = async () => {
-    let last_date = await this.db.select.transctns_update_date("ibkr");
-    const days_ago = last_date
-      ? util.time.aging_days(last_date)
-      : util.time.aging_days(conf.ibkr.start_date);
-    return days_ago + 1;
+    const { db, transctns, frmt, root_currency } = this;
+
+    return Promise.all([
+      db.select.instrmnts(["ibkr_id", true]),
+      db.select.accounts.data("ibkr").then((a) => a.map((a) => a.a_id)),
+    ])
+      .then(([instrmnts, a_ids]) =>
+        transctns.fetch([a_ids, instrmnts, root_currency, days_ago] as const),
+      )
+      .then(frmt.transform);
   };
+  public last_update_date = async () => {
+    const [date] = await this.db.select.transctns(
+      ["broker", "ibkr"],
+      ["date"],
+      ["date", "DESC"],
+    );
+    const days_ago = date?.date
+      ? util.time.aging_days(date.date)
+      : util.time.aging_days(conf.ibkr.start_date);
 
-  private transactions = {
-    fetch: async (p: b.i.transactions_p) => {
-      fetch_fn.bind(this);
-      const promises = p.con_ids.reduce(
-        (c, conid) => {
-          const try_fetch = fetch_fn.bind(this)(conid);
-          const transactions = try_fetch()
-            .catch(() => {
-              const err_mess = `Failed to fetch IBKR transactions for ${conid}`;
-              throw err_mess;
-              //return this.ibkr.retry_fetch<b.i.transactions_t>(
-              //  try_fetch,
-              //  err_mess,
-              //);
-            })
-            .then((data) => (data.transactions ? data.transactions : []));
-
-          c.push(transactions);
-          return c;
-        },
-        [] as Promise<b.i.transaction_t[]>[],
-      );
-
-      const transctns = await Promise.all(promises).then((transactions) =>
-        transactions.flat(),
-      );
-      return transctns;
-
-      function fetch_fn(this: TransactionsIbkr, conid: string) {
-        const { post, fetch } = this.ibkr.api;
-        const _p = { ...p, ...{ con_ids: [conid] } };
-        const { url, req_init } = post.transactions(_p);
-        return () => {
-          const fetcher = fetch<b.i.transactions_t>(url, req_init);
-          _p.days_ago++;
-          return fetcher;
-        };
-      }
-    },
-    /**
-     * Reduce an array of transactions into categorised arrays,
-     * keyed by conid and then by type
-     */
-    categorise: (transactions: b.i.transaction_t[]) => {
-      return transactions.reduce((c, transaction) => {
-        const { type, conid } = transaction;
-
-        if (!c[conid]) c[conid] = {} as categorise_t[typeof conid];
-        if (!c[conid][type]) c[conid][type] = [];
-        if (!transaction.isRealTime) c[conid][type].push(transaction);
-
-        return c;
-      }, {} as categorise_t);
-    },
+    return days_ago;
+  };
+  private frmt = {
     /**
      * Transforms IBKR transactions to the normalised frontend transaction type.
      */
-    transform: async (transactions: categorise_t) => {
-      return Object.keys(transactions).reduce((c, conid) => {
-        const categorised = transactions[conid as any]!;
-        const {
-          Buy,
-          Sell,
-          "Dividend Payment": dividends,
-        } = this.transactions.transfer(categorised);
+    transform: async ([transctns, instrmnts]: readonly [
+      b.i.transaction_t[],
+      g.instrmnt[],
+    ]) => {
+      const { frmt } = this,
+        cats = frmt.categorise(transctns),
+        instrmt_map = Object.fromEntries(
+          instrmnts.map((i) => [i.ibkr_id!, i]),
+        ) as { [conid: number]: g.instrmnt };
 
-        [...(Buy || []), ...(Sell || []), ...(dividends || [])].forEach(
-          (tr) => {
-            let transaction = this.transactions.format(tr);
-            c.push(transaction);
-          },
-        );
-        return c;
-      }, [] as transctn_t[]);
+      return Object.values(cats).reduce((transctns, cat) => {
+        frmt
+          .resolve_transfers(cat)
+          .forEach((tr) => transctns.push(frmt.format(tr, instrmt_map)));
+
+        return transctns;
+      }, [] as g.transctn[]);
     },
-    format: (transaction: b.i.transaction_t): transctn_t => {
+    categorise: (t: b.i.transaction_t[]) => {
+      const transctns = {} as {
+        [conid: number]: p.categorised;
+      };
+      return t.reduce((transctns, t) => {
+        const { type, conid } = t;
+        if (!transctns[conid]) transctns[conid] = {} as any;
+        if (!transctns[conid]![type]) transctns[conid]![type] = [];
+        if (!t.isRealTime) transctns[conid]![type].push(t);
+
+        return transctns;
+      }, transctns);
+    },
+    format: (
+      transctn: b.i.transaction_t,
+      instrmnts: { [conid: number]: g.instrmnt },
+    ): g.transctn => {
+      const { frmt } = this;
       let {
         conid,
         acctid: a_id,
         cur: currency,
         qty: amount,
-        pr: price_traded,
-        fxRate: fx_traded,
-        date: date_string,
         amt,
+        pr,
+        fxRate: traded_fx,
+        date: date_string,
         type,
-      } = transaction;
-      let positn = this.ibkr.cache.get.position(conid);
-      if (!positn) {
+      } = transctn;
+      let instrmnt = instrmnts[conid];
+      if (!instrmnt) {
         logger.error("No position found for transaction", "ibkr", conid);
-        positn = {
+        instrmnt = {
           i_id: `undefined-undefined`,
-        } as unknown as b.positn_t;
+        } as unknown as g.instrmnt;
       }
-      const { i_id } = positn;
-      const date = util.time.ms(date_string);
-      const id = this.transactions.uid(transaction);
-      const broker = "ibkr";
-      const p_id: p_id_t = `${broker}_${conid}`;
-      let kind: transctn_t["kind"];
+      const { i_id } = instrmnt,
+        date = util.time.ms(date_string),
+        id = frmt.make_uid(transctn),
+        broker = "ibkr",
+        traded_price = pr || amt;
+
+      let kind: g.transctn["kind"];
       switch (type) {
         case "Buy":
           kind = "buy";
@@ -133,52 +106,44 @@ export class TransactionsIbkr extends Global {
           kind = "dividend";
       }
 
-      if (kind === "dividend") {
-        amount = 1;
-        price_traded = amt / fx_traded;
-      }
-
       return {
         id,
-        p_id,
         a_id,
         i_id,
         broker,
         currency,
-        amount: amount!,
-        price_traded: price_traded!,
-        fx_traded,
+        amount: amount || 1,
+        traded_price,
+        traded_fx,
         date,
         kind,
-        //exchange,
-        //ticker,
       };
     },
-    /** Create a unque id for the given transactions */
-    uid: (transaction: b.i.transaction_t) => {
-      const string = Object.keys(transaction)
-        .map((key) => transaction[key as keyof typeof transaction])
-        .join("");
+    make_uid: (trnsctn: b.i.transaction_t) => {
+      //  const string = Object.keys(transaction)
+      //    .map((key) => transaction[key as keyof typeof transaction])
+      //    .join("");
       const hasher = new Bun.CryptoHasher("md5");
-      hasher.update(string);
+      hasher.update(JSON.stringify(trnsctn));
       return hasher.digest("hex");
     },
     /** Identifies external transfers in and converts them to buy.
      *  Maps transfer account ids to buys.*/
-    transfer: (view: view_t) => {
+    resolve_transfers: (view: p.categorised) => {
       let { Transfer, Buy } = view;
-      if (!Transfer) return view;
+      if (!Transfer) return Object.values(view).flat();
+
       if (!Buy) Buy = [];
       const transfers = Transfer.sort((a, b) =>
         b.rawDate.localeCompare(a.rawDate),
       )
         .map((transfer) => {
-          let { desc, amt, rawDate, fxRate } = transfer;
+          let { desc, amt, rawDate } = transfer;
 
           const kind = amt! > 0 ? "in" : "out";
           const qty = Number(desc.split("Quantity: ")[1]!.replaceAll(",", ""));
-          let pr = Math.round(util.money.whole(amt / fxRate) / qty);
-          pr = pr / 100;
+          let pr = amt / qty;
+          //pr = pr / 100;
 
           const match = desc.match(/\(([^)]+)\)/);
           let id = match ? match[0] : "";
@@ -194,10 +159,10 @@ export class TransactionsIbkr extends Global {
             : transfer;
         })
         .reduce(
-          (c, transfer) => {
+          (transfers, transfer) => {
             const { kind } = transfer;
-            c[kind as keyof typeof c].push(transfer);
-            return c;
+            transfers[kind as keyof typeof transfers].push(transfer);
+            return transfers;
           },
           { in: [], out: [], external: [] } as {
             in: b.i.transaction_t[];
@@ -211,12 +176,69 @@ export class TransactionsIbkr extends Global {
       });
       view.Buy = [...Buy, ...transfers.external];
 
-      return view;
+      return Object.values(view).flat();
+    },
+  };
+  private transctns = {
+    fetch: async ([a_ids, instrmnts, currency, days]: readonly [
+      string[],
+      g.instrmnt[],
+      string,
+      number,
+    ]) => {
+      const { post, fetch } = this.ibkr.api,
+        { bootstrap } = this,
+        conids = instrmnts.map((i) => i.ibkr_id!);
+
+      let count = 0;
+      a_ids = a_ids.map((a) => a.split("_")[1]!);
+      /* FUCK IBKR!!!!
+       * It is only possibly to fetch transactions for ONE fucking conid at a time.
+       * Rate limits ARE hit!!!
+       * Support is NOT fucking interested
+       */
+      const promises = conids.map((conid) => {
+        const { url, req_init } = post.transactions([
+          a_ids,
+          [conid],
+          currency,
+          days,
+        ]);
+        return fetch<b.i.transctns_res>(url, req_init)
+          .then((t) => {
+            messg();
+            return t.transactions || [];
+          })
+          .catch((err) => {
+            messg();
+            logger.error(err);
+            return [];
+          });
+      });
+
+      return Promise.all(promises)
+        .then((transctns) => transctns.flat())
+        .then((t) => {
+          logger.json("IBKR TRNSCTN RAW", t);
+          return t;
+        })
+        .then((transctns) => [transctns, instrmnts] as const);
+      function messg() {
+        count++;
+        bootstrap(
+          `IBKR checked ${count} of ${conids.length} positions for new transactions`,
+        );
+      }
     },
   };
 }
-
-type view_t = { [key in b.i.transaction_t["type"]]: b.i.transaction_t[] };
-type categorise_t = {
-  [key: number]: view_t;
-};
+namespace p {
+  type events = b.i.transaction_t["type"];
+  export type categorised = {
+    [key in events]: b.i.transaction_t[];
+  };
+}
+//type view_t = { [key in b.i.transaction_t["type"]]: b.i.transaction_t[] };
+//type categorise_t = {
+//  [key: number]: view_t;
+//};

@@ -1,0 +1,21 @@
+filter-root {
+  user-select: none;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  padding: var(--size-padding-app);
+  background: var(--col-background-light);
+
+  form {
+    display: flex;
+    flex-direction: column;
+    > div {
+      padding: var(--size-padding-cell);
+      label {
+        display: inline-block;
+        min-width: 65px;
+      }
+    }
+  }
+}

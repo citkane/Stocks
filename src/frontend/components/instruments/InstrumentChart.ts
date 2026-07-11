@@ -19,7 +19,7 @@ export class InstrumentChart extends WebComponent {
   }
 
   private handlers = {
-    render: async (p: p.prop_callback) => {
+    render: async (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
       try {
@@ -48,7 +48,7 @@ export class InstrumentChart extends WebComponent {
         logger.error(err);
       }
     },
-    fetch_data: (p: p.prop_callback) => {
+    fetch_data: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
       const { saxo_id, ibkr_id } = this.instrmnt;
@@ -150,7 +150,7 @@ export class InstrumentChart extends WebComponent {
   });
   private data = {
     data: () => this.chart_data!,
-    map: (data: chart_data_t[]) => {
+    map: (data: lv.chart_data[]) => {
       return data.reduce(
         (c, point) => {
           let { open, close, high, low, time, volume } = point;
@@ -194,16 +194,16 @@ export class InstrumentChart extends WebComponent {
     },
   };
   private get instrmnt() {
-    return this.cache.instruments[this.i_id]!;
+    return this.cache.instruments[this.p_id]!;
   }
   private get position() {
     if (this._position) return this._position;
-    const transactions = this.cache.transactions[this.i_id]!;
+    const transactions = this.cache.transactions[this.p_id]!;
     return (this._position = this.money.chart.position(transactions));
   }
 
   private chart_data?: mapped_data_t;
-  private _position?: f.positn_t;
+  private _position?: filter.positn;
 }
 
 type mapped_data_t = {

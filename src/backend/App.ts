@@ -5,11 +5,10 @@ const browser_script = "./src/scripts/browser.sh";
 export default class App extends Global {
   constructor() {
     super();
-
-    this.open_browser();
     this.add_shutdown_fncs(this.close_clients, logger.shutdown);
 
-    this.brokers.await_auth().then(this.brokers.push_cache);
+    this.brokers.init();
+    this.open_browser();
 
     process.on("SIGINT", this.shutdown);
     process.on("SIGTERM", this.shutdown);

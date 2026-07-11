@@ -27,21 +27,6 @@ export class SaxoApi extends Global {
     const pms = this.fetcher.constructor();
     this.fetch = new Fetch<"req">(...pms).fetch;
   }
-
-  //public pager = <T>() => {
-  //  let count = 0;
-  //  return async (pages: T[], res: Response, req: Request) => {
-  //    const data: b.s.data_t<b.s.positn_t[]> = await res.json();
-  //    const { __next, __count, Data } = data;
-  //    pages.push(Data as any);
-  //    if (!__next) return;
-  //
-  //    count += __count;
-  //    const url = new URL(req.url);
-  //    url.searchParams.set("$skip", String(count));
-  //    return new Request(url.toString(), req);
-  //  };
-  //};
   public get = {
     accounts: () => {
       const req_init = this.fetcher.default_headers();
@@ -170,12 +155,15 @@ export class SaxoApi extends Global {
       return new Request(`${api.auth_token}`, req_init);
     },
   };
-  public pager_cb = lib_callback.pager.param_factory(
-    "body",
-    (count: number) => ({ $skip: String(count) }),
-    "__count",
-    "__next",
-  );
+  public pager_cb = async (res: Response, req: fm.req<"req">) => {
+    const data = await res.json();
+    if (!data.__next) return;
+    const skip = data.Data.length;
+    const url = new URL(req.url);
+    url.searchParams.set("$skip", String(skip));
+    return new Request(url.toString(), req);
+  };
+
   private fetcher = {
     default_headers: (): RequestInit => ({
       headers: {

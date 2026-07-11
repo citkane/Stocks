@@ -263,7 +263,7 @@ export default class FetchManager<G extends fm.kind> {
       const req_kind: fm.kind | undefined =
         req_or_url instanceof Request && req_or_url.url.length
           ? "req"
-          : req_or_url === "string" && req_or_url.length
+          : typeof req_or_url === "string" && req_or_url.length
             ? "url"
             : undefined;
       return req_kind;
@@ -602,8 +602,8 @@ export class LibCallback<G extends fm.kind> implements t.lib_cb<G> {
 
       return async (resp: Response, req: fm.req<G>) => {
         const [count, proceed] = await get_context(resp)
-          .then((ctx) => P([ctx, get_count(ctx)]))
-          .then(([ctx, count]) => P([count, get_proceed(ctx, count)]));
+          .then(get_count)
+          .then(should_proceed);
         if (!proceed) return;
 
         return get_search_params(count)
@@ -621,14 +621,14 @@ export class LibCallback<G extends fm.kind> implements t.lib_cb<G> {
         if (Number.isNaN(count))
           throw `Failed to get pager count on key ${count_key}`;
 
-        return count;
+        return [context, count] as const;
       }
-      function get_proceed(
-        context: { [key: string]: string | number },
-        count: number,
-      ) {
-        if (!flag_next_key) return count > 0;
-        return !!context[flag_next_key];
+      function should_proceed([context, count]: readonly [
+        { [key: string]: string | number },
+        number,
+      ]) {
+        if (!flag_next_key) return [count, count > 0] as const;
+        return [count, !!context[flag_next_key]] as const;
       }
       async function get_search_params(count: number) {
         try {

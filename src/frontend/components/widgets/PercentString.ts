@@ -8,7 +8,7 @@ export class PercentString extends WebComponent {
     this.props.watch("value", this.handlers.render);
   }
   private handlers = {
-    render: (p: p.prop_callback) => {
+    render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
       let val = Number(this.value);

@@ -26,7 +26,7 @@ instrmnts-root {
     [name="ticker"] {
       grid-column: var(--grid-col-2);
     }
-    [name="positions"] {
+    [name="transctns"] {
       border-right: 1px solid var(--col-border);
       grid-column: var(--grid-col-3);
     }
@@ -36,21 +36,21 @@ instrmnts-root {
     [name="market_value"] {
       grid-column: var(--grid-col-5);
     }
-    [name="r_pl"] {
+    [name="pl_r"] {
       border-left: 1px solid var(--col-border);
       grid-column: var(--grid-col-6);
     }
-    [name="u_pl"] {
+    [name="pl_ur"] {
       border-left: 1px solid var(--col-border);
       grid-column: var(--grid-col-7);
     }
-    [name="fx_pl"] {
+    [name="pl_fx"] {
       grid-column: var(--grid-col-8);
     }
-    [name="percent_pl"] {
+    [name="pl_ur_perc"] {
       grid-column: var(--grid-col-9);
     }
-    [name="dividend"] {
+    [name="div_val"] {
       border-left: 1px solid var(--col-border);
       grid-column: var(--grid-col-10);
     }
@@ -110,16 +110,16 @@ instrmnts-root {
       border: 1px solid var(--col-border);
       cursor: pointer;
       user-select: none;
-      &[name="u_pl"] {
+      &[name="pl_ur"] {
         border-top: none;
       }
     }
     > .grid.header > *:not(:last-child) {
       border-right: none;
     }
-    > .grid.u_pl {
+    > .grid.pl_ur {
       background: var(--col-background-light);
-      [name="u_pl"] {
+      [name="pl_ur"] {
         grid-column: var(--grid-col-7);
         justify-content: center;
         cursor: pointer;
@@ -129,7 +129,7 @@ instrmnts-root {
         border-bottom: none;
         border-right: none;
       }
-      [name="u_pl_total"] {
+      [name="pl_ur_total"] {
         justify-content: center;
         grid-column: var(--grid-col-8-9);
         border: 1px solid var(--col-border);

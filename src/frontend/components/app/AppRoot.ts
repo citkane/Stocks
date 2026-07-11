@@ -1,109 +1,93 @@
 import { WebComponent } from "@frontend/components/WebComponent";
-import type { ExpandingDrawer } from "@frontend/components";
+import type { ExpandingDrawer } from "../widgets";
 
 export class AppRoot extends WebComponent {
-  static observedAttributes = [
-    "transactions",
-    "instruments",
-    "accounts",
-    "init_live_data",
-  ];
+  static observedAttributes = ["instrmnts", "positns", "filter", "auth"];
 
   constructor() {
     super();
-    this.dom.query_select();
-    this.props.watch("transactions", this.handlers.transactions);
-    this.props.watch("instruments", this.handlers.instruments);
-    this.props.watch("accounts", this.handlers.accounts);
-    this.props.watch("init_live_data", () => (this.has_live_data = true));
-    this.els_nav.forEach((el) => (el.onclick = this.handlers.navigate));
-    this.el_button_dropdown.onclick = () => this.el_drawer_menu.toggle();
-    this.els_link_dropdown.forEach(this.props.menu_actions);
+    const { dom, props, el, handlers } = this;
+    dom.template_to_self("app-root");
+
+    props.watch("instrmnts", handlers.instruments);
+    //props.watch("accounts", handlers.accounts);
+    props.watch("positns", handlers.positns);
+    props.watch("filter", handlers.filter);
+    props.watch("auth", handlers.auth);
+
+    el.buttn_menu.onclick = handlers.menu;
+    el.login.onclick = handlers.login_out;
+    el.logout.onclick = handlers.login_out;
+    el.qsa<HTMLElement>("#main_menu [link]").forEach(
+      (el) => (el.onclick = handlers.route),
+    );
   }
 
   private handlers = {
-    transactions: (p: p.prop_callback) => {
-      if (p.new === p.old) return;
-      this.transactions = p.new;
-      if (!this.instruments || !this.accounts) return;
-      this.render_instrmnts();
-    },
-    instruments: (p: p.prop_callback) => {
+    instruments: (p: pr.prop_callback) => {
       if (p.new === p.old) return;
 
-      if (this.has_live_data) {
-        this.selector.root.insights.setAttribute("instruments", p.new);
-        this.selector.root.map.setAttribute("instruments", p.new);
-      }
-      this.instruments = p.new;
-      if (!this.transactions || !this.accounts) return;
-      this.render_instrmnts();
+      this.el.root_instrmnts.setAttribute("instrmnts", p.new);
     },
-    accounts: (p: p.prop_callback) => {
+    positns: (p: pr.prop_callback) => {
       if (p.new === p.old) return;
-      this.selector.root.accnts.setAttribute("accounts", p.new);
-      this.accounts = p.new;
-      if (!this.transactions || !this.instruments) return;
-      this.render_instrmnts();
+
+      this.el.root_instrmnts.setAttribute("positns", p.new);
+    },
+    filter: (p: pr.prop_callback) => {
+      if (p.new === p.old) return;
+
+      this.el.root_instrmnts.setAttribute("filter", p.new);
+    },
+    auth: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
+      this.dom.auth(JSON.parse(p.new));
     },
     navigate: (e: Event) => {
       const name = (e.target as HTMLElement).getAttribute("name")!;
       this.router.navigate(name);
     },
-  };
-
-  private props = this.api.props({
-    menu_actions: (el: HTMLElement) => {
-      el.onclick = (e: Event) => {
-        const name = (e.target as HTMLElement).getAttribute("name")!;
-        switch (name) {
-          case "login_ibkr":
-            this.messenger.send("login", "ibkr");
-            break;
-          case "logout_ibkr":
-            this.messenger.send("logout", "ibkr");
-            break;
-          case "logout_saxo":
-            this.messenger.send("logout", "saxo");
-            break;
-        }
-      };
+    menu: () => {
+      this.el.drawer_menu.toggle();
     },
-  });
+    login_out: (e: Event) => {
+      const { messenger, dom } = this;
+      const target = e.target as HTMLUListElement;
+      const action = target.getAttribute("name");
+      if (target.className === "disable") return;
+
+      switch (action) {
+        case "logout":
+          messenger.request("logout").then(() => dom.auth(false));
+          break;
+        case "login":
+          this.app.login();
+          messenger.request("login").then(() => dom.auth(true));
+          break;
+      }
+    },
+    route: (e: Event) => {
+      const target = e.target as HTMLElement;
+      const route = target.getAttribute("name")!;
+      this.router.navigate(route);
+    },
+  };
   private dom = this.api.dom({
-    query_select: () => {
-      const qs_e = (query: string) => this.qs<HTMLElement>(query)!;
-      const qs_d = (query: string) => this.qs<ExpandingDrawer>(query)!;
-      const qsa_e = (query: string) => this.qsa<HTMLElement>(query)!;
-
-      this.els_link_dropdown = qsa_e(`menu [name="dropdown"] li`);
-      this.els_nav = qsa_e(`menu [link]`);
-      this.el_button_dropdown = qs_e(`menu [name="dropdown"] [button]`);
-      this.el_drawer_menu = qs_d(`menu [name="dropdown"] expanding-drawer`);
+    auth: (state: boolean) => {
+      this.el.login.className = state ? "disable" : "enable";
+      this.el.logout.className = state ? "enable" : "disable";
     },
   });
-
-  private render_instrmnts = () => {
-    const instrmnt_data = {
-      transactions: this.transactions,
-      instruments: this.instruments,
-      accounts: this.accounts,
-    };
-    this.selector.root.instrmnts.setAttribute(
-      "data-all",
-      util.hash_id(instrmnt_data),
-    );
-  };
-
-  private el_button_dropdown!: HTMLElement;
-  private el_drawer_menu!: ExpandingDrawer;
-  private els_nav!: NodeListOf<HTMLElement>;
-  private els_link_dropdown!: NodeListOf<HTMLElement>;
-  private qs = this.querySelector;
-  private qsa = this.querySelectorAll;
-  private has_live_data = false;
-
-  private transactions?: string;
-  private instruments?: string;
-  private accounts?: string;
+  private props = this.api.props();
+  private el = this.query.select<{
+    buttn_menu: HTMLElement;
+    drawer_menu: ExpandingDrawer;
+    login: HTMLUListElement;
+    logout: HTMLUListElement;
+  }>({
+    buttn_menu: ["qs", "#main_menu button"],
+    drawer_menu: ["qs", '#main_menu [name="dropdown_menu"]'],
+    login: ["qs", '#main_menu [name="login"]'],
+    logout: ["qs", '#main_menu  [name="logout"]'],
+  });
 }

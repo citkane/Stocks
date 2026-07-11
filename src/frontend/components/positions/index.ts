@@ -1,7 +1,7 @@
-import { PositionsRoot } from "./PositionsRoot";
-import { PositionRow } from "./PositionRow";
+import { PositnsRoot } from "./PositnsRoot";
+import { TransctnRow } from "./TransctnRow";
 
-export { PositionRow, PositionsRoot };
+export { TransctnRow, PositnsRoot };
 
-customElements.define("positions-root", PositionsRoot);
-customElements.define("position-row", PositionRow);
+customElements.define("positns-root", PositnsRoot);
+customElements.define("transctn-row", TransctnRow);

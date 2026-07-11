@@ -16,12 +16,12 @@ app-root {
     border-bottom: 1px solid var(--col-border);
     user-select: none;
 
-    [link],
-    [button] {
+    & > [button] {
       cursor: pointer;
     }
-    [link] {
+    & > [link] {
       padding: var(--size-padding-cell);
+      cursor: pointer;
     }
     [name="dropdown"] {
       position: absolute;
@@ -33,6 +33,7 @@ app-root {
       right: var(--size-padding-app);
 
       [button] {
+        cursor: pointer;
         align-self: stretch;
         text-align: center;
         font-size: 20px;
@@ -45,13 +46,14 @@ app-root {
         background: var(--col-background-light);
         border: 1px solid var(--col-border);
         border-top: none;
-        ul,
         li {
           padding: var(--size-padding-cell);
         }
-        li {
+        li.enable {
           cursor: pointer;
-          text-align: center;
+        }
+        li.disable {
+          opacity: 0.5;
         }
         .inner {
           padding: var(--size-padding-cell);

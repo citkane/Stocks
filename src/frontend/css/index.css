@@ -7,6 +7,7 @@
 @import "./insight/index.css";
 @import "./positions/index.css";
 @import "./map/index.css";
+@import "./filter/index.css";
 
 :root {
   --h: 0;
@@ -54,6 +55,7 @@ body {
     font-family: var(--font-monospace);
   }
   h1 {
+    user-select: none;
     font-size: 1.5em;
     font-weight: bold;
     margin-top: 1em;

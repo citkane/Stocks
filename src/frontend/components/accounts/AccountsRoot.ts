@@ -1,9 +1,9 @@
-import { RootComponent } from "@frontend/components/RootComponent";
+import { LandingComponent } from "@frontend/components/LandingComponent";
 import type { AccountsBroker } from "@frontend/components";
 
-export class AccountsRoot extends RootComponent {
+export class AccountsRoot extends LandingComponent {
   static observedAttributes = ["accounts"];
-
+  /*
   constructor() {
     super();
     this.dom.template_to_self("accounts-root");
@@ -33,12 +33,12 @@ export class AccountsRoot extends RootComponent {
     },
   });
   private dom = this.api.dom({
-    find_broker_el: (broker: broker_t) => {
+    find_broker_el: (broker: g.broker) => {
       return this.querySelector<AccountsBroker>(
         `accounts-broker[broker="${broker}"]`,
       );
     },
-    make_broker_el: (broker: broker_t) => {
+    make_broker_el: (broker: g.broker) => {
       return this.dom.make_el<AccountsBroker>(
         "accounts-broker",
         "",
@@ -61,4 +61,5 @@ export class AccountsRoot extends RootComponent {
   private get brokers_wrapper_el() {
     return this.querySelector<HTMLElement>(".wrapper.brokers")!;
   }
+    */
 }

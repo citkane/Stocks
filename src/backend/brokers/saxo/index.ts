@@ -1,7 +1,6 @@
 export { AuthSaxo } from "./AuthSaxo";
-export { CacheSaxo } from "./CacheSaxo";
 export { AccountsSaxo } from "./AccountsSaxo";
-export { PositionsSaxo } from "./PositionsSaxo";
+export { InstrumentsSaxo } from "./InstrumentsSaxo";
 export { TransactionsSaxo } from "./TransactionsSaxo";
 export { LiveDataSaxo } from "./LiveDataSaxo";
 export { SaxoApi } from "./SaxoApi";

@@ -54,6 +54,6 @@ export class AccountsBroker extends WebComponent {
   }
 
   private get broker() {
-    return this.getAttribute("broker")! as broker_t;
+    return this.getAttribute("broker")! as g.broker;
   }
 }

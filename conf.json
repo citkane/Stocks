@@ -1,0 +1,19 @@
+{
+  "root_currency": "EUR",
+  "brokers": {
+    "ibkr": true,
+    "saxo": true
+  },
+  "http_port": 5001,
+  "ws_port": 5002,
+  "saxo": {
+    "start_date": "2025-10-01",
+    "app_key": "af14b9ff1672459b8eb932889a993fbb",
+    "app_secret": "38952a9d5f734bdfb502d949f340a8e1",
+    "redirect": "saxo/code"
+  },
+  "ibkr": {
+    "start_date": "2025-10-01",
+    "base": "https://localhost:5000"
+  }
+}

@@ -1,7 +1,7 @@
 import { Global } from "backend";
 
 export class LiveDataIbkr extends Global {
-  public fetch_chart_data = (...p: p.chart_period) =>
+  public fetch_chart_data = (...p: pr.chart_period) =>
     this.chart.fetch_data(...p);
   //public update_fx = () => this.fx.fetch_pairs();
 

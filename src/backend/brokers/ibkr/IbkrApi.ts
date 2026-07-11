@@ -1,4 +1,4 @@
-import Fetch, { type fm } from "@common/FetchManager";
+import Fetch, { type fm, LibCallback } from "@common/FetchManager";
 
 const req_max_per_s = 100,
   req_max_concurrent = 10,
@@ -65,16 +65,25 @@ export class IbkrApi {
     },
   };
   public post = {
-    transactions: (p: b.i.transactions_p) => {
+    transactions: ([acctIds, conids, currency, days]: readonly [
+      string[],
+      number[],
+      string,
+      number,
+    ]) => {
       const body = JSON.stringify({
-        acctIds: p.acc_ids,
-        conids: p.con_ids,
-        currency: p.curr,
-        days: p.days_ago,
+        acctIds,
+        conids,
+        currency,
+        days,
       });
       return {
-        url: `${url.api}/pa/transactions`,
-        req_init: this.fetcher.req_init({ method: "POST", body }),
+        url: `https://localhost:5000/v1/api/pa/transactions`,
+        req_init: this.fetcher.req_init({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        }),
       };
     },
     logout: () => {
@@ -111,13 +120,18 @@ export class IbkrApi {
       return data;
     },
     trace_cb: (data: fm.trace_data) => {
-      console.info(data);
+      //if (data.paused) console.info(data.paused);
     },
     constructor: () => {
-      const { response_cb, trace_cb } = this.fetcher;
-      const options = { response_cb, trace_cb };
-      const { hostname, port } = new URL(conf.ibkr.base);
-      const hosts = [`${hostname}:${port}`];
+      const { retry, timeout } = new LibCallback<"url">(),
+        timeout_cb = timeout.backoff_factory(),
+        retry_cb = retry.generic_factory(),
+        { response_cb, trace_cb } = this.fetcher;
+
+      const options = { response_cb, retry_cb, timeout_cb, trace_cb },
+        { hostname, port } = new URL(conf.ibkr.base),
+        hosts = [`${hostname}:${port}`];
+
       return [
         req_max_per_s,
         req_max_concurrent,
@@ -128,17 +142,4 @@ export class IbkrApi {
     },
   };
   public fetch = new Fetch(...this.fetcher.constructor()).fetch;
-}
-
-declare global {
-  namespace b {
-    namespace i {
-      type transactions_p = {
-        acc_ids: string[];
-        con_ids: string[];
-        curr: string;
-        days_ago: number;
-      };
-    }
-  }
 }

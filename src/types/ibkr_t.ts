@@ -122,7 +122,7 @@ declare global {
         desc: string;
         isRealTime?: boolean;
       };
-      type transactions_t = {
+      type transctns_res = {
         nd: number;
         rpnl: {
           data: [];
@@ -190,13 +190,13 @@ declare global {
         points: number;
         travelTime: number;
       };
-      type positions_data_t = {
-        transactions: { [key: number]: b.i.transaction_t[] };
-        positions: {
-          frontend: globalThis.transctn_t[];
-          broker: b.i.positn_t[];
-        };
-      };
+      //type positions_data_t = {
+      //  transactions: { [key: number]: b.i.transaction_t[] };
+      //  positions: {
+      //    frontend: globalThis.transctn_t[];
+      //    broker: b.i.positn_t[];
+      //  };
+      //};
 
       type exchg_t = {
         id: string;

@@ -33,8 +33,8 @@ export class Global {
     return backend.ibkr;
   }
 
-  protected get base_currency() {
-    return conf.base_currency;
+  protected get root_currency() {
+    return conf.root_currency;
   }
 
   public bootstrap = (message: string) => {

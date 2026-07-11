@@ -9,7 +9,7 @@ export class SelectIndustry extends SelectComponent {
   }
 
   private handlers = {
-    render: (p: p.prop_callback) => {
+    render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
       const options = this.get_options("asset_industry");

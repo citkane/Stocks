@@ -39,7 +39,7 @@ export class LiveDataSaxo extends Global {
       c.push({ open, close, high, low, volume, time });
 
       return c;
-    }, [] as chart_data_t[]);
+    }, [] as lv.chart_data[]);
   };
 
   private get_bar_data = async (

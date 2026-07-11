@@ -12,8 +12,8 @@ insight-row {
     [name="value"] {
       grid-column: value;
     }
-    [name="u_pl"] {
-      grid-column: u_pl;
+    [name="pl_ur"] {
+      grid-column: pl_ur;
     }
     [name="percent"] {
       grid-column: percent;
@@ -24,6 +24,7 @@ insight-row {
       overflow: hidden;
       .bar {
         height: 20px;
+        background: grey;
         &[pl="profit"] {
           background: var(--col-pos);
           border: 2px solid var(--col-pos);
@@ -41,7 +42,7 @@ insight-row {
       }
     }
   }
-  &[name="locations"] {
+  &[view="locations"] {
     [name="topic"] {
       z-index: 2;
       &:hover {
@@ -92,7 +93,7 @@ insight-row {
       }
     }
   }
-  &[name="sectors"] {
+  &[view="sectors"] {
     [name="topic"] {
       pointer-events: none;
     }

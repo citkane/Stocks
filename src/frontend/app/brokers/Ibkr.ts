@@ -1,12 +1,16 @@
-import { LoginIbkr } from "frontend/ibkr";
-import { Global } from "@frontend/Global";
+import { Login } from "@frontend/app/brokers/Login";
 
-export class Ibkr extends Global {
+export class Ibkr extends Login {
   constructor() {
-    super();
-    this.add_shutdown_task(this.login.popup.close);
+    super("ibkr");
+    this.add_shutdown_task(this.popup.close);
   }
-  public await_login = () => this.login.await_login();
-
-  private login = new LoginIbkr();
+  public await_login = async () => {
+    return (await this.req.auth_state())
+      ? null
+      : this.popup
+          .open(conf.ibkr.base)
+          .then(this.await_auth)
+          .then(this.popup.close);
+  };
 }

@@ -1,7 +1,8 @@
 import type {
   AccountsRoot,
-  InsightWrapper,
+  InsightRoot,
   InstrumentsRoot,
+  MapRoot,
 } from "@frontend/components";
 
 export class Global {
@@ -51,10 +52,10 @@ export class Global {
     return document.querySelector<InstrumentsRoot>("instrmnts-root")!;
   }
   protected get el_insight_root() {
-    return document.querySelector<InsightWrapper>("insight-wrapper")!;
+    return document.querySelector<InsightRoot>("insight-root")!;
   }
   protected get el_map_root() {
-    return document.querySelector<InsightWrapper>("map-root")!;
+    return document.querySelector<MapRoot>("map-root")!;
   }
   protected get els_root() {
     return [
@@ -64,7 +65,6 @@ export class Global {
       this.el_map_root,
     ];
   }
-
   protected bootstrap_mess = (message: string) => {
     logger.info(message);
     this.el_bootstrap?.append(`\n${message}`);

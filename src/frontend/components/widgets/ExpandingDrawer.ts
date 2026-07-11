@@ -23,7 +23,7 @@ export class ExpandingDrawer extends WebComponent {
   };
 
   private handlers = {
-    toggle: (p: p.prop_callback) => {
+    toggle: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
       if (p.new === "open") {

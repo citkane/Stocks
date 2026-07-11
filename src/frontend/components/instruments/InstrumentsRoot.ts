@@ -1,215 +1,178 @@
-import { RootComponent } from "@frontend/components/RootComponent";
-import {
-  type InstrumentRow,
-  type MoneyString,
-  type SelectComponent,
+import { LandingComponent } from "@frontend/components/LandingComponent";
+import type {
+  InstrumentRow,
+  MoneyString,
+  PercentString,
+  FilterRoot,
 } from "@frontend/components";
 
-const transition_time = 300;
-
-export class InstrumentsRoot extends RootComponent {
-  static observedAttributes = ["data-all"];
+export class InstrumentsRoot extends LandingComponent {
+  static observedAttributes = ["instrmnts", "positns", "filter"];
 
   constructor() {
     super();
-    this.dom.template_to_self("instrmnts-root");
-    this.data.init_sort_register();
-    this.props.watch("data-all", this.handlers.render);
+    const { handlers, dom, props } = this;
+    dom.template_to_self("instrmnts-root");
+    props.watch("instrmnts", handlers.render);
+    props.watch("positns", handlers.positns);
+    props.watch("filter", handlers.filter);
   }
 
-  public apply_filter = (filter_string: string) => {
-    return new Promise((resolve) => filter.bind(this)(resolve, filter_string));
-
-    function filter(
-      this: InstrumentsRoot,
-      resolve: resolve_t,
-      filter_string: string,
-    ) {
-      if (this.dom_busy) {
-        return setTimeout(
-          () => filter.bind(this)(resolve, filter_string),
-          transition_time,
-        );
-      }
-      this.dom.set_busy();
-      clearTimeout(this.filter_timeout);
-      this.filter_timeout = setTimeout(() => {
-        this.instrmnt_els.forEach((r) => {
-          r.setAttribute("data-filter", filter_string);
-        });
-        this.props.tally_money();
-        this.dom.unset_busy();
-        resolve();
-      }, transition_time);
-    }
-  };
   private handlers = {
-    render: (p: p.prop_callback) => {
+    render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
-      try {
-        Object.values(this.instrmnts)
-          .sort((a, b) => {
-            return a.description.localeCompare(b.description);
-          })
-          .forEach((instrmnt) => {
-            const { i_id } = instrmnt;
-            const ex_row_el = this.props.find_instrmnt(i_id);
-            const row_el = ex_row_el || this.props.make_instrmnt(i_id);
-            const transactions = this.data.transactions(i_id);
-            const data = { instrmnt, transactions };
-            row_el.setAttribute("data-all", util.hash_id(data));
-            if (!ex_row_el) this.instrmnt_wrapper_el.appendChild(row_el);
-          });
-      } catch (err) {
-        console.error(err);
-      }
-      this.props.tally_money();
-      if (!!p.old) return;
 
-      this.props.init_filters();
-      this.dom.set_sort_actions();
+      const { el, dom, handlers, instrmnts, instrmnt_rows } = this;
+      instrmnts.forEach((instrmnt) => {
+        const { p_id } = instrmnt,
+          id_prefix = "instrmnt",
+          ex_row = instrmnt_rows[p_id],
+          row = ex_row || dom.make_instrmnt(p_id, id_prefix);
+
+        if (!ex_row) el.wrapper.appendChild(row);
+      });
+
+      if (p.old) return;
+
+      const query = '.grid.header > *, .grid.pl_ur [name="pl_ur"]',
+        header_cols = this.el.qsa<HTMLElement>(query);
+
+      header_cols.forEach((el) => {
+        const sorter = [
+          el.getAttribute("name")!,
+          el.hasAttribute("number"),
+        ] as const;
+        el.onclick = () => handlers.sort(sorter);
+      });
+    },
+    positns: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
+
+      const { el, props } = this;
+      el.filter.setAttribute("positns", p.new);
+
+      this.positns.forEach((positn) => {
+        const { p_id } = positn;
+
+        const positn_hash = util.hash_id(positn);
+        const row = this.instrmnt_rows[p_id]!;
+        row.setAttribute("positn", positn_hash);
+      });
+      props.update_totals();
+    },
+    filter: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
+
+      const { el, props } = this;
+      const rows = Array.from(el.wrapper.children);
+      rows.forEach((el) => el.setAttribute("filter", p.new));
+      props.update_totals();
+    },
+    sort: ([col, number]: readonly [string, boolean]) => {
+      const { el, props } = this;
+      let [sorted, dir] = props.sorted;
+      dir = sorted === col ? (dir === "asc" ? "desc" : "asc") : "desc";
+      props.sorted = [col, dir];
+      const rows = Array.from(el.wrapper.children) as InstrumentRow[];
+      rows
+        .sort((a, b) => {
+          const aa = (dir === "desc" ? a : b).values[col]!;
+          const bb = (dir === "desc" ? b : a).values[col]!;
+          return number
+            ? Number(bb) - Number(aa)
+            : String(bb).localeCompare(String(aa));
+        })
+        .forEach((row) => el.wrapper.appendChild(row));
     },
   };
-
-  private dom = this.api.dom({
-    set_sort_actions: () => {
-      [...this.header_el.children].forEach((child) => {
-        const name = child.getAttribute("name")!;
-        child.addEventListener("click", () => this.dom.sort_rows(name));
-      });
-      this.querySelector(`.grid.u_pl [name="u_pl"]`)!.addEventListener(
-        "click",
-        () => this.dom.sort_rows("u_pl"),
-      );
-    },
-    sort_rows: (name: string) => {
-      if (this.dom_busy) return;
-      this.dom.set_busy();
-      setTimeout(() => {
-        const dir = this.sort_registry[name];
-        const is_number = this.header_el
-          .querySelector(`[name="${name}"]`)
-          ?.hasAttribute("number");
-
-        const sorted = [...this.instrmnt_els].sort((a, b) => {
-          const val_a = a.getAttribute(name)!;
-          const val_b = b.getAttribute(name)!;
-
-          return is_number
-            ? dir === "dn"
-              ? Number(val_a) - Number(val_b)
-              : Number(val_b) - Number(val_a)
-            : dir === "dn"
-              ? val_a.localeCompare(val_b)
-              : val_b.localeCompare(val_a);
-        });
-        this.instrmnt_wrapper_el.innerHTML = "";
-        sorted.forEach((el) => this.instrmnt_wrapper_el.appendChild(el));
-        this.sort_registry[name] = dir === "up" ? "dn" : "up";
-        this.dom.unset_busy();
-      }, transition_time);
-    },
-    set_busy: () => {
-      this.dom_busy = true;
-      this.instrmnt_wrapper_el.classList.add("working");
-    },
-    unset_busy: () => {
-      this.dom_busy = false;
-      this.instrmnt_wrapper_el.classList.remove("working");
-    },
-  });
 
   private props = this.api.props({
-    find_instrmnt: (i_id: i_id_t) => {
-      return this.querySelector(`instrmnt-row[i_id="${i_id}"]`);
-    },
-    make_instrmnt: (i_id: i_id_t) => {
-      return this.dom.make_el("instrmnt-row", "", `i_id="${i_id}"`);
-    },
-    tally_money: () => {
-      const shown_instruments = this.selector.filter.shown_instrmnts();
-      const tally = this.money.instruments.tally(shown_instruments);
-      this.money.instruments.assign(this.els_money, tally);
-      this.money_u_pl_total_el.money_value = tally.u_pl + tally.fx_pl;
-    },
+    update_totals: () => {
+      const { el } = this;
+      const t = self.empty_totals();
+      const rows = Object.values(this.instrmnt_rows);
 
-    init_filters: () => {
-      this.filter.init();
-      this.search_el.addEventListener("input", (e) =>
-        this.data.search((e.target as HTMLInputElement).value),
-      );
-    },
-  });
-  private data = this.api.data({
-    init_sort_register: () => {
-      this.sort_registry = [...this.header_el.children].reduce(
-        (c, el) => {
-          const key = el.getAttribute("name")!;
-          c[key] = "up";
-          return c;
-        },
-        {} as { [key: string]: "up" | "dn" },
-      );
-    },
-    transactions: (i_id: i_id_t) => {
-      return this.transcts[i_id];
-    },
-    search: (term: string) => {
-      clearTimeout(this.search_debouncer);
-      if (term.length <= 2) {
-        this.select_els.forEach((el) => el.enable());
-        this.filter.handle(["search", undefined]);
-        return;
+      rows.forEach(sum_row);
+      const open = !!t.market_value && !!t.traded_value;
+      const pl_ur_perc = open
+        ? ((t.market_value - t.traded_value) / t.market_value) * 100
+        : 0;
+
+      el.market_value.money_value = t.market_value;
+      el.traded_value.money_value = t.traded_value;
+      el.div_val.money_value = t.div_val;
+      el.div_est.money_value = t.div_est;
+      el.div_yield.value = (t.div_est / t.market_value) * 100;
+      el.pl_fx.money_value = t.pl_fx;
+      el.pl_ur.money_value = t.pl_ur;
+      el.pl_r.money_value = t.pl_r;
+      el.pl_ur_total.money_value = t.pl_fx + t.pl_ur;
+      el.pl_ur_perc.value = pl_ur_perc;
+
+      function sum_row(row: InstrumentRow) {
+        Object.entries(row.totals).forEach(([k, v]) => {
+          (t as any)[k] += v;
+        });
       }
-      this.search_debouncer = setTimeout(() => {
-        term = term.toLowerCase();
-        this.select_els.forEach((el) => el.disable());
-        this.filter.handle(["search", term]);
-      }, 500);
+    },
+    sorted: [] as [string, "asc" | "desc"] | [],
+  });
+  private dom = this.api.dom({
+    make_instrmnt: (p_id: id.p, id_prefix: string) => {
+      const { dom, instrmnt_rows } = this,
+        row = dom.make_el<InstrumentRow>("instrmnt-row", "");
+
+      row.set_pid(p_id, id_prefix);
+      instrmnt_rows[p_id] = row;
+      return row;
     },
   });
 
   private get instrmnts() {
-    return this.cache.instruments;
-  }
-  private get transcts() {
-    return this.cache.transactions;
-  }
-
-  private get instrmnt_els() {
-    return this.querySelectorAll<InstrumentRow>("instrmnt-row")
-      .values()
-      .toArray();
-  }
-  private get instrmnt_wrapper_el() {
-    return this.querySelector<HTMLElement>(".wrapper.instruments")!;
-  }
-  private get header_money_el() {
-    return this.querySelector<HTMLElement>(".header .money")!;
-  }
-  private get header_el() {
-    return this.querySelector<HTMLElement>(".header .header")!;
-  }
-  private get money_u_pl_total_el() {
-    return this.querySelector<MoneyString>(`.grid.u_pl [name="u_pl_total"]`)!;
-  }
-
-  private get els_money() {
-    return this.selector.money.instruments(this.header_money_el);
-  }
-  private get search_el() {
-    return this.querySelector<HTMLInputElement>(
-      `.filter.wrapper [name="search"]`,
-    )!;
-  }
-  private get select_els() {
-    return this.querySelectorAll<SelectComponent>(
-      `.filter.wrapper [filter][select]`,
+    return Object.values(this.cache.get.instrmnts()).sort((a, b) =>
+      a.description.localeCompare(b.description),
     );
   }
+  private get positns() {
+    return Object.values(this.cache.get.positns());
+  }
+  private el = this.query.select<{
+    filter: FilterRoot;
+    wrapper: HTMLElement;
+    traded_value: MoneyString;
+    market_value: MoneyString;
+    pl_r: MoneyString;
+    pl_ur: MoneyString;
+    pl_ur_total: MoneyString;
+    pl_fx: MoneyString;
+    pl_ur_perc: PercentString;
+    div_val: MoneyString;
+    div_est: MoneyString;
+    div_yield: PercentString;
+  }>({
+    filter: ["qs", "filter-root"],
+    wrapper: ["qs", ".wrapper.instruments"],
+    traded_value: ["qs", '.money [name="traded_value"]'],
+    market_value: ["qs", '.money [name="market_value"]'],
+    pl_r: ["qs", '.money [name="pl_r"]'],
+    pl_ur: ["qs", '.money [name="pl_ur"]'],
+    pl_ur_total: ["qs", `[name="pl_ur_total"]`],
+    pl_fx: ["qs", '.money [name="pl_fx"]'],
+    pl_ur_perc: ["qs", '.money [name="pl_ur_perc"]'],
+    div_val: ["qs", '.money [name="div_val"]'],
+    div_est: ["qs", '.money [name="div_est"]'],
+    div_yield: ["qs", '.money [name="div_yield"]'],
+  });
+  private instrmnt_rows = {} as { [p_id: string]: InstrumentRow };
 
-  private sort_registry: { [key: string]: "up" | "dn" } = {};
-  private dom_busy = false;
-  private search_debouncer?: interval_t;
-  private filter_timeout: any;
+  public static empty_totals = (): filter.totals => ({
+    div_val: 0,
+    div_est: 0,
+    pl_fx: 0,
+    pl_r: 0,
+    pl_ur: 0,
+    traded_value: 0,
+    market_value: 0,
+  });
 }
+const self = InstrumentsRoot;

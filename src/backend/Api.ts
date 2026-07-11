@@ -5,25 +5,23 @@ type auth_code_t = b.s.auth_code_t;
 
 export default class Api extends Global implements Api_t {
   requests = {
-    auth_state: (...pb: p.req_broker) => {
-      this.res.auth_state(...pb);
-    },
-    wait_for_auth: (...pb: p.req_broker) => {
-      this.res.wait_for_ready(...pb);
+    auth_state: (p: req_t, broker: g.broker) => {
+      this.resp.auth_state(p, broker);
     },
     saxo_auth_url: (p: req_t) => {
-      this.res.saxo_fetch_auth_url(p);
+      this.resp.saxo_fetch_auth_url(p);
     },
-    chart_data: (...pbd: [...p.req_broker, ...p.chart_period]) => {
-      this.res.chart_data(...pbd);
+    chart_data: (p: req_t, broker: g.broker, ...pa: pr.chart_period) => {
+      this.resp.chart_data(p, broker, ...pa);
     },
+    lv_positns: (p: req_t) => this.resp.lv_positns(p),
+    meta: (p: req_t) => this.resp.meta(p),
+    qid_map: (p: req_t) => this.resp.qid_map(p),
+    logout: (p: req_t) => this.resp.logout(p),
+    login: (p: req_t) => this.resp.login(p),
   };
   setter = {
-    push_live_data: () => {}, //this.brokers.push_live_data(),
-    push_cache: () => this.brokers.push_cache(),
     saxo_token: (code: auth_code_t) => this.action.saxo_token(code),
-    logout: (broker: broker_t) => this[broker].logout(),
-    login: (_broker: broker_t) => this.ibkr.login(),
     log_debug: (message: any[]) => this.action.log("debug", message),
     log_info: (message: any[]) => this.action.log("info", message),
     log_log: (message: any[]) => this.action.log("log", message),
@@ -31,31 +29,45 @@ export default class Api extends Global implements Api_t {
     log_error: (message: any[]) => this.action.log("error", message),
   };
 
-  private res = {
-    auth_state: (p: req_t, broker: broker_t) => {
-      p.messenger.response(p.req_uid, this.brokers[broker].auth_state);
+  private resp = {
+    lv_positns: async (p: req_t) => {
+      const resp = await this.brokers.resp.lv_positns();
+      p.messenger.response(p.req_uid, resp);
     },
-    wait_for_ready: (p: req_t, broker: broker_t) => {
-      this.brokers[broker]
-        .await_auth()
-        .then(() => p.messenger.response(p.req_uid));
-      //.catch((err) => server_error(p, err));
+    meta: async (p: req_t) => {
+      const resp = await this.brokers.resp.metas();
+      p.messenger.response(p.req_uid, resp);
+    },
+    qid_map: async (p: req_t) => {
+      const resp = await this.brokers.resp.qid_map();
+      p.messenger.response(p.req_uid, resp);
+    },
+    auth_state: (p: req_t, broker: g.broker) => {
+      p.messenger.response(p.req_uid, this[broker].auth_state);
     },
 
     saxo_fetch_auth_url: (p: req_t) => {
       this.brokers["saxo"]
         .fetch_auth_url()
         .then((url) => p.messenger.response(p.req_uid, url));
-      //.catch((err) => server_error(p, err));
     },
-
-    chart_data: (p: req_t, broker: broker_t, ...pa: p.chart_period) => {
+    chart_data: (p: req_t, broker: g.broker, ...pa: pr.chart_period) => {
       this.brokers.chart
         .data(broker, ...pa)
         .then((data) => p.messenger.response(p.req_uid, data || []))
         .catch((err) => {
           throw Error(err);
         });
+    },
+    login: (p: req_t) => {
+      const { brokers } = this;
+      brokers
+        .await_auth()
+        .then(() => p.messenger.response(p.req_uid))
+        .then(brokers.update_brokers);
+    },
+    logout: (p: req_t) => {
+      this.brokers.logout().then(() => p.messenger.response(p.req_uid));
     },
   };
   private action = {
@@ -72,13 +84,5 @@ export default class Api extends Global implements Api_t {
     },
   };
 }
-
-//function server_error(p: req_t, err: any) {
-//  let { status, statusText } = err as Response;
-//  status = status ? status : 500;
-//  statusText = statusText ? statusText : "Internal server error";
-//  const error = p.messenger.error(p.req_uid, err);
-//  logger.warn("API server error", error);
-//}
 
 type level_t = "debug" | "info" | "log" | "warn" | "error";

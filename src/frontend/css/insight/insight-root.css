@@ -1,9 +1,41 @@
 insight-root {
   display: block;
-  border: 1px solid var(--col-border);
-  border-top: none;
-
-  &[hidden] {
-    display: none;
+  .grid {
+    grid-template-columns: 250px repeat(2, minmax(auto, 150px)) 1fr;
+    grid-template-areas: "category value pl_ur percent";
   }
+  .header {
+    position: sticky;
+    top: 24px;
+    background: var(--col-background-light);
+    border-bottom: 1px solid var(--col-border);
+    z-index: 100;
+    .grid {
+      justify-items: right;
+      .buttons {
+        display: flex;
+      }
+      button {
+        padding: var(--size-padding-cell);
+        margin-right: var(--size-padding-cell);
+        margin-left: var(--size-padding-cell);
+
+        cursor: pointer;
+      }
+    }
+    [name="value"],
+    [name="pl_ur"] {
+      user-select: none;
+      cursor: pointer;
+    }
+  }
+  /*
+  .menu {
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    pointer-events: none;
+    top: 24px;
+  }
+  */
 }

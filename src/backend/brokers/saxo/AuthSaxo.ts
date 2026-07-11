@@ -1,23 +1,14 @@
-import { Global } from "@backend/Global";
 import { Auth } from "@backend/brokers";
 
 const ping_auth_interval = 300000;
 const token_file = Bun.file(".temp/saxo.token.json");
 
-export class AuthSaxo extends Global {
+export class AuthSaxo extends Auth {
   constructor() {
-    super();
-    this.auth = new Auth("saxo", ping_auth_interval);
+    super("saxo", ping_auth_interval);
   }
-  public await_auth = async () => {
-    return this.auth_state
-      ? Promise.resolve()
-      : this.auth.resolver || this.auth.define_resolver();
-  };
-  public is_authorised = async () => {
-    const token = await this.token.read();
-    return !!token ? this.token.refresh(token.refresh_token) : false;
-  };
+  public await_auth = () => this.resolver(this.check_auth);
+
   public fetch_code_url = <T = string>(): Promise<T> => {
     const { get, fetch } = this.saxo.api;
     const req = get.auth_url();
@@ -41,11 +32,13 @@ export class AuthSaxo extends Global {
     return fetch<b.s.client_t>(req).then((data) => data.ClientKey);
   };
   public logout = async () => {
-    if (!this.auth_state) return;
     const { get, fetch } = this.saxo.api;
     const req = get.logout();
-    await fetch(req).then(() => logger.info("SAXO logged out"));
-    this.auth.revoke_auth();
+    return this.revoke_auth(fetch(req));
+  };
+  private check_auth = async () => {
+    const token = await this.token.read();
+    return !!token ? this.token.refresh(token.refresh_token) : false;
   };
 
   private token = {
@@ -70,12 +63,8 @@ export class AuthSaxo extends Global {
     },
   };
 
-  public get auth_state() {
-    return this.auth.auth_state;
-  }
   public auth_token = {
     access_token: "",
     refresh_token: "",
   } as b.s.auth_token_t;
-  private auth: Auth;
 }

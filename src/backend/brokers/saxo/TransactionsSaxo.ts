@@ -3,17 +3,26 @@ import { Global } from "@backend/Global";
 export class TransactionsSaxo extends Global {
   public update = (start_date = conf.saxo.start_date) => {
     const { fetch, categorise, transform } = this.transactions;
-    return fetch(start_date).then(categorise).then(transform);
+    return fetch(start_date as g.iso_date)
+      .then(categorise)
+      .then(transform);
   };
-  public transctns_update_date = async () => {
-    let last_date = await this.db.select.transctns_update_date("saxo");
+
+  public last_update_date = async () => {
+    const [date] = await this.db.select.transctns(
+      ["broker", "saxo"],
+      ["date"],
+      ["date", "DESC"],
+    );
+
+    let last_date = date?.date;
     last_date = last_date ? last_date : util.time.ms(conf.saxo.start_date);
     last_date = last_date - util.time.period.to_ms([1, "d"]);
     return util.time.epoch.to_iso_date(last_date);
   };
   private transactions = {
     fetch: async (
-      date: iso_date_t,
+      date: g.iso_date,
       skip = 0,
       transactions: b.s.transaction_t[] = [],
     ): Promise<b.s.transaction_t[]> => {
@@ -33,18 +42,18 @@ export class TransactionsSaxo extends Global {
         const { Event, Instrument, IsIntradayData } = transaction;
         const { Uic } = Instrument;
 
-        if (!c[Uic]) c[Uic] = {} as categorised_t[number];
+        if (!c[Uic]) c[Uic] = {} as p.categorised[number];
         if (!c[Uic][Event]) c[Uic][Event] = [];
         if (!IsIntradayData) c[Uic][Event].push(transaction);
 
         return c;
-      }, {} as categorised_t);
+      }, {} as p.categorised);
       return this.transactions.reduce.transfers(categorised);
     },
-    format: async (transaction: b.s.transaction_t): Promise<transctn_t> => {
+    format: async (transaction: b.s.transaction_t): Promise<g.transctn> => {
       let {
         Event,
-        ConversionRate: fx_traded,
+        ConversionRate: traded_fx,
         AccountId: a_id,
         TradeId: id,
         Bookings,
@@ -58,29 +67,29 @@ export class TransactionsSaxo extends Global {
       currency = currency === "ZAR" ? "ZAC" : currency;
 
       const trade = this.transactions.reduce.trades(Trades);
-      let kind = "" as transctn_t["kind"],
-        price_traded = 0,
+      let kind = "" as g.transctn["kind"],
+        traded_price = 0,
         amount = 0,
         date = 0;
 
       switch (Event) {
         case "Buy":
           kind = "buy";
-          price_traded = trade.price;
+          traded_price = trade.price;
           amount = trade.amount;
           date = trade.time;
           break;
         case "Final Maturity":
           kind = "sell";
-          price_traded = trade.price;
+          traded_price = trade.price;
           amount = trade.amount;
           date = trade.time;
-          fx_traded = this.transactions.fx.final_maturity(transaction);
+          traded_fx = this.transactions.fx.final_maturity(transaction);
           id = `${RelatedTradeId}_close`;
           break;
         case "Sell":
           kind = "sell";
-          price_traded = trade.price;
+          traded_price = trade.price;
           amount = trade.amount;
           date = trade.time;
           break;
@@ -91,42 +100,38 @@ export class TransactionsSaxo extends Global {
           id = `d_${BookingId}`;
           date = util.time.ms(Date);
           amount = 1;
-          fx_traded = ConversionRate;
-          price_traded = (BookedAmount * 100) / fx_traded / 100;
+          traded_fx = ConversionRate;
+          traded_price = BookedAmount; //(BookedAmount * 100) / traded_fx / 100;
           break;
       }
-      let instrmnt = await this.saxo.cache.get.instrument(Uic);
+      let instrmnt = (await this.db.select.instrmnts(["saxo_id", Uic]))[0];
       if (!instrmnt) {
         logger.warn("No instrument found for transaction", "saxo", Uic);
-        console.log({ transaction });
 
         let [ticker, exchange] = Symbol.split(":") as [string, string];
         exchange = exchange!.toUpperCase();
-        //exchange = this.saxo.tv_exchange(exchange);
         if (exchange === "HKEX") ticker = util.string.unpad_hk_ticker(ticker);
         instrmnt = {
           i_id: `${exchange}-${ticker}`,
-        } as unknown as instrmnt_t;
+        } as g.instrmnt;
       }
 
       const { i_id } = instrmnt;
       const broker = "saxo";
-      const p_id: p_id_t = `${broker}_${Uic}`;
       return {
         id: id!,
-        p_id,
         a_id,
         i_id,
-        price_traded,
+        traded_price,
         amount,
-        fx_traded,
+        traded_fx,
         currency,
         date,
         kind,
         broker,
       };
     },
-    transform: (transactions: categorised_t): Promise<transctn_t[]> => {
+    transform: (transactions: p.categorised): Promise<g.transctn[]> => {
       const { reduce, format } = this.transactions;
       return Promise.all(reduce.transform(transactions).map(format));
     },
@@ -181,7 +186,7 @@ export class TransactionsSaxo extends Global {
       },
     },
     reduce: {
-      transfers: (transactions: categorised_t) => {
+      transfers: (transactions: p.categorised) => {
         const uics = Object.keys(transactions) as unknown as number[];
         return uics.reduce((c, Uic) => {
           const _transactions = transactions[Uic]!;
@@ -195,7 +200,7 @@ export class TransactionsSaxo extends Global {
 
           c[Uic] = { ..._transactions, ...{ Buy, Sell } };
           return c;
-        }, {} as categorised_t);
+        }, {} as p.categorised);
       },
       trades: (trades: b.s.transaction_t["Trades"]) => {
         const values = trades.reduce(
@@ -215,7 +220,7 @@ export class TransactionsSaxo extends Global {
         time = Math.round(time / len);
         return { price, amount, time };
       },
-      transform: (transactions: categorised_t) => {
+      transform: (transactions: p.categorised) => {
         const uics = Object.keys(transactions) as unknown as number[];
         return uics.reduce((c, Uic) => {
           const {
@@ -238,7 +243,9 @@ export class TransactionsSaxo extends Global {
   };
 }
 
-type events_t = b.s.transaction_t["Event"];
-type categorised_t = {
-  [key: number]: { [key in events_t]: b.s.transaction_t[] };
-};
+namespace p {
+  type events = b.s.transaction_t["Event"];
+  export type categorised = {
+    [key: number]: { [key in events]: b.s.transaction_t[] };
+  };
+}

@@ -1,10 +1,9 @@
-import { InsightRoot } from "./InsightRoot";
+import { InsightView, type data } from "./InsightView";
 import { InsightRow } from "./InsightRow";
-import { InsightWrapper } from "./InsightWrapper";
+import { InsightRoot } from "./InsightRoot";
 
-export { InsightRoot, InsightRow, InsightWrapper };
-export * from "./InsightHelpers";
+export { InsightView, InsightRow, InsightRoot, type data };
 
-customElements.define("insight-wrapper", InsightWrapper);
 customElements.define("insight-root", InsightRoot);
+customElements.define("insight-view", InsightView);
 customElements.define("insight-row", InsightRow);

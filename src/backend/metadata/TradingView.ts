@@ -1,72 +1,64 @@
 import Fetch, { LibCallback } from "@common/FetchManager";
 import { Tables } from "@backend/database/Tables";
+import { Global } from "@backend/Global";
 
 const user_agent = "Stocks/0.0",
-  logo_size = 32,
+  logo_size = 18,
   rpp_max = 500,
   concurrency_max = 20,
-  lib_cb = new LibCallback<"req">(),
-  asset_class_map = {
-    Stock: "stock",
-    COMMON: "stock",
-    Etf: "fund",
-    ETF: "fund",
-  } as const;
+  lib_cb = new LibCallback<"req">();
+
+const asset_class_map = {
+  Stock: "stock",
+  Etf: "fund",
+  "STK-COMMON": "stock",
+  "STK-ETF": "fund",
+} as const;
 
 /** Trading View API interface {@link https://www.tradingview.com} */
-export class TradingView {
-  public instrmnt_lookup = async (broker_instm: Partial<instrmnt_t>) => {
-    const { fetch_asset_html, fetch_svg_string, search } = this;
-    const { to_tv_instrmnt, det_from_html, merge_asset_det } = this.format;
-    const { append_svg_logo } = this.format;
-    const P = Promise.all.bind(Promise);
-    Object.freeze(broker_instm);
+export class TradingView extends Global {
+  public instrmnt_lookup = async (instrmnt: g.instrmnt) => {
+    const { get, frmt } = this;
 
-    return to_tv_instrmnt(broker_instm)
-      .then(search)
-      .then((instm) => P([instm || broker_instm, fetch_asset_html(instm)]))
-      .then(([instm, html]) => P([instm, det_from_html(html)]))
-      .then(([instm, det]) => merge_asset_det(instm, det))
-      .then((instm) => P([instm, fetch_svg_string(instm)]))
-      .then(([instm, svg]) => append_svg_logo(instm, svg))
-      .then((instm) => {
-        instm = { ...broker_instm, ...instm };
-        Object.freeze(instm);
-        return instm;
-      });
+    const meta = await frmt
+      .to_tv(instrmnt)
+      .then(get.search)
+      .then(get.details)
+      .then(get.svg);
+
+    return [meta, instrmnt] as const;
   };
-  public forex = (base_currency: string, currencies: string[]) => {
-    const { currencies_to_tickers, fx_keys_to_currency } = this.format;
-    const exchange = "FX_IDC";
-    const tickers = currencies_to_tickers(currencies, base_currency, exchange);
-    const kind = "forex";
-    const types: [typeof kind] = [kind];
-    return this.scanner<"forex">(tickers, types, kind).then(
-      fx_keys_to_currency,
+  public forex = (root_currency: string, currencies: string[]) => {
+    const { frmt } = this;
+    const exchange = "FX_IDC",
+      kind = "forex",
+      types: [typeof kind] = [kind],
+      tickers = frmt.currencies_to_tickers(currencies, root_currency, exchange);
+
+    return this.scanner<"forex">(tickers, types, kind).then((currencies) =>
+      frmt.add_base_fx(Object.values(currencies), root_currency),
     );
   };
-  public instrument_data = (instrmnts: instrmnt_t[]) => {
-    const { live_data_ticker } = this.format;
-    const tickers = instrmnts.map(
-      (i) => `${i.exchange}:${i.ticker}`,
-    ) as `${string}:${string}`[];
+  public live_instrmnts = (metas: g.meta[]) => {
+    const { frmt } = this;
+    const tickers = metas.map((m) => `${m.p_id.replace("-", ":")}` as p.ticker);
     return this.scanner(tickers, ["stock", "fund"], "global").then(
-      live_data_ticker,
+      frmt.res_to_positn,
     );
   };
   protected scanner = async <T extends p.scanner.kind>(
-    tickers: `${string}:${string}`[],
+    tickers: p.ticker[],
     types: T extends "global" ? p.asset.kind[] : ["forex"],
     kind: T,
   ): Promise<{
     [ticker: string]: tv.scanner.data<T>;
   }> => {
     if (!tickers.length) {
-      logger.error(`No tickkers provided to TV scanner: ${types}, ${kind}`);
+      logger.error(`No tickers provided to TV scanner: ${types}, ${kind}`);
       return {};
     }
 
-    const { map_scanner_res } = this.format,
+    const { frmt, fetcher } = this,
       columns = this.fetcher.scanner_keys(kind),
       url = `https://scanner.tradingview.com/${kind}/scan`,
       query = { types },
@@ -75,60 +67,77 @@ export class TradingView {
         symbols,
         columns,
       });
-    return this.fetcher
+    return fetcher
       .request(url, "POST", {}, "application/json", body)
-      .then((req) => this.fetch<p.scanner.res_t>(req))
-      .then((res) => map_scanner_res(res, kind));
+      .then((req) => this.fetch<p.scanner.res>(req))
+      .then((res) => frmt.map_scanner_res(res, kind));
   };
-  private search = async (instm: Partial<instrmnt_t>) => {
-    const url = "https://symbol-search.tradingview.com/symbol_search/v3";
-    const { ticker, exchange, asset_class, currency } = instm;
-    const { search_to_instm, add_i_id } = this.format;
-    const { request } = this.fetcher;
-    const { fetch } = this;
-    const text = ticker!;
-    const hl = "true";
+  private get = {
+    search: async (meta: g.meta) => {
+      const url = "https://symbol-search.tradingview.com/symbol_search/v3",
+        { ticker, exchange, currency } = meta,
+        { fetch, frmt, get, fetcher } = this,
+        text = ticker,
+        hl = "true";
+      return fetcher
+        .request(url, "GET", { text, hl })
+        .then((req) => fetch<tv.search_container>(req))
+        .then(purge_result_ems)
+        .then(filter_results)
+        .then(ranked_results)
+        .then(scanner_has_symbol)
+        .then((res) => frmt.search_to_meta(meta, res));
 
-    return request(url, "GET", { text, hl })
-      .then((req) => fetch<tv.search_t>(req))
-      .then((res) => res.symbols.map(purge_result_ems))
-      .then((symbols) => symbols.filter(filter_results))
-      .then((symbols) => symbols.sort(ranker)[0])
-      .then((s) => (s ? search_to_instm(s).then(add_i_id) : add_i_id(instm)))
-      .then((res) => ({ ...instm, ...res }));
-
-    function purge_result_ems(result: tv.search_res_t) {
-      const keys = Object.keys(result) as (keyof tv.search_res_t)[];
-      return keys.reduce((result, key) => {
-        if (typeof result[key] === "string")
-          (result as any)[key] = purge_val_em(result[key]);
-        return result;
-      }, result);
-    }
-    function purge_val_em(val: string) {
-      return val.replaceAll("<em>", "").replaceAll("</em>", "").trim();
-    }
-    function filter_results(result: tv.search_res_t) {
-      return (
-        result.type === asset_class &&
-        is_same_ticker(result.symbol, ticker!) &&
-        result.currency_code === currency
-      );
-    }
-    function is_same_ticker(result: string, query: string) {
-      if (result === query) return true;
-      if (
-        (!Number.isNaN(result) && Number.isNaN(query)) ||
-        (!Number.isNaN(query) && Number.isNaN(result))
-      )
+      function purge_result_ems(results: tv.search_container) {
+        return results.symbols.map((result) => {
+          const entries = Object.entries(result).map(([key, val]) => [
+            key,
+            purge_val_em(val),
+          ]);
+          return Object.fromEntries(entries) as tv.search_res;
+        });
+      }
+      function purge_val_em(val: any) {
+        if (typeof val !== "string") return val;
+        return val.replaceAll("<em>", "").replaceAll("</em>", "").trim();
+      }
+      function filter_results(results: tv.search_res[]) {
+        return results.filter((res) => {
+          return (
+            res.type === meta.asset_class &&
+            is_same_ticker(res.symbol, ticker) &&
+            res.currency_code === currency
+          );
+        });
+      }
+      function is_same_ticker(res_symbol: string, ticker: string) {
+        if (res_symbol === ticker) return true;
+        const res_num = Number(res_symbol),
+          ticker_num = Number(ticker);
+        if (res_num === ticker_num) return true;
         return false;
-      if (Number(result) === Number(query)) return true;
-      return false;
-    }
-    function ranker(a: tv.search_res_t, b: tv.search_res_t) {
-      const a_rank = rank(a.exchange, exchange!);
-      const b_rank = rank(b.exchange, exchange!);
-      return b_rank - a_rank;
+      }
+      function ranked_results(results: tv.search_res[]) {
+        return results.sort((a, b) => {
+          const a_rank = rank(a.exchange, exchange!);
+          const b_rank = rank(b.exchange, exchange!);
+          return b_rank - a_rank;
+        });
+      }
+      async function scanner_has_symbol(results: tv.search_res[]) {
+        let i = 0;
+        let found: tv.search_res | false = false;
+        while (results[i] && !found) {
+          const res = results[i]!;
+          found = await get
+            .symbol(`${res.exchange}:${res.symbol}`)
+            .then(() => res)
+            .catch(() => false);
+          i++;
+        }
+        return found || results[0];
+      }
+      /** Best effort to match the broker exchange code to the TV exchange code */
       function rank(tv_ex: string, broker_ex: string) {
         const tv = [...new Set(Array.from(tv_ex))];
         const broker = [...new Set(Array.from(broker_ex))];
@@ -138,70 +147,104 @@ export class TradingView {
         ).length;
         return tv_score + broker_score;
       }
-    }
-  };
-  private fetch_asset_html = async (instm?: Partial<instrmnt_t>) => {
-    if (!instm) return;
-    const url = `https://www.tradingview.com/symbols/${instm.i_id}`;
-    const { request, fetch } = this.fetcher;
-    const pms = [url, "GET", {}, "application/text"] as const;
-    return request(...pms)
-      .then((req) => fetch()<string>(req))
-      .catch((_err) => undefined);
-  };
-  private fetch_svg_string = (instm: Partial<instrmnt_t>) => {
-    const { request, fetch } = this.fetcher;
-    const response_cb = (res: Response) => res.text();
-    return !instm.svg_logo
-      ? undefined
-      : request(instm.svg_logo).then((req) =>
-          fetch()<string>(req, { response_cb }),
-        );
-  };
+    },
+    symbol: (ticker: p.ticker) => {
+      const { fetcher } = this;
+      const fields = fetcher.scanner_keys("global");
+      const url = `https://scanner.tradingview.com/symbol`;
+      return fetcher
+        .request(url, "GET", {
+          symbol: ticker,
+          fields: fields.join(","),
+        })
+        .then(fetch)
+        .then((res) => {
+          if (!res.ok) throw res;
+          return res.json();
+        });
+    },
+    details: async (meta: g.meta) => {
+      if (!meta.tv_link) return meta;
 
-  private format = {
-    to_tv_instrmnt: async (instm: Partial<instrmnt_t>) => {
-      let { asset_class, exchange, ticker, currency } = instm as {
-        asset_class: p.asset.kind;
-        exchange: string;
-        ticker: string;
-        currency: string;
-      };
-      const key = asset_class as p.asset.broker_kind;
-      if (!asset_class_map[key]) throw `"${key}" is not a mapped asset kind`;
+      const { fetcher, frmt } = this,
+        pms = [meta.tv_link, "GET", {}, "application/text"] as const,
+        html = await fetcher
+          .request(...pms)
+          .then((req) => this.fetch<string>(req))
+          .catch((_err) => undefined);
 
-      asset_class = asset_class_map[key];
+      return frmt.detail_from_html(meta, html);
+    },
+    svg: async (meta: g.meta) => {
+      if (!meta.svg_logo) return meta;
+
+      const { request } = this.fetcher;
+      const response_cb = (res: Response) => res.text();
+      meta.svg_logo = await request(meta.svg_logo)
+        .then((req) => this.fetch<string>(req, { response_cb }))
+        .then((logo) => this.frmt.size_svg_logo(logo));
+
+      return meta;
+    },
+  };
+  private frmt = {
+    to_tv: async (instrmnt: g.instrmnt): Promise<g.meta> => {
+      const { frmt } = this;
+      let { i_id, exchange, ticker, currency, asset_class, description } =
+        instrmnt;
+
+      asset_class = frmt.asset_class(asset_class);
       exchange = exchange.toUpperCase();
       ticker = ticker.toUpperCase();
-      currency = currency === "CNH" ? "CNY" : currency;
-      currency = currency === "ZAR" ? "ZAC" : currency;
+      currency = util.money.patch_currency(currency);
       if (exchange === "XHKG") ticker = String(Number(ticker));
 
       return {
-        ticker,
+        p_id: i_id,
         exchange,
-        asset_class,
+        ticker,
         currency,
+        asset_class,
+        description,
       };
     },
-    search_to_instm: async (result: tv.search_res_t) => {
+    asset_class: (asset_class: string) => {
+      if (Object.values(asset_class_map).includes(asset_class as any))
+        return asset_class;
+
+      const err_mssg = `"${asset_class}" is not a mapped asset kind`;
+      asset_class = asset_class_map[asset_class as p.asset.broker_kind];
+      if (!asset_class) throw err_mssg;
+
+      return asset_class;
+    },
+    search_to_meta: async (meta: g.meta, result?: tv.search_res) => {
+      const { frmt } = this;
+      if (!result) return frmt.fix_p_id(meta);
+
       const { symbol: ticker, source2, isin, currency_code: currency } = result;
       const { id: exchange } = source2;
-      return {
+
+      meta = frmt.fix_p_id({
+        ...meta,
+        isin,
         exchange,
         ticker,
         currency,
-        isin,
-      };
+      });
+      meta.tv_link = `https://www.tradingview.com/symbols/${meta.p_id}`;
+
+      return meta;
     },
-    add_i_id: (instm: Partial<instrmnt_t>) => {
-      const { exchange, ticker } = instm;
-      const i_id: i_id_t = `${exchange}-${ticker}`;
-      instm.i_id = i_id;
-      return instm;
+    fix_p_id: (meta: g.meta) => {
+      const { exchange, ticker } = meta;
+      meta.p_id = `${exchange}-${ticker}`;
+      return meta;
     },
-    det_from_html: (html?: string) => {
-      if (!html) return;
+    detail_from_html: (meta: g.meta, html: string | undefined) => {
+      if (!html) return meta;
+      const { frmt } = this;
+
       const regex =
         /<script type="application\/prs\.init\-data\+json">([\s\S]*?)<\/script>/gi;
       let data: tv.asset.data = [...html.matchAll(regex)]
@@ -210,93 +253,96 @@ export class TradingView {
           return !!(Object.values(data)[0] as any)?.data?.symbol
             ?.ast_business_description;
         })[0];
-      data = (Object.values(data)[0] as any).data.symbol;
-      return data;
+      if (!data) {
+        console.error(meta, html.length);
+        throw "";
+      }
+      data = (Object.values(data)[0] as any)?.data?.symbol;
+      return frmt.merge_detail(meta, data);
     },
-    merge_asset_det: (instm: Partial<instrmnt_t>, det?: tv.asset.data) => {
-      if (!det) return instm;
-      const { location_from_about } = this.format;
-      const { asset_class } = instm;
+    merge_detail: (meta: g.meta, data: tv.asset.data): g.meta => {
+      if (!data) return meta;
+
+      const { frmt } = this;
+      const { asset_class } = meta;
       let asset_sector: string, website: string;
       let {
         ast_business_description,
         medium_logo_urls,
         industry: asset_industry,
         short_description: description,
-      } = det;
+      } = data;
 
       const svg_logo = medium_logo_urls[0]!;
       const about_instrmnt = ast_business_description.children[0]!.trim();
       description = description.trim();
-      const { country_name: country, place_name: place } =
-        location_from_about(about_instrmnt);
+      const { country, place } = frmt.location_from_about(about_instrmnt);
 
       if (asset_class === "stock") {
-        const { web_site_url, sector } = det as tv.asset.data<"stock">;
+        const { web_site_url, sector } = data as tv.asset.data<"stock">;
         website = web_site_url;
         asset_sector = sector;
       } else {
-        const { homepage } = det as tv.asset.data<"fund">;
+        const { homepage } = data as tv.asset.data<"fund">;
         website = homepage;
         asset_sector = "fund";
       }
 
       return {
-        ...instm,
+        ...meta,
+        asset_class,
         description,
         about_instrmnt,
         asset_sector,
         asset_industry,
-        country,
-        place,
         svg_logo,
         website,
+        country,
+        place,
       };
     },
-    location_from_about: (about_instm: string | undefined) => {
-      if (!about_instm) return undef();
+    location_from_about: (about_instm: string | undefined): g.meta_geo => {
+      if (!about_instm) return {};
 
       let pars = about_instm.replace(/.$/, "").split(". ");
       pars = pars.splice(pars.length - 2);
       if (pars[0]?.endsWith(pars[1] || "")) pars.pop();
       const location = pars.join()?.split(" headquartered in ")[1]?.trim();
-      if (!location) return undef();
+      if (!location) return {};
 
-      let [place_name, country_name] = location.split(", ") as [string, string];
-      return { country_name, place_name };
-
-      function undef() {
-        return { country_name: undefined, place_name: undefined };
-      }
+      let [place, country] = location.split(", ") as [string, string];
+      place = this.frmt.hacky_place_fix(place);
+      return { country, place };
     },
-    append_svg_logo: (instm: Partial<instrmnt_t>, svg?: string) => {
-      instm.svg_logo = undefined;
-      if (!svg) return instm;
-
+    hacky_place_fix: (place: string) => {
+      if (place === "Northlands") place = "Illovo";
+      return place;
+    },
+    size_svg_logo: (svg_logo: string) => {
       const repl_tv = "<!-- by TradingView -->";
-      const repl_size = `<svg xmlns="http://www.w3.org/2000/svg" width="${logo_size}" height="${logo_size}" viewBox="0 0 ${logo_size} ${logo_size}">`;
+      const repl_size = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${logo_size} ${logo_size}">`;
       const regex = /<svg[^>]*>/;
       const match = (_m: any) => repl_size;
-      instm.svg_logo = svg.replace(repl_tv, "").trim().replace(regex, match);
-      return instm;
+
+      return svg_logo.replace(repl_tv, "").trim().replace(regex, match);
     },
     map_scanner_res: <T extends p.scanner.kind>(
-      res: p.scanner.res_t,
+      res: p.scanner.res,
       kind: T,
     ) => {
-      const keys = this.fetcher.scanner_keys(kind);
+      const fields = this.fetcher.scanner_keys<T>(kind);
       return res.data.reduce(
         (results, res) => {
           const { d: values, s: symbol } = res;
           const ticker = symbol.split(":")[1]!;
-          results[ticker] = pair(keys, values);
+          results[ticker as p.ticker] = pair(fields, values);
           return results;
         },
         {} as { [ticker: string]: tv.scanner.data<T> },
       );
 
-      function pair(keys: p.scanner.fields_t<T>[], values: unknown[]) {
-        return keys.reduce((data, key, i) => {
+      function pair(fields: p.scanner.fields<T>[], values: unknown[]) {
+        return fields.reduce((data, key, i) => {
           (data as any)[key] = values[i];
           return data;
         }, {} as tv.scanner.data<T>);
@@ -304,39 +350,34 @@ export class TradingView {
     },
     currencies_to_tickers: (
       currencies: string[],
-      base_currency: string,
+      root_currency: string,
       exchange: string,
     ) => {
       return currencies.map(
-        (currency) =>
-          `${exchange}:${base_currency}${currency}` as `${string}:${string}`,
+        (currency) => `${exchange}:${root_currency}${currency}` as p.ticker,
       );
     },
-    fx_keys_to_currency: (fx_pair_map: {
-      [fx_pair: string]: tv.scanner.data<"forex">;
-    }) => {
-      const curr_map = {} as { [currency: string]: tv.scanner.data<"forex"> };
-      return Object.values(fx_pair_map).reduce((fx, value) => {
-        const { currency } = value;
-        fx[currency] = value;
-        return fx;
-      }, curr_map);
+    add_base_fx: (forex: tv.scanner.data<"forex">[], root_currency: string) => {
+      const base_fx: tv.scanner.data<"forex"> = {
+        currency: root_currency,
+        open: 1,
+        close: 1,
+        exchange: "NOOP",
+      };
+      forex.push(base_fx);
+      return forex;
     },
-    live_data_ticker: (data: {
+    res_to_positn: (scanner_res: {
       [ticker: string]: tv.scanner.data<"global">;
     }) => {
-      data = Object.entries(data).reduce(
-        (data, entry) => {
-          const [ticker, value] = entry;
-          const { exchange } = value;
-          const i_id = `${exchange}-${ticker}`;
-          value.i_id = i_id as i_id_t;
-          data[i_id] = value;
-          return data;
-        },
-        {} as typeof data,
-      );
-      return data;
+      return Object.entries(scanner_res).reduce((positns, entry) => {
+        const [ticker, value] = entry;
+        const { exchange } = value;
+        const p_id = `${exchange}-${ticker}`;
+        value.p_id = p_id as id.p;
+        positns.push(value);
+        return positns;
+      }, [] as tv.scanner.data<"global">[]);
     },
   };
   protected fetcher = {
@@ -387,10 +428,11 @@ export class TradingView {
       };
       return new Request(url, init);
     },
-    fetch: () => this.fetch,
-    scanner_keys: (kind: p.scanner.kind) => {
-      const db_table = kind === "forex" ? "forex" : "instrument_data";
-      return Tables.table_cols(db_table) as db.tbl.cols<typeof db_table>[];
+    scanner_keys: <T extends p.scanner.kind>(kind: T) => {
+      const db_table = kind === "forex" ? "live_forex" : "live_instrmnt";
+      return Object.keys(Tables.tables[db_table]).filter(
+        (k) => k !== "p_id",
+      ) as p.scanner.fields<T>[];
     },
   };
   protected fetch = new Fetch<"req">(...this.fetcher.constructor()).fetch;
@@ -407,7 +449,6 @@ export class TradingViewFields extends TradingView {
       .then((req) => this.fetch<tv.fields.res>(req))
       .then((res) => res.fields);
   };
-
   public map_fields = (fields: tv.fields.field[]) => {
     return fields.map((r) => r.n.trim()).sort((a, b) => a.localeCompare(b));
   };
@@ -653,16 +694,15 @@ declare global {
         | "holiday";
     }
     namespace scanner {
-      type data<
-        K extends p.scanner.kind,
-        T extends db.tbl.names = p.scanner.db_table<K>,
-      > = db.data<T>;
+      type data<T extends p.scanner.kind> = T extends "global"
+        ? db.data<"live_instrmnt">
+        : db.data<"live_forex">;
     }
-    type search_t = {
+    type search_container = {
       symbols_remaining: number;
-      symbols: search_res_t[];
+      symbols: search_res[];
     };
-    type search_res_t = {
+    type search_res = {
       symbol: string;
       description: string;
       type: string;
@@ -682,19 +722,17 @@ declare global {
       source_id: string;
       country: string;
     };
+    type forex = tv.scanner.data<"forex">[];
   }
 }
-
 namespace p {
+  export type ticker = `${string}:${string}`;
   export namespace scanner {
     export type kind = "global" | "forex";
-    export type fields_t<T extends kind> = db.tbl.cols<db_table<T>>;
-    export type db_table<T extends kind> = T extends "forex"
-      ? T
-      : T extends "global"
-        ? "instrument_data"
-        : never;
-    export type res_t = {
+    export type fields<T extends kind> = T extends "global"
+      ? Exclude<db.tbl.col_names<"live_instrmnt">, "p_id">
+      : db.tbl.col_names<"live_forex">;
+    export type res = {
       totalCount: number;
       data: [
         {

@@ -1,0 +1,9 @@
+insight-view {
+  display: block;
+  border: 1px solid var(--col-border);
+  border-top: none;
+
+  &[hidden] {
+    display: none;
+  }
+}

@@ -5,10 +5,12 @@ export class Time {
    * @returns
    */
   aging_days = (start_date: string | number) => {
-    const date =
+    const then =
       typeof start_date === "number" ? start_date : this.ms(start_date);
     const now = this.ms_now();
-    return Math.floor((now - date) / (24 * 60 * 60 * 1000));
+    const day_ms = 24 * 60 * 60 * 1000;
+
+    return Math.floor((now - then) / day_ms);
   };
   /**
    * ms from epoch for the present moment
@@ -114,7 +116,7 @@ export class Time {
      * @returns
      */
     to_iso_date: (ms: number = new Date().valueOf()) => {
-      return this.epoch.to_iso(ms).split("T")[0]! as iso_date_t;
+      return this.epoch.to_iso(ms).split("T")[0]! as g.iso_date;
     },
     /**
      * Convert epoch to a UTC time string "Day, dd mm yyyy hh:mm:ss TZONE"

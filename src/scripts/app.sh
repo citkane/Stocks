@@ -4,9 +4,9 @@ temp_dir="$(pwd)/.temp"
 log_dir="$(pwd)/.logs"
 app_pid_file="$temp_dir/app.pid"
 app_index="$(pwd)/src/backend/index.ts"
-chrome_bins=(
-  "/var/lib/flatpak/exports/bin/io.github.ungoogled_software.ungoogled_chromium"
-);
+#chrome_bins=(
+#  "/var/lib/flatpak/exports/bin/io.github.ungoogled_software.ungoogled_chromium"
+#);
 
 [ ! -d "$temp_dir" ] && mkdir "$temp_dir"
 [ ! -d "$log_dir" ] && mkdir "$log_dir"
@@ -14,12 +14,12 @@ chrome_bins=(
 source src/scripts/ibkr.sh
 
 function app_start {
-	chrome_bin=$(_chrome_bin)
+	#chrome_bin=$(_chrome_bin)
 	app_stop
 	(
-		if [[ -n $chrome_bin ]];then
-			export BUN_CHROME_PATH="$chrome_bin"
-		fi
+	#	if [[ -n $chrome_bin ]];then
+	#		export BUN_CHROME_PATH="$chrome_bin"
+	#	fi
 		bun "$app_index" &
 		pid=$!
 		echo "$pid" > "$app_pid_file"
@@ -54,17 +54,17 @@ function process_stop {
 	kill -HUP "$pid"
 }
 
-function _chrome_bin {
-	_path=""
-	for path in "${chrome_bins[@]}"; do
-		if [[ -e "$path" ]]; then
-			_path="$path"
-			break	
-		fi
-	done
-	if [[ -n "$_path" ]];then
-		echo "$_path"
-	else
-		return 1
-	fi
-}
+#function _chrome_bin {
+#	_path=""
+#	for path in "${chrome_bins[@]}"; do
+#		if [[ -e "$path" ]]; then
+#			_path="$path"
+#			break	
+#		fi
+#	done
+#	if [[ -n "$_path" ]];then
+#		echo "$_path"
+#	else
+#		return 1
+#	fi
+#}

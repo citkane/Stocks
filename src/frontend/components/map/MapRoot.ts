@@ -1,9 +1,9 @@
-import { RootComponent } from "@frontend/components/RootComponent";
+import { LandingComponent } from "@frontend/components/LandingComponent";
 import maplibregl from "maplibre-gl";
 //@ts-expect-error
 import "maplibre-gl/dist/maplibre-gl.css";
 
-export class MapRoot extends RootComponent {
+export class MapRoot extends LandingComponent {
   static observedAttributes = ["instruments"];
 
   constructor() {
@@ -14,7 +14,7 @@ export class MapRoot extends RootComponent {
   }
 
   private handlers = {
-    render: (p: p.prop_callback) => {
+    render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
       this.instruments.forEach((i) => {
         this.place_point(i);
@@ -34,7 +34,7 @@ export class MapRoot extends RootComponent {
     });
     this.map.addControl(new maplibregl.FullscreenControl());
   };
-  private place_point = (instrmnt: instrmnt_t) => {
+  private place_point = (instrmnt: filter.instrmnt) => {
     const { place_point, place_qid } = instrmnt;
     if (!place_point || this.place_points[place_qid]) return;
     const coord = place_point.split(",").map(Number) as [number, number];
@@ -42,7 +42,7 @@ export class MapRoot extends RootComponent {
       .setLngLat(coord)
       .addTo(this.map);
   };
-  private region_shape = (instrmnt: instrmnt_t) => {
+  private region_shape = (instrmnt: filter.instrmnt) => {
     const { region_qid, region_shape, region } = instrmnt;
     if (!region_shape || this.region_shapes[region_qid]) return;
     const shape = JSON.parse(region_shape);

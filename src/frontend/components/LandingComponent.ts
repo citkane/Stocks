@@ -1,6 +1,6 @@
 import { WebComponent } from "./WebComponent.ts";
 
-export class RootComponent extends WebComponent {
+export class LandingComponent extends WebComponent {
   constructor() {
     super();
   }

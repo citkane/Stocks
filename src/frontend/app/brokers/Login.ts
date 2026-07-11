@@ -5,13 +5,24 @@ const height = 900;
 const windowFeatures = `popup,innerWidth=${width},innerHeight=${height}`;
 
 export class Login extends Global {
-  constructor(private broker: broker_t) {
+  constructor(private broker: g.broker) {
     super();
-    console.error(broker);
-
     window.addEventListener("focus", () => this.popup.focus());
   }
-  public popup = {
+  protected await_auth = async () => {
+    const { req } = this;
+    if (await req.auth_state()) return;
+    return new Promise<void>((resolve) => poll(resolve));
+
+    function poll(resolve: g.resolve) {
+      const poll = setInterval(async () => {
+        if (!(await req.auth_state())) return;
+        clearInterval(poll);
+        resolve();
+      }, 500);
+    }
+  };
+  protected popup = {
     open: async (url: string) => {
       if (!this.is_url(url)) return console.error("No url for login popup");
 
@@ -33,7 +44,7 @@ export class Login extends Global {
     },
   };
   protected req = {
-    await_auth: () => this.request<null>("wait_for_auth", this.broker),
+    //await_auth: () => this.request<null>("wait_for_auth", this.broker),
     url: () => this.request<string>("saxo_auth_url"),
     auth_state: () => this.request<boolean>("auth_state", this.broker),
   };

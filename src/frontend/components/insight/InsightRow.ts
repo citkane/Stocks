@@ -1,130 +1,218 @@
 import { WebComponent } from "@frontend/components/WebComponent";
-import type { MoneyString, PercentString } from "@frontend/components";
+import {
+  type InsightView,
+  type data,
+  type MoneyString,
+  type PercentString,
+} from "@frontend/components";
 
 export class InsightRow extends WebComponent {
-  static observedAttributes = ["data"];
-
   constructor() {
     super();
     this.dom.template_to_self("insight-row");
-    this.dom.define_selectors();
-    this.props.watch("data", this.handlers.render);
+  }
+  public init = (
+    topic: string,
+    instrmnts: id.p[],
+    level: number,
+    view: InsightView,
+    parent?: InsightRow,
+  ) => {
+    const view_name = view.getAttribute("view")! as insight.view_name;
+    this.view_name = view_name;
+    this.setAttribute("view", view_name);
+    this.setAttribute("level", String(level));
+    this.level = level;
+    this.tally = view.tally;
+    this.parent = parent || view;
+    this.instrmnts = instrmnts;
+    this.topic = topic;
+    this.totals = this.tally.empty();
+  };
+  public append_child = (child: InsightRow) => {
+    this.el.children.appendChild(child);
+  };
+  public calc_total = (parent_totals: data.tally) => {
+    const { rows, tally, instrmnts, totals } = this;
+    rows.length
+      ? rows.forEach((row) => row.calc_total(totals))
+      : tally.instrmnts(instrmnts, totals);
+
+    tally.children([totals], parent_totals);
+    tally.high_low(totals, parent_totals);
+  };
+  public render = (parent_width?: number) => {
+    const { market_value, pl_ur_perc } = this.totals;
+    const { el, topic, parent } = this;
+    const { high } = parent.totals;
+    let { rows } = this;
+
+    el.topic.innerHTML = topic;
+    el.value.money_value = market_value;
+    el.pl_ur.value = pl_ur_perc;
+
+    const width = parent_width
+      ? (market_value / high.market_value) * parent_width
+      : (market_value / high.market_value) * 100;
+
+    const percnt = (market_value / parent.totals.market_value) * 100;
+    const info_percnt = `${Math.round(percnt * 100) / 100}%`;
+    const info = `${info_percnt} of ${parent.topic_string} market value`;
+    el.percent_bar.style.width = `${width}%`;
+    el.percent_value.innerHTML = info;
+    this.width = width;
+
+    rows.forEach((row) => row.render(this.width));
+    //rows.forEach((row) => el.children.appendChild(row));
+  };
+  public sort(ctx: data.ctx) {
+    let { rows, el, dom } = this;
+    dom.bar_background(ctx);
+    switch (ctx) {
+      case "pl_ur":
+        rows = rows.sort((a, b) => b.totals.pl_ur_perc - a.totals.pl_ur_perc);
+        break;
+      case "value":
+        rows = rows.sort((a, b) => b.width - a.width);
+        break;
+    }
+    rows.forEach((row) => {
+      row.sort(ctx);
+      el.children.appendChild(row);
+    });
   }
 
+  private dom = this.api.dom({
+    bar_background: (ctx: data.ctx) => {
+      const { el, parent, totals } = this;
+      const { high, low } = parent.totals;
+      const { pl_ur_perc } = totals;
+
+      console.log({ ctx });
+      if (ctx === "value") {
+        el.percent_bar.removeAttribute("pl");
+        el.percent_bar.style.backgroundColor = "";
+        return;
+      }
+
+      el.percent_bar.setAttribute("pl", pl_ur_perc < 0 ? "loss" : "profit");
+      let opacity = 0;
+      if (high.pl_ur_perc >= 0 && pl_ur_perc >= 0)
+        opacity = pl_ur_perc / high.pl_ur_perc;
+      if (low.pl_ur_perc < 0 && pl_ur_perc < 0)
+        opacity = pl_ur_perc / low.pl_ur_perc;
+      if (high.pl_ur_perc <= 0 || low.pl_ur_perc >= 0)
+        opacity = Math.abs(pl_ur_perc) / Math.abs(high.pl_ur_perc);
+
+      const current_color = window.getComputedStyle(
+        el.percent_bar,
+      ).backgroundColor;
+      const [r, g, b] = current_color.match(/[\d\.]+/g)!;
+      el.percent_bar.style.backgroundColor = `rgba(${r},${g},${b},${opacity})`;
+    },
+  });
+  private set topic(topic: string) {
+    switch (this.view_name) {
+      case "sectors":
+        this.topic_string = topic;
+        break;
+      case "locations":
+        const { get } = this.cache;
+        const { level } = this;
+        if (level === 0) this.topic_string = get.country(topic)!;
+        if (level === 1) this.topic_string = get.region(topic)!;
+        if (level === 2) this.topic_string = get.place(topic)!;
+        break;
+    }
+  }
+  private get topic() {
+    return this.topic_string;
+  }
+  private get rows() {
+    return Array.from(this.el.children.children) as InsightRow[];
+  }
+
+  public totals = {} as data.tally;
+  public width = 0;
+  private level = 0;
+  private view_name = "" as insight.view_name;
+  private instrmnts = [] as id.p[];
+  public topic_string = "";
+  private parent = {} as InsightRow | InsightView;
+  private tally = {} as InsightView["tally"];
+
+  private el = this.query.select<{
+    grid: HTMLElement;
+    topic: HTMLAnchorElement;
+    value: MoneyString;
+    pl_ur: PercentString;
+    percent_value: HTMLElement;
+    percent_bar: HTMLElement;
+    children: HTMLElement;
+  }>({
+    grid: ["qs", ".grid"],
+    topic: ["qs", '[name="topic"] a'],
+    value: ["qs", '[name="value"]'],
+    pl_ur: ["qs", '[name="pl_ur"]'],
+    percent_value: ["qs", '[name="percent"] .value'],
+    percent_bar: ["qs", '[name="percent"] .bar'],
+    children: ["qs", ".children"],
+  });
+}
+
+// apply_data: () => {
+//   const { topic, market_value, u_pl_perc, location_link } = this.row_data;
+//   this.el_value.money_value = market_value;
+//   this.el_u_pl.value = u_pl_perc;
+//   this.el_percent_bar.setAttribute("pl", u_pl_perc > 0 ? "profit" : "loss");
+//   this.el_topic.innerText = topic;
+//   if (location_link) this.el_topic.href = `${location_link}#Economy`;
+//
+//   setTimeout(() => {
+//     this.dom.bar_opacity();
+//     this.el_percent_value.innerText = this.dom.percent_string();
+//   });
+// },
+// percent_string: () => {
+//   const percent = Math.round(this.percent * 100) / 100;
+//   const name = this.parent?.row_data.topic || this.name;
+//   return `${percent}% of ${name}`;
+// },
+/*
+  private data = this.api.data({
+    //percent_width: () => {
+    //  const { root_value, market_value } = this.row_data;
+    //  return (market_value / root_value) * 100;
+    //},
+  });
+*/
+//public set row_data(data: filter.insight_row_data_t) {
+//  this._data = data;
+//  const data_hash = util.hash_id(data);
+//  this.setAttribute("data", data_hash);
+//}
+//public get row_data() {
+//  return this._data;
+//}
+//private _data!: filter.insight_row_data_t;
+
+/*
   private handlers = {
-    render: (p: p.prop_callback) => {
+    render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
-      this.percent = this.data.percent_width();
-      this.dom.apply_data();
+      const { el, data, dom } = this;
+      //this.percent = data.percent_width();
+      //dom.apply_data();
+      if (!p.old) return;
 
-      this.el_grid.onclick = this.handlers.filter;
-      this.el_topic.onclick = this.handlers.wiki;
+      el.topic.onclick = this.handlers.wiki;
     },
-    filter: (e: Event) => {
-      this.router.navigate("/portfolio");
-      this.filter.set(this.row_data.filter);
+    positn: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
     },
     wiki: (e: Event) => {
       e.stopPropagation();
     },
   };
-  private dom = this.api.dom({
-    apply_data: () => {
-      const { topic, market_value, u_pl_perc, location_link } = this.row_data;
-      this.el_value.money_value = market_value;
-      this.el_u_pl.value = u_pl_perc;
-      this.el_percent_bar.setAttribute("pl", u_pl_perc > 0 ? "profit" : "loss");
-      this.el_topic.innerText = topic;
-      if (location_link) this.el_topic.href = `${location_link}#Economy`;
-
-      setTimeout(() => {
-        this.dom.bar_opacity();
-        this.el_percent_value.innerText = this.dom.percent_string();
-      });
-    },
-    define_selectors: () => {
-      this.el_grid = this.querySelector(".grid")!;
-      this.el_topic = this.querySelector('[name="topic"] a')!;
-      this.el_value = this.querySelector('[name="value"]')!;
-      this.el_u_pl = this.querySelector('[name="u_pl"]')!;
-      this.el_percent_value = this.querySelector('[name="percent"] .value')!;
-      this.el_percent_bar = this.querySelector('[name="percent"] .bar')!;
-      this._el_children = this.querySelector(".children")!;
-    },
-    percent_string: () => {
-      const percent = Math.round(this.percent * 100) / 100;
-      const name = this.parent?.row_data.topic || this.name;
-      return `${percent}% of ${name}`;
-    },
-    bar_opacity: () => {
-      const { u_pl_high, u_pl_low, u_pl_perc } = this.row_data;
-      let opacity = 0;
-      if (u_pl_high >= 0 && u_pl_perc >= 0) opacity = u_pl_perc / u_pl_high;
-      if (u_pl_low < 0 && u_pl_perc < 0) opacity = u_pl_perc / u_pl_low;
-      if (u_pl_high <= 0 || u_pl_low >= 0)
-        opacity = Math.abs(u_pl_perc) / Math.abs(u_pl_high);
-
-      const current_color = window.getComputedStyle(
-        this.el_percent_bar,
-      ).backgroundColor;
-      const [r, g, b] = current_color.match(/[\d\.]+/g)!;
-      const rgba = `rgba(${r},${g},${b},${opacity})`;
-      this.el_percent_bar.style.backgroundColor = rgba;
-      //const high = 0 + Math.abs(u_pl_high);
-    },
-  });
-  private props = this.api.props({});
-  private data = this.api.data({
-    percent_width: () => {
-      const { root_value, market_value } = this.row_data;
-      return (market_value / root_value) * 100;
-    },
-  });
-
-  public set_width = (parent_percent = 100) => {
-    let { percent, rel_percent } = this;
-    const scale_factor = 100 / rel_percent;
-    percent = percent * scale_factor;
-    percent = (percent * parent_percent) / 100;
-    this.el_percent_bar.style.width = `${percent}%`;
-
-    this.els_row.forEach((el_row) => el_row.set_width(percent));
-  };
-  public set_level = (level: number) => {
-    this.setAttribute("level", String(level));
-  };
-
-  public set row_data(data: f.insight_row_data_t) {
-    this._data = data;
-    const data_hash = util.hash_id(data);
-    this.setAttribute("data", data_hash);
-  }
-  public get row_data() {
-    return this._data;
-  }
-  public get el_rows_container() {
-    return this._el_children;
-  }
-  public get els_row() {
-    return this.el_rows_container.querySelectorAll<InsightRow>(
-      "&> insight-row",
-    );
-  }
-  private get name() {
-    return this.getAttribute("name")!;
-  }
-
-  public parent?: InsightRow;
-  public percent = 0;
-  public rel_percent = 0;
-  private el_topic!: HTMLAnchorElement;
-  private el_grid!: HTMLElement;
-  private el_value!: MoneyString;
-  private el_u_pl!: PercentString;
-  private el_percent_value!: HTMLElement;
-  private el_percent_bar!: HTMLElement;
-  private _el_children!: HTMLElement;
-
-  private _data!: f.insight_row_data_t;
-}
+*/

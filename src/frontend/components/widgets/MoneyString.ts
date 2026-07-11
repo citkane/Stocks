@@ -8,7 +8,7 @@ export class MoneyString extends WebComponent {
     this.props.watch("value", this.handlers.render);
   }
   private handlers = {
-    render: (p: p.prop_callback) => {
+    render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
       delete this._value;
