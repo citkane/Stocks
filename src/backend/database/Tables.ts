@@ -1,14 +1,3 @@
-//const char = {
-//  prim: def("VARCHAR PRIMARY KEY"),
-//  char: "VARCHAR",
-//  def: def(char.char),
-//};
-//const dec = {
-//  "5": "DECIMAL(38,5)",
-//  "2": "DECIMAL(38,2)",
-//  "2_def": def("DECIMAL(38,2)"),
-//};
-
 function dec(precision: number, scale: number) {
   return `DECIMAL(${precision},${scale})`;
 }
@@ -70,6 +59,8 @@ const view_instrmnt_meta = [
   ["svg_logo"] as unknown as ["svg_logo", string | null],
   ["tv_link"] as unknown as ["tv_link", string | null],
   ["geo", undefined, "j"] as unknown as ["geo", g.meta_geo],
+  ["saxo_id"] as unknown as ["saxo_id", number | null],
+  ["ibkr_id"] as unknown as ["ibkr_id", number | null],
 ] as const;
 const view_transctns = [
   ["id"] as unknown as ["id", string],
@@ -102,6 +93,10 @@ const transactions = [
   ["traded_price", dec(35, 2)] as unknown as ["traded_price", number],
   ["date", def("DATETIME")] as unknown as ["date", number],
   ["kind", def(char(6))] as unknown as ["kind", lv.transctn_kind],
+] as const;
+const transaction_update = [
+  ["date", def("DATETIME")] as unknown as ["date", number],
+  ["broker", def(char(4))] as unknown as ["broker", string],
 ] as const;
 const instrmnt = [
   ["i_id", prim(char())] as unknown as ["i_id", id.i],
@@ -197,10 +192,11 @@ const live_instrmnt = [
   ["type", char()] as unknown as ["type", string | null],
 ] as const;
 const live_balances = [
-  ["a_id", prim(char())] as unknown as ["a_id", id.a],
+  ["b_id", prim(char())] as unknown as ["b_id", id.b],
   ["currency", def(char())] as unknown as ["currency", string],
   ["assets_val", def(dec(35, 2))] as unknown as ["assets_val", number],
   ["cash", def(dec(35, 2))] as unknown as ["cash", number],
+  ["fx", def(dec(38, 5))] as unknown as ["fx", number],
 ] as const;
 
 const tables = Object.freeze({
@@ -210,6 +206,7 @@ const tables = Object.freeze({
   view_transctns,
   accounts,
   transactions,
+  transaction_update,
   instrmnt,
   id_join,
   instrmnt_meta,
@@ -240,6 +237,8 @@ SELECT DISTINCT
       instrmnt_meta.isin,
       instrmnt_meta.svg_logo,
       instrmnt_meta.tv_link,
+      instrmnt_meta.saxo_id,
+      instrmnt_meta.ibkr_id,
       json_object(
         'country_qid', meta_location.country_qid,
         'region_qid', meta_location.region_qid,

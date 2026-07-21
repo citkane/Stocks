@@ -13,10 +13,10 @@ type res_error_t = {
 };
 
 interface Api_t {
-  requests: {
+  req: {
     [key: string]: (p: req_t, ...params: any[]) => void;
   };
-  setter: {
+  on: {
     [key: string]: (...params: any[]) => void;
   };
 }
@@ -27,6 +27,8 @@ type interval_t = ReturnType<typeof setInterval>;
 namespace id {
   /** account id */
   type a = `${g.broker}_${string}`;
+  /** account balance id */
+  type b = `${a}_${string}`;
   /** instrument id (broker "exchange-ticker")*/
   type i = `${string}-${string}`;
   /** position id (tv "exchange-ticker") */
@@ -66,7 +68,7 @@ namespace g {
     country_shape?: Object;
     region_shape?: Object;
   };
-  type qid_map = db.data<"view_qid_map">["geo_map"];
+  type geo_map = db.data<"view_qid_map">["geo_map"];
   type geo_point = [number, number];
   type iso_date = `${string}-${string}-${string}`;
 }

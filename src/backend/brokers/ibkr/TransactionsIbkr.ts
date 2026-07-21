@@ -5,27 +5,33 @@ export class TransactionsIbkr extends Global {
     if (!days_ago) return [];
 
     const { db, transctns, frmt, root_currency } = this;
-
     return Promise.all([
       db.select.instrmnts(["ibkr_id", true]),
-      db.select.accounts.data("ibkr").then((a) => a.map((a) => a.a_id)),
+      db.select.accounts(["broker", "ibkr"]).then((a) => a.map((a) => a.a_id)),
     ])
       .then(([instrmnts, a_ids]) =>
         transctns.fetch([a_ids, instrmnts, root_currency, days_ago] as const),
       )
-      .then(frmt.transform);
+      .then(frmt.transform)
+      .then(async (transctns) => {
+        await this.db.insert.transctns.last_update("ibkr", util.time.ms_now());
+        return transctns;
+      });
   };
   public last_update_date = async () => {
-    const [date] = await this.db.select.transctns(
-      ["broker", "ibkr"],
-      ["date"],
-      ["date", "DESC"],
-    );
-    const days_ago = date?.date
-      ? util.time.aging_days(date.date)
-      : util.time.aging_days(conf.ibkr.start_date);
-
-    return days_ago;
+    let date = await this.db.select.transctns.last_update("ibkr");
+    date ??= util.time.ms(conf.ibkr.start_date);
+    return util.time.aging_days(date);
+    // const [date] = await this.db.select.transctns.data(
+    //   ["broker", "ibkr"],
+    //   ["date"],
+    //   ["date", "DESC"],
+    // );
+    //const days_ago = date?.date
+    //  ? util.time.aging_days(date)
+    //  : util.time.aging_days(conf.ibkr.start_date);
+    //
+    //return days_ago;
   };
   private frmt = {
     /**

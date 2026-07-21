@@ -1,12 +1,25 @@
-const money_round = 100;
-const fx_round = 1000000;
-
 export class Money {
   public currency_minor: string[] = ["ZAC", "GBp", "GBX"];
   public patch_currency = (currency: string) => {
     currency = currency === "CNH" ? "CNY" : currency;
     currency = currency === "ZAR" ? "ZAC" : currency;
     return currency;
+  };
+  public to_cents = (value: number, fractional: boolean) => {
+    value = fractional ? value * 100 : value; // proceed in cents
+    return Math.round(value);
+  };
+  public is_fractional = (currency: string) => {
+    return !["ZAC", "GBX"].includes(currency);
+  };
+  public convert_traded = (cents: number, fx_rate: number) => {
+    cents = cents * fx_rate; // Broker fx is inverse of TradingView
+    return Math.round(cents);
+  };
+  public convert_market = (cents: number, fx: number, fractional: boolean) => {
+    cents = fractional ? cents : cents * 100; // TradingView fx already wants to compensate for non-fractional currencies
+    cents = cents / fx; // TradingView fx is inverse of broker
+    return Math.round(cents);
   };
 
   /**

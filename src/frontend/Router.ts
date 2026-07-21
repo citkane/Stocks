@@ -32,9 +32,7 @@ export default class Router extends Global {
   };
 
   private locate = (pathname: string) => {
-    if (this.el_app_root.hasAttribute("hidden")) {
-      this.app.run();
-    }
+    if (this.el_app_root.hasAttribute("hidden")) this.app.run();
     this.els_root.forEach((root) => root.hide());
     if (!this.routes[pathname as route_key_t]) {
       window.location.pathname = landing_page;

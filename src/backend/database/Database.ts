@@ -2,12 +2,19 @@ import { Sql } from "./Sql";
 
 export class Database extends Sql {
   public select = {
-    transctns: <T extends "view_transctns", C extends db.tbl.col_names<T>>(
-      condition?: db.condition<T>,
-      cols?: C[],
-      sort?: db.sort<T>,
-    ) => {
-      return this.sql.select("view_transctns", condition, sort, cols);
+    transctns: {
+      data: <T extends "view_transctns", C extends db.tbl.col_names<T>>(
+        condition?: db.condition<T>,
+        cols?: C[],
+        sort?: db.sort<T>,
+      ) => {
+        return this.sql.select("view_transctns", condition, sort, cols);
+      },
+      last_update: (broker: g.broker) => {
+        return this.sql
+          .select("transaction_update", ["broker", broker], undefined, ["date"])
+          .then((u) => u[0]?.date);
+      },
     },
     instrmnts: <T extends "instrmnt", C extends db.tbl.col_names<T>>(
       condition?: db.condition<T>,
@@ -43,20 +50,34 @@ export class Database extends Sql {
         return this.sql.chart.select(id) as Promise<lv.chart_data[]>;
       },
     },
-    accounts: {
-      data: (broker?: g.broker) => {
-        return this.sql.select(
-          "accounts",
-          broker ? ["broker", broker] : undefined,
-        );
-      },
+    accounts: <T extends "accounts", C extends db.tbl.col_names<T>>(
+      condition?: db.condition<T>,
+      cols?: C[],
+    ) => {
+      return this.sql.select("accounts", condition, undefined, cols);
     },
+    id_join: <T extends "id_join", C extends db.tbl.col_names<T>>(
+      cols?: C[],
+    ) => {
+      return this.sql.select("id_join", undefined, undefined, cols);
+    },
+    //{
+    //  broker: (broker?: g.broker) => {
+    //    return this.sql.select(
+    //      "accounts",
+    //      broker ? ["broker", broker] : undefined,
+    //    );
+    //  },
+    //},
   };
   public insert = {
     transctns: {
       data: async (transactions: db.data<"transactions">[]) => {
         if (!transactions.length) return undefined;
         return this.sql.insert("transactions", transactions);
+      },
+      last_update: (broker: g.broker, date: number) => {
+        return this.sql.insert("transaction_update", [{ broker, date }], true);
       },
     },
     geo: {
@@ -96,7 +117,7 @@ export class Database extends Sql {
       forex: async (forex: db.data<"live_forex">[]) => {
         return this.sql.insert("live_forex", forex, true);
       },
-      balance: async (balances: db.data<"live_balances">[]) => {
+      balances: async (balances: db.data<"live_balances">[]) => {
         if (!balances.length) return;
         return this.sql.insert("live_balances", balances, true);
       },
@@ -104,12 +125,11 @@ export class Database extends Sql {
         return this.sql.chart.insert(id, data);
       },
     },
-    accounts: {
-      data: async (accounts: db.data<"accounts">[]) => {
-        if (!accounts.length) return;
-        return this.sql.insert("accounts", accounts);
-      },
+    accounts: (accounts: db.data<"accounts">[]) => {
+      if (!accounts.length) return;
+      return this.sql.insert("accounts", accounts);
     },
+
     instrumnts: (instrmnts: db.data<"instrmnt">[]) => {
       return this.sql.insert("instrmnt", instrmnts);
     },

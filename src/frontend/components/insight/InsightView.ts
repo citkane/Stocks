@@ -14,7 +14,6 @@ export class InsightView extends WebComponent {
   private handlers = {
     render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
-
       const { el, view_name, instrmnts, dom } = this;
       el.content.innerHTML = "";
       const data = new DataStructure(view_name, instrmnts);
@@ -22,22 +21,26 @@ export class InsightView extends WebComponent {
     },
     positns: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
-
-      let { rows, dom } = this;
+      let { rows, tally, el } = this;
+      this.totals = tally.empty();
       rows.forEach((row) => row.calc_total(this.totals));
       rows.forEach((row) => row.render());
-      dom.sort_rows(this.ctx);
+      this.sort_rows(el.content);
     },
     sort: (p: pr.prop_callback) => {
-      if (p.old === p.new) return;
+      const { sort_dir, el } = this;
+      this.sort_dir = p.old === p.new && sort_dir === "desc" ? "asc" : "desc";
+      this.sort_dir = !p.old ? "asc" : this.sort_dir;
 
-      this.dom.sort_rows(p.new as data.ctx);
+      this.ctx = p.new as data.ctx;
+      this.rows.forEach((row) => row.setAttribute("sort", p.new));
+      this.sort_rows(el.content);
     },
   };
+  private props = this.api.props();
   private dom = this.api.dom({
     make_rows: (data: data.branch, level = 0, parent?: InsightRow) => {
       if (!data.children) return;
-
       const { dom } = this;
       Object.entries(data.children).forEach((child) =>
         dom.make_row(child, level, parent),
@@ -55,23 +58,39 @@ export class InsightView extends WebComponent {
       parent ? parent.append_child(row) : el.content.appendChild(row);
       dom.make_rows(child, level + 1, row);
     },
-    sort_rows: (ctx: data.ctx) => {
-      let { rows, el } = this;
-      switch (ctx) {
-        case "pl_ur":
-          rows = rows.sort((a, b) => b.totals.pl_ur_perc - a.totals.pl_ur_perc);
-          break;
-        case "value":
-          rows = rows.sort((a, b) => b.width - a.width);
-          break;
-      }
-      rows.forEach((row) => {
-        row.sort(ctx);
-        el.content.appendChild(row);
-      });
-    },
   });
-  private props = this.api.props();
+
+  public sort_rows = (wrapper: HTMLElement) => {
+    const asc = this.sort_dir === "asc";
+    const ctx = this.ctx;
+
+    let rows = Array.from(wrapper.children) as InsightRow[];
+    switch (ctx) {
+      case "pl_ur_perc":
+        rows = rows.sort((a, b) =>
+          asc
+            ? a.totals.pl_ur_perc - b.totals.pl_ur_perc
+            : b.totals.pl_ur_perc - a.totals.pl_ur_perc,
+        );
+        break;
+      case "pl_ur":
+        rows = rows.sort((a, b) =>
+          asc
+            ? a.totals.pl_ur - b.totals.pl_ur
+            : b.totals.pl_ur - a.totals.pl_ur,
+        );
+        break;
+      case "market_value":
+        rows = rows.sort((a, b) =>
+          asc ? a.width - b.width : b.width - a.width,
+        );
+        break;
+    }
+    rows.forEach((row) => {
+      row.setAttribute("sort", ctx);
+      wrapper.appendChild(row);
+    });
+  };
   public tally = {
     instrmnts: (instrmnts: id.p[], totals: data.tally) => {
       const { tally } = this;
@@ -80,7 +99,6 @@ export class InsightView extends WebComponent {
       const transctns = instrmnts
         .map((p_id) => positns[p_id]!.transctns.filter((t) => t.kind === "buy"))
         .flat();
-
       tally.children(transctns, totals);
     },
     children: (data: (data.tally | lv.transctn)[], totals: data.tally) => {
@@ -123,18 +141,14 @@ export class InsightView extends WebComponent {
   public totals = this.tally.empty();
   public show = () => {
     if (this.hasAttribute("shown")) return;
-
     this.props.show();
     document.body.scrollTop = this.scroll_top;
   };
   public hide = () => {
     if (this.hasAttribute("hidden")) return;
-
     this.scroll_top = document.body.scrollTop;
     this.props.hide();
   };
-  private scroll_top = 0;
-  private ctx: data.ctx = "value";
 
   private get rows() {
     return Array.from(this.el.content.children) as InsightRow[];
@@ -146,6 +160,11 @@ export class InsightView extends WebComponent {
   private get instrmnts() {
     return Object.values(this.cache.get.instrmnts());
   }
+
+  private scroll_top = 0;
+  private sort_dir: "asc" | "desc" = "desc";
+  private ctx: data.ctx = "market_value";
+
   private el = this.query.select<{
     content: HTMLElement;
   }>({
@@ -211,7 +230,7 @@ class DataStructure {
 }
 
 export namespace data {
-  export type ctx = "value" | "pl_ur";
+  export type ctx = "market_value" | "pl_ur" | "pl_ur_perc";
   export type tally = tally_base & {
     high: tally_base;
     low: tally_base;

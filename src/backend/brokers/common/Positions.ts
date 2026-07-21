@@ -4,14 +4,14 @@ export class Positions extends Global {
   public update = {
     lv_positns: async (
       metas: g.meta[],
-      lv_forex?: lv.forex[],
-      lv_instrmnts?: lv.instrmnt[],
+      fx: lv.forex[],
+      lv_instrmnts: lv.instrmnt[],
     ): Promise<lv.positn[]> => {
-      const { positn, transctn, frmt, update } = this;
-      lv_forex ??= await update.lv_forex(metas);
-      lv_instrmnts ??= await this.tv.live_instrmnts(metas);
+      const { positn, transctn, frmt } = this;
+      //lv_forex ??= await update.lv_forex(metas);
+      //lv_instrmnts ??= await this.tv.live_instrmnts(metas);
 
-      const forex_map = frmt.map_forex(lv_forex),
+      const forex_map = frmt.map_forex(fx),
         meta_map = frmt.map_pid(metas),
         instrmnt_map = frmt.map_pid(lv_instrmnts);
 
@@ -24,13 +24,20 @@ export class Positions extends Global {
     lv_instrmnts: async (metas: g.meta[]) => {
       return this.tv.live_instrmnts(metas);
     },
-    lv_forex: (metas: g.meta[]) => {
-      const { fx, tv, frmt, root_currency } = this;
-      return fx
-        .currencies(metas)
-        .then((currencies) => tv.forex(root_currency, currencies))
+    lv_forex: async (currencies: string[]) => {
+      const { tv, frmt, root_currency } = this;
+      return tv
+        .forex(root_currency, currencies)
         .then((forex) => frmt.add_root_fx(forex, root_currency));
     },
+    // lv_balances: (balances: lv.balance[], forex: lv.forex[]) => {
+    //   const { frmt } = this;
+    //   const forex_map = frmt.map_forex(forex);
+    //   return balances.map((balance) => {
+    //     let { currency } = balance;
+    //     const fx = forex_map[currency]!;
+    //   });
+    // },
   };
   private frmt = {
     map_forex: (forex: lv.forex[]) => {
@@ -90,10 +97,6 @@ export class Positions extends Global {
 
       return instrmnts;
     },
-    to_cents: (value: number, fractional: boolean) => {
-      value = fractional ? value * 100 : value; // proceed in cents
-      return Math.round(value);
-    },
   };
   /*
   private get = {
@@ -147,6 +150,7 @@ export class Positions extends Global {
       lv_instrmnt: lv.instrmnt,
       forex_map: p.forex_map,
     ): pos.live => {
+      const { money } = util;
       const {
         p_id,
         current_session,
@@ -168,7 +172,7 @@ export class Positions extends Global {
         transctns: [],
         base: {
           currency,
-          fractional: this.fx.is_fractional_currency(currency),
+          fractional: money.is_fractional(currency),
           market_price,
           market_open,
           market_high,
@@ -185,8 +189,8 @@ export class Positions extends Global {
       const { transctn, db } = this;
       const entries = Object.entries(postns);
       const promises = entries.map(([p_id, positn]) =>
-        db.select
-          .transctns(["p_id", p_id], undefined, ["date", "DESC"])
+        db.select.transctns
+          .data(["p_id", p_id], undefined, ["date", "DESC"])
           .then((tranctns) => to_live_transctns(tranctns, positn))
           .then(transctn.calculate_positn),
       );
@@ -270,58 +274,17 @@ export class Positions extends Global {
       }
     },
     calculate_positn: (positn: lv.positn) => {
-      const { frmt, fx } = this;
-      const { transctns, base } = positn;
-      const { market_fx, fractional } = base;
-
-      let { buy, sell, dividend, unbooked } = categorise(transctns);
+      const { transctns } = positn;
+      const { transctn } = this;
+      const { buy, sell, dividend, unbooked } = transctn.categorise(transctns);
       let sold_total = sum_sales(sell);
 
       while (sold_total > 0) {
         sell.forEach(balance_sales);
       }
-      const a_id = current_aid(sell, buy);
-
-      buy.map((b) => {
-        const { base, amount } = b;
-        b.a_id = a_id;
-        b.currency = this.root_currency;
-        b.market_value = amount * base.market_price;
-        b.traded_value = amount * base.traded_price;
-        b.pl_ur = amount * (base.market_price - base.traded_price);
-
-        (["market_value", "pl_ur"] as const).forEach((key) => {
-          b[key] = frmt.to_cents(b[key], fractional);
-          b[key] = fx.convert_market(b[key], market_fx, fractional);
-        });
-        b.traded_value = frmt.to_cents(b.traded_value, fractional);
-        b.traded_value = fx.convert_traded(b.traded_value, base.traded_fx);
-        b.pl_fx = b.market_value - b.traded_value - b.pl_ur;
-      });
-      sell.map((s) => {
-        const { base } = s;
-        s.a_id = a_id;
-        s.currency = this.root_currency;
-        s.pl_r = frmt.to_cents(s.pl_r, fractional);
-        s.pl_r = fx.convert_traded(s.pl_r, base.traded_fx);
-      });
-      dividend.map((d) => {
-        const { base } = d;
-        d.a_id = a_id;
-        d.currency = this.root_currency;
-        d.amount = 0;
-        d.div_value = frmt.to_cents(base.traded_price, fractional);
-        d.div_value = fx.convert_traded(d.div_value, base.traded_fx);
-      });
-      unbooked.map((u) => {
-        u.a_id = a_id;
-        u.currency = this.root_currency;
-        u.amount = 0;
-        u.currency = this.root_currency;
-      });
-      positn.transctns = [...buy, ...sell, ...dividend, ...unbooked];
-
-      return positn;
+      return transctn.set_current_a_ids(
+        transctn.convert_fx(positn, buy, sell, dividend, unbooked),
+      );
 
       function balance_sales(sell: lv.transctn) {
         if (!sell.amount) return;
@@ -359,27 +322,6 @@ export class Positions extends Global {
           buy.amount > 0 && buy.date < sell.date && buy.broker === sell.broker
         );
       }
-      function categorise(transctns: lv.transctn[]) {
-        const t: p.transctn_cats = {
-          buy: [],
-          sell: [],
-          dividend: [],
-          unbooked: [],
-        };
-        return transctns.reduce((cats, transctn) => {
-          const { kind } = transctn;
-          cats[kind].push(transctn);
-          return cats;
-        }, t);
-      }
-      function current_aid(sell: pos.transctn[], buy: pos.transctn[]) {
-        const sell_aid = sell[sell.length - 1]?.a_id;
-
-        const buy_aid = buy[buy.length - 1]?.a_id;
-        if (!buy_aid) console.error("No position data", { buy, sell, positn });
-
-        return sell_aid || buy_aid || "";
-      }
       function sum_sales(sell: lv.transctn[]) {
         return sell.reduce((amount, sell) => {
           amount += sell.amount;
@@ -387,23 +329,103 @@ export class Positions extends Global {
         }, 0);
       }
     },
-  };
-  private fx = {
-    currencies: async (metas: g.meta[]) => {
-      const currencies = metas.map((i) => i.currency);
-      return [...new Set(currencies)];
+    convert_fx: (
+      positn: lv.positn,
+      buy: lv.transctn[],
+      sell: lv.transctn[],
+      dividend: lv.transctn[],
+      unbooked: lv.transctn[],
+    ) => {
+      const { base } = positn;
+      const { market_fx, fractional } = base;
+      const { money } = util;
+
+      buy.map((b) => {
+        const { base, amount } = b;
+        b.currency = this.root_currency;
+        b.market_value = amount * base.market_price;
+        b.traded_value = amount * base.traded_price;
+        b.pl_ur = amount * (base.market_price - base.traded_price);
+        (["market_value", "pl_ur"] as const).forEach((key) => {
+          b[key] = money.to_cents(b[key], fractional);
+          b[key] = money.convert_market(b[key], market_fx, fractional);
+        });
+        b.traded_value = money.to_cents(b.traded_value, fractional);
+        b.traded_value = money.convert_traded(b.traded_value, base.traded_fx);
+        b.pl_fx = b.market_value - b.traded_value - b.pl_ur;
+      });
+      sell.map((s) => {
+        const { base } = s;
+        s.currency = this.root_currency;
+        s.pl_r = money.to_cents(s.pl_r, fractional);
+        s.pl_r = money.convert_traded(s.pl_r, base.traded_fx);
+      });
+      dividend.map((d) => {
+        const { base } = d;
+        d.currency = this.root_currency;
+        d.amount = 0;
+        d.div_value = money.to_cents(base.traded_price, fractional);
+        d.div_value = money.convert_traded(d.div_value, base.traded_fx);
+      });
+      unbooked.map((u) => {
+        u.currency = this.root_currency;
+        u.amount = 0;
+        u.currency = this.root_currency;
+      });
+      positn.transctns = [...buy, ...sell, ...dividend, ...unbooked];
+      return positn;
     },
-    is_fractional_currency: (currency: string) => {
-      return !["ZAC", "GBX"].includes(currency);
+    categorise: (transctns: lv.transctn[]) => {
+      const cats: p.transctn_cats = {
+        buy: [],
+        sell: [],
+        dividend: [],
+        unbooked: [],
+      };
+      return transctns.reduce((cats, transctn) => {
+        const { kind } = transctn;
+        cats[kind].push(transctn);
+        return cats;
+      }, cats);
     },
-    convert_traded: (cents: number, fx_rate: number) => {
-      cents = cents * fx_rate; // Broker fx is inverse of TradingView
-      return Math.round(cents);
-    },
-    convert_market: (cents: number, fx: number, fractional: boolean) => {
-      cents = fractional ? cents : cents * 100; // TradingView fx already wants to compensate for non-fractional currencies
-      cents = cents / fx; // TradingView fx is inverse of broker
-      return Math.round(cents);
+    set_current_a_ids: (positn: lv.positn) => {
+      const { transctn } = this;
+      positn.transctns = group_brokers().map(map_groups).flat();
+      return positn;
+
+      function map_groups({ buy, sell, dividend, unbooked }: p.transctn_cats) {
+        const transctns = [...buy, ...sell, ...dividend, ...unbooked];
+        const a_id = find_a_id(buy, sell, positn);
+        if (!a_id) return transctns;
+        transctns.forEach((t) => {
+          t.a_id = a_id;
+        });
+        return transctns;
+      }
+      function find_a_id(
+        buy: lv.transctn[],
+        sell: lv.transctn[],
+        positn: lv.positn,
+      ) {
+        buy = buy.sort((a, b) => b.date - a.date);
+        sell = sell.sort((a, b) => b.date - a.date);
+
+        const sell_a_id = sell[0]?.a_id;
+        const buy_a_id = buy[0]?.a_id;
+        if (!buy_a_id && !!sell_a_id)
+          console.error("No position data", { buy, sell, positn });
+
+        return sell_a_id || buy_a_id;
+      }
+      function group_brokers() {
+        const brokers = {} as { [broker in g.broker]: lv.transctn[] };
+        positn.transctns.reduce((brokers, t) => {
+          if (!brokers[t.broker]) brokers[t.broker] = [];
+          brokers[t.broker].push(t);
+          return brokers;
+        }, brokers);
+        return Object.values(brokers).map((b) => transctn.categorise(b));
+      }
     },
   };
 }
@@ -442,7 +464,6 @@ declare global {
     };
   }
 }
-
 namespace p {
   export type transctn_meta = {
     [key in transctn_meta_keys]?: number | string | boolean;

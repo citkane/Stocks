@@ -4,8 +4,8 @@ export class InstrumentsIbkr extends Global {
   public update = () => {
     const { db, postns, frmt } = this;
     return Promise.all([
-      db.select.accounts
-        .data("ibkr")
+      db.select
+        .accounts(["broker", "ibkr"])
         .then((a) => a.map((a) => a.a_id.split("_")[1]!)),
       db.select
         .instrmnts(["ibkr_id", true], ["ibkr_id"])

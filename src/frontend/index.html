@@ -50,7 +50,7 @@
       <money-str name="cash" currency="€"></money-str>
       <money-str name="total" currency="€"></money-str>
     </div>
-    <div class="wrapper brokers"></div>
+    <div class="brokers"></div>
   </template>
   <!-- broker row -->
   <template id="accounts-broker">
@@ -60,7 +60,7 @@
       <money-str name="cash" currency="€"></money-str>
       <money-str name="total" currency="€"></money-str>
     </div>
-    <div class="wrapper accounts"></div>
+    <div class="accounts"></div>
   </template>
   <!-- account row -->
   <template id="account-row">
@@ -70,7 +70,7 @@
       <money-str name="cash" currency="€"></money-str>
       <money-str name="total" currency="€"></money-str>
     </div>
-    <div class="wrapper balances"></div>
+    <div class="balances"></div>
   </template>
   <!-- balance row -->
   <template id="balance-row">
@@ -129,33 +129,6 @@
     <h1>Portfolio</h1>
     <div class="header wrapper">
       <filter-root></filter-root>
-      <!--
-      <div class="filter wrapper">
-        <div class="inner">
-          <form>
-            <select-broker name="broker" filter select></select-broker>
-            <select-account name="a_id" filter select></select-account>
-          </form>
-          <form>
-            <select-sector name="asset_sector" filter select></select-sector>
-            <select-industry
-              name="asset_industry"
-              filter
-              select
-            ></select-industry>
-          </form>
-          <form>
-            <select-country name="country" filter select></select-country>
-            <select-region name="region" filter select></select-region>
-            <select-place name="place" filter select></select-place>
-          </form>
-          <form>
-            <label for="search">search:</label>
-            <input type="search" name="search" filter />
-          </form>
-        </div>
-      </div>
-      -->
       <div class="grid pl_ur">
         <div name="pl_ur" number>unrl p/l</div>
         <money-str name="pl_ur_total" currency="€" pl bold></money-str>
@@ -164,7 +137,7 @@
       <div class="grid header">
         <div name="description"><div class="cell">description</div></div>
         <div name="ticker"><div class="cell">ticker</div></div>
-        <div name="transctns" number>transctns</div>
+        <div name="transctns" number>t</div>
         <div name="traded_value" number>traded value</div>
         <div name="market_value" number>market value</div>
         <div name="pl_r" number>rl p/l</div>
@@ -225,10 +198,8 @@
       <div name="live_data"></div>
     </expanding-drawer>
   </template>
-
   <!-- instrument chart-->
   <template id="instrmnt-chart"></template>
-
   <!-- POSITIONS -->
   <template id="position-root">
     <div class="wrapper positn">
@@ -275,9 +246,10 @@
     <div class="header">
       <div class="grid insight">
         <div name="topic"></div>
-        <div name="value">Market Value</div>
-        <div name="pl_ur">ur P/L</div>
-        <div name="percent">
+        <div name="market_value">Market Value</div>
+        <div name="pl_ur">ur p/l</div>
+        <div name="pl_ur_perc">perc p/l</div>
+        <div name="bars">
           <div class="buttons">
             <button name="sectors">sectors</button>
             <button name="locations">locations</button>
@@ -298,9 +270,10 @@
   <template id="insight-row">
     <div class="grid">
       <div name="topic"><a target="blank"></a></div>
-      <money-str name="value" currency="€"></money-str>
-      <percent-str name="pl_ur" pl></percent-str>
-      <div name="percent">
+      <money-str name="market_value" currency="€"></money-str>
+      <money-str name="pl_ur" currency="€" pl></money-str>
+      <percent-str name="pl_ur_perc" pl></percent-str>
+      <div name="bars">
         <div class="bar"></div>
         <div class="value"></div>
       </div>
@@ -319,7 +292,6 @@
       <select></select>
     </span>
   </template>
-
   <template id="expanding-drawer">
     <div class="inner"></div>
   </template>

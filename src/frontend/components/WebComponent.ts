@@ -3,6 +3,7 @@ import type {
   AccountsRoot,
   InstrumentsRoot,
   AppRoot,
+  FilterRoot,
 } from "@frontend/components";
 
 export class WebComponent extends HTMLElement {
@@ -137,8 +138,9 @@ export class WebComponent extends HTMLElement {
 
     els.root_instrmnts = els.root_instrmnts ??= els.qs("instrmnts-root")!;
     els.root_accounts = els.root_accounts ??= els.qs("accounts-root")!;
-    els.root_insight = els.root_insight ??= els.qs("insight-wrapper")!;
+    els.root_insight = els.root_insight ??= els.qs("insight-root")!;
     els.root_app = els.root_app ??= els.qs("app-root")!;
+    els.root_filter = els.root_filter ??= els.qs("filter-root")!;
 
     this.queries.forEach((q) => q());
     Object.entries(self.els).forEach(([key, val]) => {
@@ -155,6 +157,7 @@ export class WebComponent extends HTMLElement {
     root_accounts: AccountsRoot;
     root_insight: InsightRoot;
     root_app: AppRoot;
+    root_filter: FilterRoot;
   };
 
   private id_prefix = "";

@@ -1,4 +1,5 @@
 import { WikiDataApi, type p } from "@backend/metadata/WikiDataApi";
+let i = 0;
 
 export class WikiData extends WikiDataApi {
   public location_lookup = async (meta: g.meta) => {
@@ -19,8 +20,9 @@ export class WikiData extends WikiDataApi {
     };
 
     return new Promise<wd.result>((resolve, reject) => {
-      WikiData.resolvers.set(p_id, () => location_lookup(resolve, reject));
-      WikiData.queue.push(p_id);
+      const id: id.p = `${p_id}_${i++}`;
+      WikiData.resolvers.set(id, () => location_lookup(resolve, reject));
+      WikiData.queue.push(id);
       this.dequeue();
     });
 
@@ -41,9 +43,9 @@ export class WikiData extends WikiDataApi {
     if (!WikiData.queue.length || WikiData.resolving) return;
 
     WikiData.resolving = true;
-    const i_id = WikiData.queue.shift()!;
-    const resolver = WikiData.resolvers.get(i_id)!;
-    await resolver().then(() => WikiData.resolvers.delete(i_id));
+    const id = WikiData.queue.shift()!;
+    const resolver = WikiData.resolvers.get(id)!;
+    await resolver().then(() => WikiData.resolvers.delete(id));
     WikiData.resolving = false;
     this.dequeue();
   };

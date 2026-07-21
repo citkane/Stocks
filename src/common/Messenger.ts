@@ -19,11 +19,11 @@ type send_topic_t<T = context_t> = T extends "frontend"
 
 declare global {
   namespace frontend {
-    type req_topic_t = keyof frontend.Api_t["requests"];
+    type req_topic_t = keyof frontend.Api_t["req"];
     type send_topic_t = keyof frontend.Api_t["setter"];
   }
   namespace backend {
-    type req_topic_t = keyof backend.Api_t["requests"];
+    type req_topic_t = keyof backend.Api_t["req"];
     type send_topic_t = keyof backend.Api_t["setter"];
   }
 

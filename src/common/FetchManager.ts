@@ -598,8 +598,6 @@ export class LibCallback<G extends fm.kind> implements t.lib_cb<G> {
       count_key: string,
       flag_next_key?: string,
     ) => {
-      const P = Promise.all.bind(Promise);
-
       return async (resp: Response, req: fm.req<G>) => {
         const [count, proceed] = await get_context(resp)
           .then(get_count)

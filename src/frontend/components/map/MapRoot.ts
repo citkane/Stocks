@@ -1,6 +1,5 @@
 import { LandingComponent } from "@frontend/components/LandingComponent";
 import maplibregl from "maplibre-gl";
-//@ts-expect-error
 import "maplibre-gl/dist/maplibre-gl.css";
 
 export class MapRoot extends LandingComponent {

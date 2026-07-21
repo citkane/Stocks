@@ -5,20 +5,34 @@ export class TransactionsSaxo extends Global {
     const { fetch, categorise, transform } = this.transactions;
     return fetch(start_date as g.iso_date)
       .then(categorise)
-      .then(transform);
+      .then(transform)
+      .then(async (transctns) => {
+        await this.db.insert.transctns.last_update("saxo", util.time.ms_now());
+        return transctns;
+      });
   };
 
   public last_update_date = async () => {
-    const [date] = await this.db.select.transctns(
-      ["broker", "saxo"],
-      ["date"],
-      ["date", "DESC"],
-    );
+    let date = await this.db.select.transctns.last_update("ibkr");
+    date ??= util.time.ms(conf.saxo.start_date);
+    date = date - util.time.period.to_ms([1, "d"]);
+    return util.time.epoch.to_iso_date(date);
 
-    let last_date = date?.date;
-    last_date = last_date ? last_date : util.time.ms(conf.saxo.start_date);
-    last_date = last_date - util.time.period.to_ms([1, "d"]);
-    return util.time.epoch.to_iso_date(last_date);
+    //const [date] = await this.db.select.transctns.data(
+
+    //  ["broker", "saxo"],
+
+    //  ["date"],
+
+    //  ["date", "DESC"],
+
+    //);
+
+    //
+
+    //let last_date = date?.date;
+
+    //last_date = last_date ? last_date : util.time.ms(conf.saxo.start_date);
   };
   private transactions = {
     fetch: async (

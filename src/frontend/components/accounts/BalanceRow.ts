@@ -1,63 +1,57 @@
 import { WebComponent } from "@frontend/components/WebComponent";
+import type { MoneyString } from "../widgets";
 
 export class BalanceRow extends WebComponent {
-  static observedAttributes = ["data-balance"];
+  static observedAttributes = ["balance"];
 
   constructor() {
     super();
     this.dom.template_to_self("balance-row");
-    this.props.watch("data-balance", this.handlers.render);
+    this.props.watch("balance", this.handlers.render);
   }
 
   private handlers = {
     render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
-
-      delete this._balance;
-      let { cash, assets_val, currency: curr } = this.balance;
-      const fx = this.cache.fx[curr];
-      this._money_cash = util.money.base_whole(curr, 1, cash, fx);
-      this._money_assets = util.money.base_whole(curr, 1, assets_val, fx);
-
-      cash = util.money.whole(cash);
-      assets_val = util.money.whole(assets_val);
-      const total = cash + assets_val;
-
-      this.currency_el.innerText = curr;
-      this.local_money_els.cash.money_value = cash;
-      this.local_money_els.assets.money_value = assets_val;
-      this.local_money_els.total.money_value = total;
+      const { el } = this;
+      const { assets_val, cash } = this.balance;
+      el.currency.innerHTML = this.currency;
+      el.val.money_value = assets_val;
+      el.cash.money_value = cash;
+      el.total.money_value = cash + assets_val;
+      this.vals.assets_val = assets_val;
+      this.vals.cash = cash;
     },
   };
-  private props = this.api.props({});
-  private dom = this.api.dom({});
+  private props = this.api.props();
+  private dom = this.api.dom();
 
-  public get els_money() {
-    return {
-      cash: { money_value: this._money_cash },
-      assets: { money_value: this._money_assets },
-    };
+  public vals = { cash: 0, assets_val: 0 };
+  public get b_id() {
+    return this.getAttribute("b_id")!;
   }
-  public get local_money_els() {
-    return this.selector.money.accounts(this);
+  public get currency() {
+    return this.b_id.split("_")[2]!;
   }
-  public get money_cash() {
-    return this._money_cash;
+  private get broker() {
+    return this.b_id.split("_")[0]! as g.broker;
   }
-  public get money_assets() {
-    return this._money_assets;
-  }
-
-  private get currency_el() {
-    return this.querySelector<HTMLElement>(`[name="currency"]`)!;
+  private get acc_id() {
+    return this.b_id.split("_")[1]!;
   }
   private get balance() {
-    if (this._balance) return this._balance;
-    const balance = util.html.json_parse<balance_t>(this.dataset.balance!);
-    return (this._balance = balance);
+    return this.cache.get.balances()[this.broker][this.acc_id]![this.currency]!;
   }
 
-  private _balance?: balance_t;
-  private _money_cash = 0;
-  private _money_assets = 0;
+  private el = this.query.select<{
+    currency: HTMLElement;
+    val: MoneyString;
+    cash: MoneyString;
+    total: MoneyString;
+  }>({
+    currency: ["qs", '[name="currency"]'],
+    val: ["qs", '[name="assets_val"]'],
+    cash: ["qs", '[name="cash"]'],
+    total: ["qs", '[name="total"]'],
+  });
 }

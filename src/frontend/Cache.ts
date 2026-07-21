@@ -1,10 +1,17 @@
 export default class Cache {
   public set = {
+    accnts: (accnts: g.account[]) => {
+      accnts.forEach((accnt) => {
+        const [broker, id] = accnt.a_id.split("_") as [g.broker, string];
+        this.mem.accnts[broker] ??= {};
+        this.mem.accnts[broker][id] = accnt;
+      });
+    },
     instrmnts: (metas: g.meta_view[]) => {
       metas.forEach((m) => (this.mem.instrmnts[m.p_id] = m));
     },
-    qid_map: (qid_map: g.qid_map) => {
-      this.mem.qid_map = qid_map;
+    geo_map: (geo_map: g.geo_map) => {
+      this.mem.geo_map = geo_map;
     },
     positions: (positns: lv.positn[]) => {
       positns.forEach((p) => {
@@ -12,22 +19,39 @@ export default class Cache {
         this.set.transctns(p.transctns);
       });
     },
+    balances: (balances: lv.balance[]) => {
+      const { mem } = this;
+      balances.forEach((balance) => {
+        const { b_id } = balance;
+        const [broker, acc_id, currency] = b_id.split("_") as [
+          g.broker,
+          string,
+          string,
+        ];
+        mem.balances[broker] ??= {};
+        mem.balances[broker][acc_id] ??= {};
+        mem.balances[broker][acc_id][currency] = balance;
+      });
+    },
     transctns: (transctns: lv.transctn[]) => {
       transctns.forEach((t) => (this.mem.transctns[t.id] = t));
     },
   };
   public get = {
+    accnts: () => this.mem.accnts,
     instrmnts: () => this.mem.instrmnts,
     positns: () => this.mem.positns,
     transctns: () => this.mem.transctns,
+    balances: () => this.mem.balances,
+
     place: (place_qid?: string) => {
-      return place_qid ? this.mem.qid_map[place_qid]?.name : undefined;
+      return place_qid ? this.mem.geo_map[place_qid]?.name : undefined;
     },
     country: (country_qid?: string) => {
-      return country_qid ? this.mem.qid_map[country_qid]?.name : undefined;
+      return country_qid ? this.mem.geo_map[country_qid]?.name : undefined;
     },
     region: (region_qid?: string) => {
-      return region_qid ? this.mem.qid_map[region_qid]?.name : undefined;
+      return region_qid ? this.mem.geo_map[region_qid]?.name : undefined;
     },
   };
   public get filter() {
@@ -43,10 +67,16 @@ export default class Cache {
   }
 
   private static mem = {
+    accnts: {} as { [broker in g.broker]: { [id: string]: g.account } },
+    balances: {} as {
+      [broker in g.broker]: {
+        [id: string]: { [currency: string]: lv.balance };
+      };
+    },
     instrmnts: {} as { [p_id: string]: g.meta_view },
     positns: {} as { [p_id: string]: lv.positn },
     transctns: {} as { [id: string]: lv.transctn },
-    qid_map: {} as g.qid_map,
+    geo_map: {} as g.geo_map,
     geo: {} as { [country: string]: { [region: string]: string[] } },
   };
   public static filter: filter.data = {

@@ -48,9 +48,7 @@ export class InstrumentsRoot extends LandingComponent {
     positns: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
 
-      const { el, props } = this;
-      el.filter.setAttribute("positns", p.new);
-
+      const { props } = this;
       this.positns.forEach((positn) => {
         const { p_id } = positn;
 

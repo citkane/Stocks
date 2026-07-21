@@ -1,76 +1,91 @@
 import { WebComponent } from "@frontend/components/WebComponent";
-import { BalanceRow } from "@frontend/components";
+import { BalanceRow, MoneyString } from "@frontend/components";
 
 export class AccountRow extends WebComponent {
+  static observedAttributes = ["accnt", "balances"];
+
   constructor() {
     super();
-    this.dom.template_to_self("account-row");
+    const { dom, props, handlers } = this;
+    dom.template_to_self("account-row");
+    props.watch("accnt", handlers.render);
+    props.watch("balances", handlers.balances);
   }
 
-  public render = () => {
-    this.name_el.innerText = this.name;
-    this.balances.forEach((balance) => {
-      const { currency, cash, assets_val } = balance;
-      if (!cash && !assets_val) return;
+  private handlers = {
+    render: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
 
-      const ex_el = this.dom.find_balance_row(currency);
-      const balance_row = ex_el || this.dom.make_balance_row(currency);
-      if (!ex_el) this.balances_wrapper_el.appendChild(balance_row);
+      const { el } = this;
+      el.name.innerHTML = this.name;
+    },
+    balances: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
+      const { balances, dom, el } = this;
+      const vals = { cash: 0, assets_val: 0 };
+      Object.values(balances).forEach(dom.make_balance_row);
 
-      const balance_data = util.html.json_stringify(balance);
-      balance_row.setAttribute("data-balance", balance_data);
-      this.props.set_money();
-    });
+      this.balance_els.forEach((el) => {
+        const { cash, assets_val } = el.vals;
+        vals.cash += cash;
+        vals.assets_val += assets_val;
+      });
+      this.vals = vals;
+      el.val.money_value = vals.assets_val;
+      el.cash.money_value = vals.cash;
+      el.total.money_value = vals.cash + vals.assets_val;
+    },
   };
 
-  private props = this.api.props({
-    set_money: () => {
-      const { tally } = this.money.accounts;
-      const { cash, assets_val, total } = tally(this.balance_row_els);
-      this.els_money.cash.money_value = cash;
-      this.els_money.assets.money_value = assets_val;
-      this.els_money.total.money_value = total;
-    },
-  });
+  private props = this.api.props();
   private dom = this.api.dom({
-    find_balance_row: (currency: string) => {
-      return this.querySelector<BalanceRow>(
-        `balance-row[currency=${currency}]`,
-      );
-    },
-    make_balance_row: (currency: string) => {
-      return this.dom.make_el<BalanceRow>(
-        "balance-row",
-        "",
-        `currency="${currency}"`,
-      );
+    make_balance_row: (balance: lv.balance) => {
+      const { el, balance_els, dom } = this;
+      const { b_id } = balance;
+      let balance_el = balance_els.find((el) => el.b_id === b_id);
+      if (!balance_el) {
+        balance_el = dom.make_el("balance-row", "");
+        balance_el.setAttribute("b_id", b_id);
+        balance_els.push(balance_el);
+      }
+      const hash = util.hash_id(balance);
+      balance_el.setAttribute("balance", hash);
+      balance_els
+        .sort((a, b) => a.currency.localeCompare(b.currency))
+        .forEach((row) => el.balances.appendChild(row));
     },
   });
 
-  private get a_id() {
-    return this.getAttribute("a_id")!;
+  public vals = { cash: 0, assets_val: 0 };
+  public get name() {
+    return this.accnt.alias || this.acc_id;
+  }
+  public get acc_id() {
+    return this.getAttribute("acc_id")!;
+  }
+  private get broker() {
+    return this.getAttribute("broker")! as g.broker;
+  }
+  private get accnt() {
+    return this.cache.get.accnts()[this.broker][this.acc_id]!;
   }
   private get balances() {
-    return this.cache.get.balances(this.a_id) as balance_t[];
+    return this.cache.get.balances()[this.broker][this.acc_id]!;
   }
-  private get name() {
-    const acc = this.balances[0]!;
-    const { alias, a_id_original } = acc;
-    return alias || a_id_original;
+  private get balance_els() {
+    return Array.from(this.el.balances.children) as BalanceRow[];
   }
-
-  public get els_money() {
-    return this.selector.money.accounts(this);
-  }
-  private get name_el() {
-    return this.querySelector<HTMLElement>(`div[name="name"]`)!;
-  }
-  private get balances_wrapper_el() {
-    return this.querySelector<HTMLElement>(".wrapper.balances")!;
-  }
-  private get balance_row_els() {
-    return this.balances_wrapper_el
-      .querySelectorAll<BalanceRow>(`balance-row`)
-      .values();
-  }
+  private el = this.query.select<{
+    name: HTMLElement;
+    balances: HTMLElement;
+    val: MoneyString;
+    cash: MoneyString;
+    total: MoneyString;
+  }>({
+    name: ["qs", '.header [name="name"]'],
+    balances: ["qs", ".balances"],
+    val: ["qs", '[name="assets_val"]'],
+    cash: ["qs", '[name="cash"]'],
+    total: ["qs", '[name="total"]'],
+  });
 }

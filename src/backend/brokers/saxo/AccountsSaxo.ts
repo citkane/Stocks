@@ -5,53 +5,68 @@ export class AccountsSaxo extends Global {
     const { get, fetch } = this.saxo.api;
     const req = get.accounts();
     const accounts = await fetch<b.s.data_t<b.s.account_t>>(req);
-    logger.json("SAXO accounts raw", accounts.Data);
-    return accounts.Data.map(this.translate.account);
+    return accounts.Data.map(this.frmt.account);
   };
-  public balances = async (accnts: g.account[]) => {
+  public balances = async (fx: lv.forex[]): Promise<lv.balance[]> => {
     const { get, fetch } = this.saxo.api;
-    const { balance } = this.translate;
-    return Promise.all(accnts.map(fetch_balance)).then(reduce_balances);
+    const { frmt, db } = this;
+    const fx_map = Object.fromEntries(fx.map((f) => [f.currency, f]));
 
-    function fetch_balance(acc: g.account) {
-      const { broker_key } = acc;
-      const req = get.balance(broker_key!);
-      return fetch<b.s.balance_t>(req).then((bal) => balance(acc, bal));
-    }
-    function reduce_balances(bals: lv.balance[]) {
-      return bals.reduce(
-        (bals, b) => {
-          const { a_id } = b;
-          bals[a_id] = b;
-          return bals;
-        },
-        {} as { [a_id: string]: lv.balance },
-      );
-    }
+    const acc_keys = await db.select
+      .accounts(["broker", "saxo"], ["broker_key", "a_id"])
+      .then((accs) => accs.map((a) => [a.broker_key!, a.a_id] as const));
+
+    return Promise.all(
+      acc_keys.map(([key, a_id]) => {
+        const req = get.balance(key);
+        return fetch<b.s.balance_t>(req).then((bal) =>
+          frmt.balance(a_id, bal, fx_map),
+        );
+      }),
+    );
   };
-  private translate = {
+  private frmt = {
     account: (account: b.s.account_t): g.account => {
-      const { AccountId, DisplayName, Currency, AccountKey } = account;
+      const {
+        AccountId,
+        DisplayName: alias,
+        Currency: currency,
+        AccountKey: broker_key,
+      } = account;
       return {
         a_id: `saxo_${AccountId}`,
         broker: "saxo",
-        alias: DisplayName,
-        currency: util.money.patch_currency(Currency),
-        broker_key: AccountKey,
+        alias,
+        currency: util.money.patch_currency(currency),
+        broker_key,
       };
     },
-    balance: (account: g.account, balance: b.s.balance_t): lv.balance => {
-      const { a_id } = account;
+    balance: (
+      a_id: id.a,
+      balance: b.s.balance_t,
+      fx_map: lv.fx_map,
+    ): lv.balance => {
       let {
-        Currency,
+        Currency: currency,
         UnrealizedPositionsValueExcludingCostToClosePositions: assets_val,
         CashBalance: cash,
       } = balance;
+      const { money } = util;
+      currency = money.patch_currency(currency);
+      const fractional = money.is_fractional(currency);
+      const fx = fx_map[currency]!.close;
+      cash = money.to_cents(cash, true);
+      cash = money.convert_market(cash, fx, fractional);
+      assets_val = money.to_cents(assets_val, true);
+      assets_val = money.convert_market(assets_val, fx, fractional);
+
+      const b_id: id.b = `${a_id}_${currency}`;
       return {
-        a_id,
-        currency: util.money.patch_currency(Currency),
+        b_id,
+        currency,
         assets_val,
         cash,
+        fx,
       };
     },
   };

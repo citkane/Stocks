@@ -67,7 +67,7 @@ export class InstrumentChart extends WebComponent {
       this.setAttribute("i_id", i_id);
     },
   };
-  private props = this.api.props({});
+  private props = this.api.props();
   private dom = this.api.dom({
     createChart: () => lwc.createChart(this),
     add_bar_series: (chart: lwc.IChartApi) => {
@@ -116,7 +116,7 @@ export class InstrumentChart extends WebComponent {
     add_buy_lines: (series: lwc.ISeriesApi<"Baseline">) => {
       this.data.buys().forEach((p) =>
         series.createPriceLine({
-          price: p.price_traded!,
+          price: p.base.traded_price,
           color: util.colours.blue,
           //lineWidth: 2,
           //lineStyle: 2, // LineStyle.Dashed
@@ -126,14 +126,12 @@ export class InstrumentChart extends WebComponent {
       );
     },
     create_trade_markers: (series: lwc.ISeriesApi<"Baseline">) => {
-      const { buys, sells } = this.position;
-
-      const markers = [...buys, ...sells].map((t) => {
-        const time = Math.floor(Number(t.date) / 1000); //Math.floor(Number(p.date) / 1000) as Time;
+      const markers = this.positn.transctns.map((t) => {
+        const time = Math.floor(Number(t.date) / 1000);
         const color = t.kind === "buy" ? util.colours.blue : util.colours.red;
 
         return {
-          price: t.price_traded,
+          price: t.base.traded_price,
           color,
           position: "atPriceMiddle",
           shape: "circle",
@@ -153,7 +151,8 @@ export class InstrumentChart extends WebComponent {
     map: (data: lv.chart_data[]) => {
       return data.reduce(
         (c, point) => {
-          let { open, close, high, low, time, volume } = point;
+          let { open, close, high, low, time: t, volume } = point;
+          const time = t as lwc.Time;
           const color = open > close ? util.colours.red : util.colours.green;
           const value = Math.round((high * 100 + low * 100) / 2) / 100;
           c.bar.push({ close, open, high, low, time });
@@ -165,20 +164,20 @@ export class InstrumentChart extends WebComponent {
       );
     },
     buys: () => {
-      return this.money.chart
-        .aggregate_position(this.position)
-        .filter((t) => t.amount > 0);
+      return this.positn.transctns.filter(
+        (t) => t.kind === "buy" && t.amount > 0,
+      );
     },
     baseline: () => {
       const buys = this.data.buys();
       if (!buys.length) return 0;
 
       const vals = this.data.buys().reduce(
-        (c, transaction) => {
-          const { price_traded, amount } = transaction;
-          c.value += price_traded! * amount;
-          c.amount += amount;
-          return c;
+        (values, t) => {
+          const { base, amount } = t;
+          values.value += base.traded_price * amount;
+          values.amount += amount;
+          return values;
         },
         { value: 0, amount: 0 },
       );
@@ -193,17 +192,14 @@ export class InstrumentChart extends WebComponent {
       };
     },
   };
-  private get instrmnt() {
-    return this.cache.instruments[this.p_id]!;
-  }
-  private get position() {
-    if (this._position) return this._position;
-    const transactions = this.cache.transactions[this.p_id]!;
-    return (this._position = this.money.chart.position(transactions));
-  }
 
+  private get positn() {
+    return this.cache.get.positns()[this.p_id]!;
+  }
+  private get instrmnt() {
+    return this.cache.get.instrmnts()[this.p_id]!;
+  }
   private chart_data?: mapped_data_t;
-  private _position?: filter.positn;
 }
 
 type mapped_data_t = {

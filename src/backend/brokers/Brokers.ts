@@ -1,18 +1,22 @@
 import { Global } from "backend";
 import { Positions, CacheBrokers } from "@backend/brokers";
 
-const update_freq = util.time.period.to_ms([5, "s"]);
+const poll_postn_freq = util.time.period.to_ms([5, "s"]);
+const poll_balance_freq = util.time.period.to_ms([30, "s"]);
 
 export class Brokers extends Global {
   constructor() {
     super();
-    this.add_shutdown_fncs(this.stop_polling, this.insert_live_data);
-
+    const { live } = this;
+    this.add_shutdown_fncs(
+      live.stop_postn_poll,
+      live.stop_balances_poll,
+      live.insert_data,
+    );
     this.cache = new CacheBrokers();
     this.positions = new Positions();
   }
-
-  public init = () => this.start_polling().then(this.insert_live_data);
+  public init = () => this.live.poll_positns().then(this.live.insert_data);
   public await_auth = async () => {
     const promises = conf.brokers.map((broker) => this[broker].await_auth());
     await Promise.all(promises);
@@ -21,50 +25,30 @@ export class Brokers extends Global {
     return Promise.all(conf.brokers.map((broker) => this[broker].logout()));
   };
   public update_brokers = async () => {
-    const { update } = this;
+    const { update, live } = this;
     Brokers.resolved ??= update
       .accounts()
       .then(update.instruments)
       .then(update.meta)
       .then(update.transactions)
       .then(update.lv_positns)
-      .then(this.insert_live_data);
+      .then(update.lv_balances)
+      .then(live.insert_data)
+      .then(() => {
+        live.poll_positns();
+        live.poll_balances();
+      });
 
     await Brokers.resolved;
-    return this.start_polling();
+    // return live.poll_balances();
   };
-
   public resp = {
-    lv_positns: () => this.cache.lv_positns,
-    metas: () => this.cache.get.metas(),
-    qid_map: () => this.cache.get.qid_map(),
+    positns: () => this.cache.lv_positns,
+    balances: () => this.cache.get.lv_balances(),
+    meta_views: () => this.cache.get.meta_views(),
+    geo_map: () => this.cache.get.qid_map(),
+    accnts: () => this.cache.get.accnts(),
   };
-  //public push_live_data = async () => {
-  //  try {
-  //    this.ws.publish("live_data", this.cache.live_data);
-  //  } catch (_err) {
-  //    await this.init_cache();
-  //    this.ws.publish("live_data", this.cache.live_data);
-  //  }
-  //};
-
-  //public push_cache = async () => {
-  //  await this.init_cache();
-  //  const [accounts, instruments, transactions, live] = await Promise.all([
-  //    this.cache.accounts,
-  //    this.cache.instruments,
-  //    this.cache.transactions,
-  //    this.cache.live,
-  //  ]);
-  //  const cache_data: fe.cache = {
-  //    accounts,
-  //    instruments,
-  //    transactions,
-  //    live,
-  //  };
-  //  this.ws.publish("cache", cache_data);
-  //};
-  //
   public chart = {
     data: async (broker: g.broker, ...p: pr.chart_period) => {
       const [conid, _period, granularity] = p;
@@ -102,47 +86,41 @@ export class Brokers extends Global {
     },
   };
   private update = {
-    accounts: async () => {
+    accounts: () => {
       this.bootstrap("Updating accounts");
-
+      this.cache.invalidate.accnts();
       return Promise.all(
         conf.brokers.map((broker) => this[broker].update_accounts()),
       );
     },
-    instruments: async () => {
-      const { db, bootstrap } = this;
-      // await Brokers.resolve.accounts;
+    instruments: () => {
       this.bootstrap("Updating instruments");
-
-      const instrmnts = await Promise.all(
+      return Promise.all(
         conf.brokers.map((broker) => this[broker].update_instruments()),
-      ).then((instrmnts) => instrmnts.flat());
-
-      await db.insert.instrumnts(instrmnts);
-
-      if (instrmnts.length)
-        bootstrap(`Updating ${instrmnts.length} new instruments`);
-      return instrmnts;
+      );
     },
     transactions: async () => {
       this.bootstrap("Updating transactions");
-
       return Promise.all(
         conf.brokers.map((broker) => this[broker].update_transactions()),
       );
     },
-    meta: async (instrmnts?: g.instrmnt[]) => {
-      if (instrmnts && !instrmnts.length) return;
-
-      const { db, tv, update } = this;
-      instrmnts ??= await db.select.instrmnts();
+    meta: async () => {
+      const { db, tv, update, bootstrap } = this;
+      let [instrmnts, ex_ids] = await Promise.all([
+        db.select.instrmnts(),
+        db.select.id_join(["i_id"]).then((i) => i.map((i) => i.i_id)),
+      ]);
+      instrmnts = instrmnts.filter((i) => !ex_ids.includes(i.i_id));
+      if (instrmnts.length)
+        bootstrap(`Updating ${instrmnts.length} new instruments`);
 
       return Promise.all(
         instrmnts.map((i) => tv.instrmnt_lookup(i).then(this.update.geo)),
       ).then(update.store_meta);
     },
     geo: async ([meta, instrmnt]: readonly [g.meta, g.instrmnt]) => {
-      const { wd, bootstrap } = this;
+      const { wd } = this;
       const geo: wd.result = await wd.location_lookup(meta);
 
       return [geo, meta, instrmnt] as const;
@@ -150,7 +128,8 @@ export class Brokers extends Global {
     store_meta: async (
       geo_meta_instrmnt: (readonly [wd.result, g.meta, g.instrmnt])[],
     ) => {
-      const { db } = this;
+      const { db, cache } = this;
+
       const data_to_db = {
         id_joins: [] as db.data<"id_join">[],
         loctns: [] as db.data<"meta_location">[],
@@ -174,7 +153,8 @@ export class Brokers extends Global {
           },
           data_to_db,
         );
-
+      cache.invalidate.metas();
+      cache.invalidate.qid_map();
       await Promise.all([
         db.insert.id_join(id_joins),
         db.insert.meta(metas),
@@ -227,48 +207,89 @@ export class Brokers extends Global {
         }) as T extends readonly [infer R, any] ? R : never;
       }
     },
+    lv_fx: async (metas: g.meta[]) => {
+      const { db, positions } = this;
+      const transctns = await db.select.transctns.data();
+      let currencies = [metas, transctns].flat().map((i) => i.currency);
+      currencies = Array.from(new Set(currencies));
+      return positions.update.lv_forex(currencies);
+    },
     lv_positns: async () => {
-      const { positions, cache } = this;
-      const { update } = positions;
-      const metas = await this.db.select.meta(); //await cache.get.metas();
-
-      const live_instrmnts_p = update.lv_instrmnts(metas);
-      const lv_instrmnts = await cache.set.lv_instrmnts(live_instrmnts_p);
-
-      const live_forex_p = update.lv_forex(metas);
+      const { positions, cache, update } = this;
+      cache.invalidate.live();
+      const metas = await cache.get.metas();
+      const instrmnts = positions.update.lv_instrmnts(metas);
+      const lv_instrmnts = await cache.set.lv_instrmnts(instrmnts);
+      const live_forex_p = update.lv_fx(metas);
       const lv_forex = await cache.set.lv_forex(live_forex_p);
-
-      return update.lv_positns(metas, lv_forex, lv_instrmnts);
+      return positions.update.lv_positns(metas, lv_forex, lv_instrmnts);
+    },
+    lv_balances: async () => {
+      const { cache } = this;
+      if (!this.auth_state) return cache.get.lv_balances();
+      const fx = await cache.get.lv_forex();
+      const balances = Promise.all(
+        conf.brokers.map((broker) => this[broker].balances(fx)),
+      ).then((balances) => balances.flat());
+      return cache.set.lv_balances(balances);
+    },
+  };
+  private live = {
+    poll_positns: async () => {
+      const { live } = this;
+      live.stop_postn_poll();
+      await live.publish_postns();
+      Brokers.poll_positn = setInterval(
+        async () => await live.publish_postns(),
+        poll_postn_freq,
+      );
+    },
+    /* Needs lower frequency to avoid broker rate limits */
+    poll_balances: async () => {
+      const { live, update } = this;
+      live.stop_balances_poll();
+      await update.lv_balances();
+      Brokers.poll_balances = setInterval(
+        async () => await update.lv_balances(),
+        poll_balance_freq,
+      );
+    },
+    stop_postn_poll: () => clearInterval(Brokers.poll_positn),
+    stop_balances_poll: () => clearInterval(Brokers.poll_balances),
+    publish_postns: async () => {
+      const { cache, update, ws } = this;
+      const [positns, balances] = await Promise.all([
+        update.lv_positns(),
+        cache.get.lv_balances(),
+      ]);
+      cache.lv_positns = positns;
+      ws.publish("positns", positns);
+      ws.publish("balances", balances);
+    },
+    insert_data: async () => {
+      const { db, cache } = this;
+      const [fx, instrmnts, balances] = await Promise.all([
+        cache.get.lv_forex(),
+        cache.get.lv_instrmnts(),
+        cache.get.lv_balances(),
+      ]);
+      await Promise.all([
+        db.insert.live.forex(fx),
+        db.insert.live.instrmnts(instrmnts),
+        db.insert.live.balances(balances),
+      ]);
     },
   };
 
-  private start_polling = async () => {
-    const { update, cache, ws } = this;
-    this.stop_polling();
-    cache.lv_positns = await update.lv_positns();
-    ws.publish("positns", cache.lv_positns);
-
-    Brokers.interval = setInterval(async () => {
-      cache.lv_positns = await update.lv_positns();
-      ws.publish("positns", cache.lv_positns);
-    }, update_freq);
-  };
-  private stop_polling = () => {
-    if (Brokers.interval) clearInterval(Brokers.interval);
-  };
-  private insert_live_data = async () => {
-    const { db, cache } = this;
-    const forex = await cache.get.lv_forex();
-    const lv_instrmnts = await cache.get.lv_instrmnts();
-    await Promise.all([
-      db.insert.live.forex(forex),
-      db.insert.live.instrmnts(lv_instrmnts),
-    ]);
-  };
-
+  private get auth_state() {
+    return !conf.brokers
+      .map((broker) => this[broker].auth_state)
+      .includes(false);
+  }
   public cache: CacheBrokers;
   private positions: Positions;
-  private static interval?: interval_t;
+  private static poll_positn?: interval_t;
+  private static poll_balances?: interval_t;
   private static resolved = null as resolve_t;
 }
 

@@ -1,5 +1,5 @@
 import { LandingComponent } from "@frontend/components/LandingComponent";
-import { InstrumentsRoot, type InsightView } from "@frontend/components";
+import { type InsightView } from "@frontend/components";
 
 export class InsightRoot extends LandingComponent {
   static observedAttributes = ["instrmnts", "positns"];
@@ -10,6 +10,7 @@ export class InsightRoot extends LandingComponent {
     const { el, props, handlers } = this;
     el.view_buttns.forEach((b) => (b.onclick = handlers.change_view));
     el.sort_pl_ur.onclick = handlers.sort;
+    el.sort_pl_ur_perc.onclick = handlers.sort;
     el.sort_value.onclick = handlers.sort;
     props.watch("instrmnts", handlers.render);
     props.watch("positns", handlers.positns);
@@ -62,12 +63,14 @@ export class InsightRoot extends LandingComponent {
     content: HTMLElement;
     sort_value: HTMLElement;
     sort_pl_ur: HTMLElement;
+    sort_pl_ur_perc: HTMLElement;
   }>({
     views: ["qsa", "insight-view"],
     view_buttns: ["qsa", ".header button"],
     content: ["qs", ".content"],
-    sort_value: ["qs", '.header [name="value"]'],
+    sort_value: ["qs", '.header [name="market_value"]'],
     sort_pl_ur: ["qs", '.header [name="pl_ur"]'],
+    sort_pl_ur_perc: ["qs", '.header [name="pl_ur_perc"]'],
   });
 
   private active_view?: string;

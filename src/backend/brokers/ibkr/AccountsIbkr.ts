@@ -5,57 +5,74 @@ export class AccountsIbkr extends Global {
     const { get, fetch } = this.ibkr.api;
     const { url, req_init } = get.accounts();
     const accounts = await fetch<b.i.account_t[]>(url, req_init);
-    logger.json("IBKR accounts raw", accounts);
-    return accounts.map(this.translate.account);
+    return accounts.map(this.frmt.account);
   };
-  public balances = async (accounts: g.account[]) => {
+  public balances = async (fx: lv.forex[]) => {
     const { get, fetch } = this.ibkr.api;
-    const balances = await Promise.all(
-      accounts.map((account) => {
-        const { a_id } = account;
-        const [_broker, id] = a_id.split("_");
-        const { url, req_init } = get.balance(id!);
-        return fetch<{
-          [currency: string]: b.i.balance_t;
-        }>(url, req_init).then((balances) => this.map_balances(balances));
+    const { frmt, db } = this;
+    const fx_map = Object.fromEntries(fx.map((f) => [f.currency, f]));
+
+    const acc_ids = await db.select
+      .accounts(["broker", "ibkr"], ["a_id"])
+      .then((accs) => accs.map((a) => a.a_id.split("_")[1]!));
+
+    return Promise.all(
+      acc_ids.map((id) => {
+        const { url, req_init } = get.balance(id);
+        return fetch<p.balance_res>(url, req_init).then((b) =>
+          frmt.balances(b, fx_map),
+        );
       }),
-    );
-    return balances.flat();
+    ).then((balances) => balances.flat());
   };
-  private map_balances = (balances: { [currency: string]: b.i.balance_t }) => {
-    delete balances.BASE;
-    return Object.keys(balances).map((currency) => {
-      const _balance = balances[currency]!;
-      const balance = this.translate.balance(_balance);
-      return balance;
-    });
-  };
-  private translate = {
+
+  private frmt = {
     account: (account: b.i.account_t): g.account => {
-      const { accountId, accountAlias, currency } = account;
+      const { accountId, accountAlias: alias, currency } = account;
       return {
         a_id: `ibkr_${accountId}`,
         broker: "ibkr",
-        alias: accountAlias,
+        alias,
         currency: util.money.patch_currency(currency),
       };
     },
-    balance: (balance: b.i.balance_t): lv.balance => {
+    balances: (balances: p.balance_res, fx_map: lv.fx_map) => {
+      delete balances.BASE;
+      return Object.entries(balances).map((b) =>
+        this.frmt.balance(...b, fx_map),
+      );
+    },
+    balance: (
+      currency: string,
+      balance: b.i.balance_t,
+      fx_map: lv.fx_map,
+    ): lv.balance => {
       let {
         acctcode,
         cashbalance: cash,
-        currency,
         stockmarketvalue: assets_val,
       } = balance;
+      const { money } = util;
       const broker: g.broker = "ibkr";
-      const a_id = `${broker}_${acctcode}` as id.a;
-
+      currency = money.patch_currency(currency);
+      const fractional = money.is_fractional(currency);
+      const fx = fx_map[currency]!.close;
+      cash = money.to_cents(cash, true);
+      cash = money.convert_market(cash, fx, true);
+      assets_val = money.to_cents(assets_val, fractional);
+      assets_val = money.convert_market(assets_val, fx, fractional);
+      const b_id = `${broker}_${acctcode}_${currency}` as id.b;
       return {
-        a_id,
+        b_id,
         currency,
         assets_val,
         cash,
+        fx,
       };
     },
   };
+}
+
+namespace p {
+  export type balance_res = { [currency: string]: b.i.balance_t };
 }

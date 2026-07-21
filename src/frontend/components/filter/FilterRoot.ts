@@ -9,12 +9,29 @@ export class FilterRoot extends WebComponent {
     this.dom.template_to_self("filter-root");
     this.props.watch("positns", this.handlers.render);
   }
+  public set = (filter: filter.data) => {
+    console.log({ filter });
+    Object.entries(filter).forEach(([key, val]) => {
+      Cache.filter[key as filter.key] = val;
+    });
+    this.dom.set_options();
+    const filter_hash = util.hash_id(Cache.filter);
+    this.el.root_app.setAttribute("filter", filter_hash);
+  };
+  public default = (): filter.data => ({
+    broker: "all",
+    a_id: "none",
+    asset_sector: "all",
+    asset_industry: "none",
+    country_qid: "all",
+    region_qid: "none",
+    place_qid: "none",
+  });
   private handlers = {
     render: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
-
       const { dom, el, handlers } = this;
-      delete self.select_paths;
+      delete self.selection_paths;
       dom.set_options();
       if (p.old) return;
 
@@ -24,42 +41,38 @@ export class FilterRoot extends WebComponent {
     },
     select: (e: Event) => {
       const el = e.target as HTMLSelectElement;
-      const value = el.value;
+      const val = el.value;
       const key = el.name as keyof filter.data;
-      if (Cache.filter[key] === value) return;
+      if (Cache.filter[key] === val) return;
 
-      Cache.filter[key] = value;
-
+      Cache.filter[key] = val;
       if (key === "broker") {
-        Cache.filter.a_id = value === "all" ? "none" : "all";
+        Cache.filter.a_id = val === "all" ? "none" : "all";
       }
       if (key === "asset_sector") {
-        Cache.filter.asset_industry = value === "all" ? "none" : "all";
+        Cache.filter.asset_industry = val === "all" ? "none" : "all";
       }
       if (key === "country_qid") {
-        Cache.filter.region_qid = value === "all" ? "none" : "all";
+        Cache.filter.region_qid = val === "all" ? "none" : "all";
         Cache.filter.place_qid = "none";
       }
       if (key === "region_qid") {
-        Cache.filter.place_qid = value === "all" ? "none" : "all";
+        Cache.filter.place_qid = val === "all" ? "none" : "all";
       }
-
-      this.dom.set_options();
-      const filter_hash = util.hash_id(Cache.filter);
-      this.el.root_app.setAttribute("filter", filter_hash);
+      this.set(Cache.filter);
     },
   };
   private dom = this.api.dom({
     set_options: () => {
-      const { dom, cache, option_keys } = this;
+      const { dom, cache } = this;
       const { opt } = dom;
       const { country: c, place: p, region: r } = cache.get;
-      const { broker, a_id, sector, industry: ind } = option_keys,
-        { country_qid: cq, region_qid: rq, place_qid: pq } = option_keys;
-
+      const { broker, a_id, sector, industry: ind } = this.option_keys,
+        { country_qid: cq, region_qid: rq, place_qid: pq } = this.option_keys;
+      const a = accnt_keys();
       const all_opts = {
         broker: [broker.map((k) => opt([k, k])), ["brokers", "broker"]],
-        a_id: [a_id.map((k) => opt([k, k])), ["accounts", "broker"]],
+        a_id: [a_id.map((k) => opt([k, a[k]!])), ["accounts", "broker"]],
         asset_sector: [sector.map((k) => opt([k, k])), ["sectors", "sector"]],
         asset_industry: [ind.map((k) => opt([k, k])), ["industries", "sector"]],
         country_qid: [cq.map((k) => opt([k, c(k)!])), ["countries", "country"]],
@@ -87,6 +100,21 @@ export class FilterRoot extends WebComponent {
           el.value = "none";
         }
       });
+
+      function accnt_keys() {
+        //console.log(a_id, cache.filter.broker);
+        const accnts = cache.get.accnts();
+        const keys = {} as { [id: string]: string };
+        return broker.reduce((accs, broker) => {
+          //console.log(broker);
+          const a = accnts[broker as g.broker];
+          if (!a) return accs;
+          Object.entries(a).forEach(([id, acc]) => {
+            accs[id] = acc.alias || id;
+          });
+          return accs;
+        }, keys);
+      }
     },
     opt: ([val, key]: [string, string]) => {
       return this.dom.make_el<HTMLOptionElement>(
@@ -97,7 +125,6 @@ export class FilterRoot extends WebComponent {
     },
   });
   private props = this.api.props();
-
   private el = this.query.select<{
     a_id: HTMLSelectElement;
     broker: HTMLSelectElement;
@@ -119,7 +146,7 @@ export class FilterRoot extends WebComponent {
   });
 
   private get option_keys() {
-    let path = structuredClone(this.select_paths);
+    let path = structuredClone(this.make_paths());
     const f = this.cache.filter;
 
     if (f.asset_sector) path = path.asset_sector![f.asset_sector]!;
@@ -147,16 +174,17 @@ export class FilterRoot extends WebComponent {
     }
   }
 
-  private get select_paths() {
-    if (self.select_paths) return self.select_paths;
+  private make_paths = () => {
+    if (self.selection_paths) return self.selection_paths;
 
-    const { get } = this.cache;
-    const positns = get.positns();
-    const instrmnts = get.instrmnts();
+    const { cache } = this;
+    const positns = cache.get.positns();
+    const instrmnts = cache.get.instrmnts();
+    const path = empty_path();
 
-    return (self.select_paths = Object.entries(instrmnts).reduce(
-      (path, [p_id, instrmnt]) => {
-        const { asset_sector, asset_industry } = instrmnt;
+    return (self.selection_paths = Object.values(instrmnts).reduce(
+      (path, instrmnt) => {
+        const { asset_sector, asset_industry, p_id } = instrmnt;
         const { country_qid, region_qid, place_qid } = instrmnt.geo;
 
         positns[p_id]!.transctns.forEach((t) => {
@@ -171,10 +199,9 @@ export class FilterRoot extends WebComponent {
           };
           build_paths(path, filter);
         });
-
         return path;
       },
-      make_branch(),
+      path,
     ));
 
     function build_paths(path: p.path, f: Partial<filter.data>) {
@@ -211,21 +238,18 @@ export class FilterRoot extends WebComponent {
         build_paths(branch, f_path);
       }
     }
-    function make_branch(
-      filter?: Partial<filter.data>,
-      parent?: p.path,
-    ): p.path {
-      if (!filter)
-        return {
-          broker: {},
-          a_id: {},
-          asset_sector: {},
-          asset_industry: {},
-          country_qid: {},
-          region_qid: {},
-          place_qid: {},
-        };
-
+    function empty_path(): p.path {
+      return {
+        broker: {},
+        a_id: {},
+        asset_sector: {},
+        asset_industry: {},
+        country_qid: {},
+        region_qid: {},
+        place_qid: {},
+      };
+    }
+    function make_branch(filter: Partial<filter.data>, parent: p.path): p.path {
       const path = Object.fromEntries(
         Object.entries(filter).map(([k]) => [k, {} as p.path]),
       );
@@ -237,8 +261,8 @@ export class FilterRoot extends WebComponent {
         Object.entries(obj).filter(([k]) => !f.includes(k)),
       ) as T;
     }
-  }
-  private static select_paths?: p.path;
+  };
+  private static selection_paths?: p.path;
 }
 const self = FilterRoot;
 
@@ -253,9 +277,6 @@ declare global {
       | "region_qid"
       | "place_qid";
     type data = { [key in filter.key]: string };
-    // & {
-    //  search: string;
-    //};
   }
 }
 namespace p {

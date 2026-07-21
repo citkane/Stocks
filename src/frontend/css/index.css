@@ -46,6 +46,7 @@ body {
   font-family: sans-serif;
   color: var(--col-text);
   font-size: var(--font-size);
+  user-select: none;
   pre {
     font-family: monospace;
   }

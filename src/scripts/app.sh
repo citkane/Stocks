@@ -2,6 +2,7 @@
 
 temp_dir="$(pwd)/.temp"
 log_dir="$(pwd)/.logs"
+
 app_pid_file="$temp_dir/app.pid"
 app_index="$(pwd)/src/backend/index.ts"
 #chrome_bins=(
@@ -17,12 +18,12 @@ function app_start {
 	#chrome_bin=$(_chrome_bin)
 	app_stop
 	(
-	#	if [[ -n $chrome_bin ]];then
-	#		export BUN_CHROME_PATH="$chrome_bin"
-	#	fi
+		#	if [[ -n $chrome_bin ]];then
+		#		export BUN_CHROME_PATH="$chrome_bin"
+		#	fi
 		bun "$app_index" &
 		pid=$!
-		echo "$pid" > "$app_pid_file"
+		echo "$pid" >"$app_pid_file"
 	)
 	sleep 1
 }
@@ -59,7 +60,7 @@ function process_stop {
 #	for path in "${chrome_bins[@]}"; do
 #		if [[ -e "$path" ]]; then
 #			_path="$path"
-#			break	
+#			break
 #		fi
 #	done
 #	if [[ -n "$_path" ]];then

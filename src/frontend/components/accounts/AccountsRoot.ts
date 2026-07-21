@@ -1,65 +1,73 @@
 import { LandingComponent } from "@frontend/components/LandingComponent";
-import type { AccountsBroker } from "@frontend/components";
+import type { AccountsBroker, MoneyString } from "@frontend/components";
 
 export class AccountsRoot extends LandingComponent {
-  static observedAttributes = ["accounts"];
-  /*
+  static observedAttributes = ["accnts", "balances"];
+
   constructor() {
     super();
-    this.dom.template_to_self("accounts-root");
-    this.props.watch("accounts", this.handlers.render);
+    const { dom, props, handlers } = this;
+    dom.template_to_self("accounts-root");
+    props.watch("accnts", handlers.render);
+    props.watch("balances", handlers.balances);
   }
 
   private handlers = {
-    render: (_p: p.prop_callback) => {
-      this.cache.account_brokers
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((broker) => {
-          const ex_broker_el = this.dom.find_broker_el(broker);
-          const broker_el = ex_broker_el || this.dom.make_broker_el(broker);
-          if (!ex_broker_el) this.brokers_wrapper_el.appendChild(broker_el);
-          broker_el.render();
-          this.props.set_money();
-        });
+    render: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
+      const { cache, dom } = this;
+      Object.entries(cache.get.accnts()).forEach((b) => dom.make_broker(...b));
+    },
+    balances: (p: pr.prop_callback) => {
+      if (p.old === p.new) return;
+
+      const { el } = this;
+      const balances = this.cache.get.balances();
+      const vals = { cash: 0, assets_val: 0 };
+
+      this.broker_els.forEach((el) => {
+        const hash = util.hash_id(balances[el.name]);
+        el.setAttribute("balances", hash);
+        const { cash, assets_val } = el.vals;
+        vals.cash += cash;
+        vals.assets_val += assets_val;
+      });
+      this.vals = vals;
+      el.val.money_value = vals.assets_val;
+      el.cash.money_value = vals.cash;
+      el.total.money_value = vals.cash + vals.assets_val;
     },
   };
-  private props = this.api.props({
-    set_money: () => {
-      const { tally } = this.money.accounts;
-      const { cash, assets_val, total } = tally(this.broker_rows_els);
-      this.els_money.cash.money_value = cash;
-      this.els_money.assets.money_value = assets_val;
-      this.els_money.total.money_value = total;
-    },
-  });
+  private props = this.api.props();
   private dom = this.api.dom({
-    find_broker_el: (broker: g.broker) => {
-      return this.querySelector<AccountsBroker>(
-        `accounts-broker[broker="${broker}"]`,
-      );
-    },
-    make_broker_el: (broker: g.broker) => {
-      return this.dom.make_el<AccountsBroker>(
-        "accounts-broker",
-        "",
-        `broker="${broker}"`,
-      );
+    make_broker: (broker: string, accnts: { [id: string]: g.account }) => {
+      const { broker_els, dom, el } = this;
+      let broker_el = broker_els.find((el) => el.name === broker);
+      if (!broker_el) {
+        broker_el = dom.make_el<AccountsBroker>("accounts-broker", "");
+        broker_el.setAttribute("name", broker);
+        broker_els.push(broker_el);
+      }
+      const hash = util.hash_id(accnts);
+      broker_el.setAttribute("accnts", hash);
+      broker_els
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((b) => el.brokers.appendChild(b));
     },
   });
-
-  public get els_money() {
-    return this.selector.money.accounts(this.money_row_el);
+  public vals = { cash: 0, assets_val: 0 };
+  private get broker_els() {
+    return Array.from(this.el.brokers.children) as AccountsBroker[];
   }
-  private get broker_rows_els() {
-    return this.brokers_wrapper_el
-      .querySelectorAll<AccountsBroker>(`accounts-broker`)
-      .values();
-  }
-  private get money_row_el() {
-    return this.querySelector<HTMLElement>(`.grid.money`)!;
-  }
-  private get brokers_wrapper_el() {
-    return this.querySelector<HTMLElement>(".wrapper.brokers")!;
-  }
-    */
+  private el = this.query.select<{
+    brokers: HTMLElement;
+    val: MoneyString;
+    cash: MoneyString;
+    total: MoneyString;
+  }>({
+    brokers: ["qs", ".brokers"],
+    val: ["qs", '.money [name="assets_val"]'],
+    cash: ["qs", '.money [name="cash"]'],
+    total: ["qs", '.money [name="total"]'],
+  });
 }

@@ -2,21 +2,26 @@ insight-row {
   display: block;
 
   .grid:hover {
+    /*
     background-color: var(--col-header-background-light) !important;
     cursor: pointer;
+    */
   }
   > .grid {
     [name="topic"] {
       grid-column: category;
     }
-    [name="value"] {
-      grid-column: value;
+    [name="market_value"] {
+      grid-column: market_value;
     }
     [name="pl_ur"] {
       grid-column: pl_ur;
     }
-    [name="percent"] {
-      grid-column: percent;
+    [name="pl_ur_perc"] {
+      grid-column: pl_ur_perc;
+    }
+    [name="bars"] {
+      grid-column: bars;
       padding: 1px;
       border-left: 1px solid var(--col-border-light);
       flex-direction: column;
@@ -25,6 +30,7 @@ insight-row {
       .bar {
         height: 20px;
         background: grey;
+        border: 2px solid grey;
         &[pl="profit"] {
           background: var(--col-pos);
           border: 2px solid var(--col-pos);
@@ -83,20 +89,22 @@ insight-row {
       }
     }
     &[level="2"] {
-      [name="percent"] {
+      [name="bars"] {
         border-bottom: 1px solid var(--col-border-light);
       }
       &:last-child {
-        [name="percent"] {
+        [name="bars"] {
           border-bottom: none;
         }
       }
     }
   }
   &[view="sectors"] {
+    /*
     [name="topic"] {
       pointer-events: none;
     }
+      */
     &[level="0"] {
       &:first-child {
         border-top: none;
@@ -107,11 +115,11 @@ insight-row {
       }
     }
     &[level="1"] {
-      [name="percent"] {
+      [name="bars"] {
         border-bottom: 1px solid var(--col-border-light);
       }
       &:last-child {
-        [name="percent"] {
+        [name="bars"] {
           border-bottom: none;
         }
       }

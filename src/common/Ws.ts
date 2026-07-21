@@ -22,18 +22,18 @@ export class Ws {
   private respond(mssg: message_t, p: req_t, api: Api_t) {
     const { topic } = mssg;
     const params = get_params(mssg);
-    const key = topic as keyof api_t["requests"];
-    const fnc = api.requests[key] as Function;
-    this.logger.debug("WS response cache:", Object.keys(api.requests).length);
+    const key = topic as keyof api_t["req"];
+    const fnc = api.req[key] as Function;
+    this.logger.debug("WS response cache:", Object.keys(api.req).length);
     fnc(p, ...params);
   }
 
   private action = (api: Api_t, mssg: message_t) => {
     const { topic } = mssg;
     const params = get_params(mssg);
-    const key = topic as keyof api_t["setter"];
-    const fnc = api.setter[key] as Function;
-    this.logger.debug("WS setter cache:", Object.keys(api.setter).length);
+    const key = topic as keyof api_t["on"];
+    const fnc = api.on[key] as Function;
+    this.logger.debug("WS setter cache:", Object.keys(api.on).length);
 
     fnc(...params);
   };
