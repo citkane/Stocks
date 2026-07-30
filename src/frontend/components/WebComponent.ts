@@ -4,6 +4,7 @@ import type {
   InstrumentsRoot,
   AppRoot,
   FilterRoot,
+  MapRoot,
 } from "@frontend/components";
 
 export class WebComponent extends HTMLElement {
@@ -141,6 +142,7 @@ export class WebComponent extends HTMLElement {
     els.root_insight = els.root_insight ??= els.qs("insight-root")!;
     els.root_app = els.root_app ??= els.qs("app-root")!;
     els.root_filter = els.root_filter ??= els.qs("filter-root")!;
+    els.root_map = els.root_map ?? els.qs("map-root");
 
     this.queries.forEach((q) => q());
     Object.entries(self.els).forEach(([key, val]) => {
@@ -158,6 +160,7 @@ export class WebComponent extends HTMLElement {
     root_insight: InsightRoot;
     root_app: AppRoot;
     root_filter: FilterRoot;
+    root_map: MapRoot;
   };
 
   private id_prefix = "";

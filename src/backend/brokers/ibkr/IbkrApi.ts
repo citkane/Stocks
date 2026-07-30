@@ -1,4 +1,4 @@
-import Fetch, { type fm, LibCallback } from "@common/FetchManager";
+import Fetch, { LibCallback } from "@common/FetchManager";
 
 const req_max_per_s = 100,
   req_max_concurrent = 10,
@@ -119,16 +119,13 @@ export class IbkrApi {
       const data = type?.includes("json") ? await res.json() : await res.text();
       return data;
     },
-    trace_cb: (data: fm.trace_data) => {
-      //if (data.paused) console.info(data.paused);
-    },
     constructor: () => {
       const { retry, timeout } = new LibCallback<"url">(),
         timeout_cb = timeout.backoff_factory(),
         retry_cb = retry.generic_factory(),
-        { response_cb, trace_cb } = this.fetcher;
+        { response_cb } = this.fetcher;
 
-      const options = { response_cb, retry_cb, timeout_cb, trace_cb },
+      const options = { response_cb, retry_cb, timeout_cb },
         { hostname, port } = new URL(conf.ibkr.base),
         hosts = [`${hostname}:${port}`];
 

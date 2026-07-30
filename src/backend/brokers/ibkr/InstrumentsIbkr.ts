@@ -1,7 +1,7 @@
 import { Global } from "@backend/Global";
 
 export class InstrumentsIbkr extends Global {
-  public update = () => {
+  public update = async () => {
     const { db, postns, frmt } = this;
     return Promise.all([
       db.select
@@ -44,11 +44,11 @@ export class InstrumentsIbkr extends Global {
   };
 
   private postns = {
-    fetch_conids: ([acc_ids, ex_postns]: [string[], number[]]) => {
+    fetch_conids: async ([acc_ids, ex_postns]: [string[], number[]]) => {
       const { api } = this.ibkr;
       return Promise.all(acc_ids.map(fetch_acc_postns)).then(to_con_ids);
 
-      function fetch_acc_postns(a_id: string) {
+      async function fetch_acc_postns(a_id: string) {
         const { url, req_init } = api.get.positions(a_id);
         return api
           .fetch<{ conid: string }[]>(url, req_init)
@@ -63,7 +63,7 @@ export class InstrumentsIbkr extends Global {
         });
       }
     },
-    fetch_postns: ([a_id, conids]: readonly [string, number[]]) => {
+    fetch_postns: async ([a_id, conids]: readonly [string, number[]]) => {
       const { postns } = this;
       return Promise.all(conids.map((conid) => postns.fetch_postn(a_id, conid)))
         .then((p) => p.flat())
@@ -72,7 +72,10 @@ export class InstrumentsIbkr extends Global {
           return p;
         });
     },
-    fetch_postn: (a_id: string, conid: number): Promise<b.i.positn_t[]> => {
+    fetch_postn: async (
+      a_id: string,
+      conid: number,
+    ): Promise<b.i.positn_t[]> => {
       const { postns } = this;
       const { api } = this.ibkr;
       const { url, req_init } = api.get.position(a_id, conid);

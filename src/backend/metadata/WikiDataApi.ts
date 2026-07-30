@@ -114,6 +114,7 @@ LIMIT 1`;
       city_million: "Q1637706",
       city_large: "Q129676344",
       city_big: "Q1549591",
+      prefecture_city: "Q748149",
       city_average: "Q896881",
       city_county: "Q1070990",
       small_city: "Q18466176",
@@ -137,8 +138,9 @@ LIMIT 1`;
     _in_country: "P17",
     _is_a: "P31",
     place_statement_init: () => {
-      const places = Object.values(this.wiki.places);
-      return places.map((place) => `${this.wiki._is_a}=${place}`).join("|");
+      const { wiki } = this;
+      const places = Object.values(wiki.places);
+      return places.map((place) => `${wiki._is_a}=${place}`).join("|");
     },
     headers: (...header: { [key: string]: string }[]) => {
       const collector = {
@@ -208,9 +210,6 @@ LIMIT 1`;
       return Object.fromEntries(
         Object.entries(geo).filter(([_k, v]) => v && v !== null),
       ) as p.raw_geo;
-    },
-    links_res: (links: p.res.links, q_id: string) => {
-      return links.entities[q_id]!.sitelinks.enwiki.url;
     },
     geo_to_db: <K extends p.ctx>(
       ctx: K,

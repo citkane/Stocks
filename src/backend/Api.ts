@@ -61,7 +61,8 @@ export default class Api extends Global implements Api_t {
         .data(broker, ...pa)
         .then((data) => p.messenger.response(p.req_uid, data || []))
         .catch((err) => {
-          throw Error(err);
+          console.error(err);
+          return [];
         });
     },
     login: (p: req_t) => {

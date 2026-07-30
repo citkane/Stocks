@@ -98,42 +98,6 @@ export class Positions extends Global {
       return instrmnts;
     },
   };
-  /*
-  private get = {
-    lv_trnsctns_map: async (
-      metas: g.meta[],
-      postns_map: p.positns_map,
-      root_currency: string,
-    ) => {
-      const { fx, lv_transctn: trctn, get } = this;
-
-      return Promise.all(
-        metas.map((meta) => get.lv_trnsctns(meta, postns_map, root_currency)),
-      );
-      //  .then((trnscns) =>
-      //    trnscns.map((ts) => fx.convert_transctns(ts, root_currency)),
-      //  )
-      //.then(trctn.to_i_id_map);
-    },
-    lv_trnsctns: async (
-      meta: g.meta,
-      postns_map: p.positns_map,
-      root_currency: string,
-    ) => {
-      const { lv_transctn: trctn } = this;
-      const { p_id } = meta;
-      let postn = postns_map[p_id];
-      postn = postn?.base_instrmnt || postn;
-      postn ??= this.lv_positn.dummy_postn(meta, root_currency);
-
-      return this.db.select
-        .transctns(["p_id", p_id], undefined, ["date", "DESC"])
-        .then((tns) => tns.map((tn) => trctn.to_lv_transctn(tn, postn)))
-        .then(trctn.to_positn_value)
-        .then((tns) => [p_id, tns] as const);
-    },
-  };
-  */
   private positn = {
     to_live_positns: async (
       live_instrmnts: p.pid_map<lv.instrmnt>,
@@ -290,6 +254,10 @@ export class Positions extends Global {
         if (!sell.amount) return;
 
         const bought = buy.find((buy) => find_buy(buy, sell))!;
+        if (!bought) {
+          console.error(sell);
+          throw sell;
+        }
         const sold_amount = sell.amount;
         const price_diff = sell.base.traded_price - bought.base.traded_price;
         if (bought.amount === sold_amount) {
@@ -365,7 +333,7 @@ export class Positions extends Global {
         d.currency = this.root_currency;
         d.amount = 0;
         d.div_value = money.to_cents(base.traded_price, fractional);
-        d.div_value = money.convert_traded(d.div_value, base.traded_fx);
+        // d.div_value = money.convert_traded(d.div_value, base.traded_fx);
       });
       unbooked.map((u) => {
         u.currency = this.root_currency;

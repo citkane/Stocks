@@ -19,7 +19,7 @@ const view_qid_map = [
         name: string;
         wiki_link: string;
         geo_point?: g.geo_point;
-        geo_shape?: Object;
+        geo_shape?: g.geo_shape;
       };
     },
   ],
@@ -95,8 +95,8 @@ const transactions = [
   ["kind", def(char(6))] as unknown as ["kind", lv.transctn_kind],
 ] as const;
 const transaction_update = [
+  ["broker", prim(char(4))] as unknown as ["broker", string],
   ["date", def("DATETIME")] as unknown as ["date", number],
-  ["broker", def(char(4))] as unknown as ["broker", string],
 ] as const;
 const instrmnt = [
   ["i_id", prim(char())] as unknown as ["i_id", id.i],
@@ -146,7 +146,7 @@ const geo_region = [
   ["qid", prim(char())] as unknown as ["qid", string],
   ["name", def(char())] as unknown as ["name", string],
   ["country_qid", def(char())] as unknown as ["country_qid", string],
-  ["geo_shape", "TEXT", "j"] as unknown as ["geo_shape", Object | null],
+  ["geo_shape", "TEXT", "j"] as unknown as ["geo_shape", g.geo_shape | null],
   ["geo_point", "TEXT", "j"] as unknown as ["geo_point", g.geo_point | null],
   ["wiki_link", char()] as unknown as ["wiki_link", string | null],
 ] as const;
@@ -237,8 +237,8 @@ SELECT DISTINCT
       instrmnt_meta.isin,
       instrmnt_meta.svg_logo,
       instrmnt_meta.tv_link,
-      instrmnt_meta.saxo_id,
-      instrmnt_meta.ibkr_id,
+      instrmnt.saxo_id,
+      instrmnt.ibkr_id,
       json_object(
         'country_qid', meta_location.country_qid,
         'region_qid', meta_location.region_qid,
@@ -246,7 +246,9 @@ SELECT DISTINCT
       ) AS geo
 FROM
       instrmnt_meta
-LEFT JOIN meta_location ON meta_location.p_id = instrmnt_meta.p_id;`,
+LEFT JOIN meta_location ON meta_location.p_id = instrmnt_meta.p_id
+LEFT JOIN id_join ON id_join.p_id = meta_location.p_id  
+LEFT JOIN instrmnt ON instrmnt.i_id = id_join.i_id;`,
   view_transctns: `
 CREATE VIEW IF NOT EXISTS view_transctns
 AS
@@ -305,14 +307,15 @@ json AS (
 			geo_region.qid, json_object(
 				'name', geo_region.name,
 				'wiki_link', geo_region.wiki_link,
-				'geo_point', json(geo_region.geo_point)
+				'geo_point', json(geo_region.geo_point),
+				'geo_shape', json(geo_region.geo_shape)
 			)
 		) AS regions,
 		json_group_object(
 			geo_place.qid, json_object(
 				'name', geo_place.name,
 				'wiki_link', geo_place.wiki_link,
-				'geo_point', json(geo_region.geo_point)
+				'geo_point', json(geo_place.geo_point)
 			)	
 		) AS places
 	FROM geo_country, geo_region, geo_place

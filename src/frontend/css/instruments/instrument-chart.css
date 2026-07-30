@@ -1,12 +1,12 @@
 instrmnt-chart {
-  display: block;
-  grid-column: var(--grid-col-all);
+  display: block !important;
+  /* grid-column: var(--grid-col-all); */
   padding: 0 !important;
   height: 200px;
-  /*
-  inner {
-    display: block;
-    width: 100%;
-  }
-    */
+  position: relative;
+
+  /* inner { */
+  /*   display: block; */
+  /*   width: 100%; */
+  /* } */
 }

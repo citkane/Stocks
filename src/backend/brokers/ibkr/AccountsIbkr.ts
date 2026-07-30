@@ -17,7 +17,7 @@ export class AccountsIbkr extends Global {
       .then((accs) => accs.map((a) => a.a_id.split("_")[1]!));
 
     return Promise.all(
-      acc_ids.map((id) => {
+      acc_ids.map(async (id) => {
         const { url, req_init } = get.balance(id);
         return fetch<p.balance_res>(url, req_init).then((b) =>
           frmt.balances(b, fx_map),

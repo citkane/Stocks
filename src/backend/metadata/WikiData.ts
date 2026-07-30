@@ -97,17 +97,17 @@ export class WikiData extends WikiDataApi {
         .then((geo) => debug(geo, "country"));
     },
     qid_place: async (geo: g.meta_geo) => {
-      const { get, find } = this,
-        { in_country, is_place } = this.wiki.statement;
-
+      const { get, find } = this;
+      const { in_country, is_place } = this.wiki.statement;
       geo = await find.qid_country(geo);
       if (geo.place_qid) return geo;
 
       const statement = geo.country_qid
         ? ([in_country(geo.country_qid), is_place()] as string[])
         : ([is_place()] as string[]);
-      const qid = await get.search(geo.place!, statement);
-      geo.place_qid = qid ? qid : undefined;
+
+      const place_qid = await get.search(geo.place!, statement);
+      geo.place_qid = place_qid ? place_qid : undefined;
 
       return this.cache.locatn_search(geo);
     },
@@ -124,7 +124,16 @@ export class WikiData extends WikiDataApi {
       const { fetch, request } = this;
       const req = request.wiki_links(q_id);
       const res = await fetch<p.res.links>(req);
-      return this.frmt.links_res(res, q_id);
+
+      const url = res.entities[q_id]?.sitelinks.enwiki?.url;
+
+      if (!url) {
+        console.error(q_id, res);
+        throw res.entities;
+      }
+
+      return url;
+      // return this.frmt.links_res(res, q_id);
     },
     geo_shape: async (url: string) => {
       const { fetch, request } = this;
@@ -138,12 +147,11 @@ export class WikiData extends WikiDataApi {
     },
   };
   private get = {
-    search: async (search_term: string, statements: string[], limit = 1) => {
+    search: async (search_term: string, statements: string[], limit = 3) => {
       const { fetch, request } = this;
-      return request
-        .search(search_term, statements, limit)
-        .then((req) => fetch<p.res.search>(req))
-        .then((res) => res.query.search[0]?.title || undefined);
+      const req = await request.search(search_term, statements, limit);
+      const res = await fetch<p.res.search>(req);
+      return res.query.search[0]?.title || undefined;
     },
     merge_geo_dets: async (geo: g.meta_geo, wiki: p.raw_geo) => {
       let { find } = this,

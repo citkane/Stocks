@@ -10,7 +10,7 @@ export class Database extends Sql {
       ) => {
         return this.sql.select("view_transctns", condition, sort, cols);
       },
-      last_update: (broker: g.broker) => {
+      last_update: async (broker: g.broker) => {
         return this.sql
           .select("transaction_update", ["broker", broker], undefined, ["date"])
           .then((u) => u[0]?.date);
@@ -32,7 +32,7 @@ export class Database extends Sql {
       locatn_search: async () => {
         return this.sql.select("view_locatns");
       },
-      qid_map: () => {
+      qid_map: async () => {
         return this.sql.select("view_qid_map").then((json) => json[0]!.geo_map);
       },
     },
@@ -121,7 +121,7 @@ export class Database extends Sql {
         if (!balances.length) return;
         return this.sql.insert("live_balances", balances, true);
       },
-      chart: (id: string, data: db.data<"live_chart">[]) => {
+      chart: async (id: string, data: db.data<"live_chart">[]) => {
         return this.sql.chart.insert(id, data);
       },
     },

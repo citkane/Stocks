@@ -40,16 +40,6 @@ export class Sql extends Global {
       const conflict = this.fragment.primary_conflict(table, cols, update);
       return sql`INSERT INTO ${sql(table)} ${sql(values)} ${conflict}`;
     },
-    //update: <T extends db.tbl.names>(
-    //  table: T,
-    //  value: db.data<T>,
-    //  condition?: db.condition<T>,
-    //) => {
-    //  value = this.parse_data.in([value], table)[0]!;
-    //
-    //  const cond = this.fragment.condition(table, condition);
-    //  return sql`UPDATE ${sql(table)} SET ${sql(value)} ${cond}`;
-    //},
     select: <T extends db.tbl.names, C extends db.tbl.col_names<T>>(
       table: T,
       condition?: db.condition<T>,
@@ -75,7 +65,7 @@ export class Sql extends Global {
         (res) => (!!res[0] ? true : false),
       ),
     chart: {
-      create: (name: string) => {
+      create: async (name: string) => {
         const { chart } = this.sql;
         return create_table("live_chart", sql_c).then(() => chart.rename(name));
       },
@@ -83,13 +73,9 @@ export class Sql extends Global {
         return sql_c`ALTER TABLE ${sql_c("live_chart")} RENAME TO ${sql_c(name)}`;
       },
       insert: async (name: string, values: db.data<"live_chart">[]) => {
-        const { table_exists, chart } = this.sql,
-          exists = await table_exists(name, sql_c),
-          insert = `INSERT INTO ${sql_c(name)} ${sql_c(values)}`;
-
-        return exists
-          ? sql_c`${sql_c(insert)} ON CONFLICT (${sql_c("time")}) DO NOTHING`
-          : chart.create(name).then(() => sql_c(insert));
+        const { table_exists, chart } = this.sql;
+        if (!(await table_exists(name, sql_c))) await chart.create(name);
+        return sql_c`INSERT INTO ${sql_c(name)} ${sql_c(values)} ON CONFLICT (${sql_c("time")}) DO NOTHING`;
       },
       select: async (id: string) => {
         const exists = await this.sql.table_exists(id, sql_c);
@@ -243,15 +229,4 @@ function create_table(table_name: db.tbl.names, _sql = sql) {
   return _sql
     .unsafe(`CREATE TABLE IF NOT EXISTS ${table_name} (${schema})`)
     .execute();
-}
-
-function foo1<T extends db.tbl.names>(cols: db.tbl.col_names<T>[]) {
-  return foo<T, typeof cols extends readonly [...infer C] ? C : never>(cols);
-}
-
-function foo<
-  T extends db.tbl.names,
-  C extends db.tbl.col_names<T>[] | string[] = string[],
->(cols: [...C], _table?: T) {
-  return cols as C;
 }

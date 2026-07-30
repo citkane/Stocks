@@ -28,7 +28,7 @@ export class TradingView extends Global {
 
     return [meta, instrmnt] as const;
   };
-  public forex = (root_currency: string, currencies: string[]) => {
+  public forex = async (root_currency: string, currencies: string[]) => {
     const { frmt } = this;
     const exchange = "FX_IDC",
       kind = "forex",
@@ -39,7 +39,7 @@ export class TradingView extends Global {
       frmt.add_base_fx(Object.values(currencies), root_currency),
     );
   };
-  public live_instrmnts = (metas: g.meta[]) => {
+  public live_instrmnts = async (metas: g.meta[]) => {
     const { frmt } = this;
     const tickers = metas.map((m) => `${m.p_id.replace("-", ":")}` as p.ticker);
     return this.scanner(tickers, ["stock", "fund"], "global").then(
@@ -148,7 +148,7 @@ export class TradingView extends Global {
         return tv_score + broker_score;
       }
     },
-    symbol: (ticker: p.ticker) => {
+    symbol: async (ticker: p.ticker) => {
       const { fetcher } = this;
       const fields = fetcher.scanner_keys("global");
       const url = `https://scanner.tradingview.com/symbol`;
@@ -440,7 +440,7 @@ export class TradingView extends Global {
 
 /** Utility to look up TV scanner fields */
 export class TradingViewFields extends TradingView {
-  public fields = (
+  public fields = async (
     market: p.scanner.kind,
   ): Promise<tv.fields.res["fields"]> => {
     let url = `https://scanner.tradingview.com/${market}/metainfo`;

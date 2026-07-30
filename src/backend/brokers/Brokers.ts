@@ -51,17 +51,18 @@ export class Brokers extends Global {
   };
   public chart = {
     data: async (broker: g.broker, ...p: pr.chart_period) => {
+      const { db, chart } = this;
       const [conid, _period, granularity] = p;
       const [c, t] = granularity;
       const id = `${broker}_${conid}_${c}${t}`;
-      const data = await this.db.select.live.chart(id);
-
-      return !!data
-        ? this.chart.update(data, id, broker, ...p)
-        : this[broker].chart_data(...p).then(async (data) => {
-            await this.db.insert.live.chart(id, data);
-            return this.db.select.live.chart(id)!;
-          });
+      const data = await db.select.live.chart(id);
+      // return data;
+      return data.length
+        ? chart.update(data, id, broker, ...p)
+        : this[broker]
+            .chart_data(...p)
+            .then((data) => db.insert.live.chart(id, data))
+            .then(() => db.select.live.chart(id));
     },
     update: async (
       data: lv.chart_data[],
@@ -69,6 +70,7 @@ export class Brokers extends Global {
       broker: g.broker,
       ...p: pr.chart_period
     ) => {
+      const { db } = this;
       let [conid, period, granularity] = p;
       const end_last = data[data.length - 1]!.time;
       const end_now = util.time.period.ms_end(util.time.ms_now(), granularity);
@@ -76,9 +78,10 @@ export class Brokers extends Global {
       if (update_period <= 0) return data;
 
       period = [update_period, "s"];
-      data = await this[broker].chart_data(conid, period, granularity);
-      if (data.length) await this.db.insert.live.chart(id, data);
-      return this.db.select.live.chart(id)!;
+      return this[broker]
+        .chart_data(conid, period, granularity)
+        .then((data) => db.insert.live.chart(id, data))
+        .then(() => db.select.live.chart(id));
       //.then(async (data) => {
       //  if (data.length) await this.db.insert.chart(id, data);
       //  return this.db.select.chart(id)!;
@@ -122,7 +125,6 @@ export class Brokers extends Global {
     geo: async ([meta, instrmnt]: readonly [g.meta, g.instrmnt]) => {
       const { wd } = this;
       const geo: wd.result = await wd.location_lookup(meta);
-
       return [geo, meta, instrmnt] as const;
     },
     store_meta: async (
@@ -231,6 +233,7 @@ export class Brokers extends Global {
       const balances = Promise.all(
         conf.brokers.map((broker) => this[broker].balances(fx)),
       ).then((balances) => balances.flat());
+
       return cache.set.lv_balances(balances);
     },
   };

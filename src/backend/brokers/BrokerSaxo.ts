@@ -51,7 +51,7 @@ export class BrokerSaxo extends Global {
         .then(() => bootstrap("SAXO accounts updated"));
     },
 
-    instruments: () => {
+    instruments: async () => {
       const { bootstrap, instruments, db } = this;
       return instruments
         .update()

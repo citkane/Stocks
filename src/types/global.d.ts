@@ -71,6 +71,16 @@ namespace g {
   type geo_map = db.data<"view_qid_map">["geo_map"];
   type geo_point = [number, number];
   type iso_date = `${string}-${string}-${string}`;
+
+  type geo_shape = {
+    license: string;
+    description: { [lang: string]: string };
+    sources: string;
+    zoom: number;
+    latitude: number;
+    longitude: number;
+    data: {};
+  };
 }
 
 /** Live data */

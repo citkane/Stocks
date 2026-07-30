@@ -4,6 +4,7 @@ import {
   MoneyString,
   PercentString,
   PositnsRoot,
+  chart_granularity,
   type ExpandingDrawer,
   type InstrumentChart,
 } from "@frontend/components";
@@ -13,25 +14,29 @@ export class InstrumentRow extends WebComponent {
 
   constructor() {
     super();
-    this.dom.template_to_self("instrmnt-row");
-    this.props.show();
-    this.props.watch("id", this.handlers.render);
-    this.props.watch("positn", this.handlers.positn);
-    this.props.watch("filter", this.handlers.filter);
+
+    const { dom, props, handlers } = this;
+
+    dom.template_to_self("instrmnt-row");
+    props.show();
+    props.watch("id", handlers.render);
+    props.watch("positn", handlers.positn);
+    props.watch("filter", handlers.filter);
   }
 
   private handlers = {
     render: async (p: pr.prop_callback) => {
       if (p.old === p.new || p.old) return;
-
+      const { el, handlers, p_id, dom } = this;
       // this.el_button_ticker.oncontextmenu = this.handlers.drawers;
       // this.el_button_pos.oncontextmenu = this.handlers.drawers;
-      this.el.positn_root.set_pid(this.p_id, "positn_root");
-      this.el.button_transctns.onclick = this.handlers.drawer;
-      this.el.button_ticker.onclick = this.handlers.drawer;
+      el.positn_root.set_pid(p_id, "positn_root");
+      el.chart.set_pid(p_id, "chart_root");
+      el.button_transctns.onclick = handlers.drawer;
+      el.button_ticker.onclick = handlers.drawer;
 
-      this.dom.init();
-      this.dom.init_info();
+      dom.init();
+      dom.init_info();
     },
     positn: (p: pr.prop_callback) => {
       if (p.old === p.new) return;
@@ -71,7 +76,10 @@ export class InstrumentRow extends WebComponent {
       const name = button.getAttribute("name")!;
       switch (name) {
         case "ticker":
-          el.chart.setAttribute("init", "true");
+          const time = Math.round(
+            util.time.ms_now() / util.time.period.to_ms(chart_granularity),
+          );
+          el.chart.setAttribute("update", String(time));
           el.drawer_info.toggle();
           break;
         case "transctns":
@@ -253,4 +261,3 @@ export class InstrumentRow extends WebComponent {
     div_yield: ["qs", '.instrmnt [name="div_yield"]'],
   });
 }
-const self = InstrumentRow;

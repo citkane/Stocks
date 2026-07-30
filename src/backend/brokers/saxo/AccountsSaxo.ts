@@ -17,7 +17,7 @@ export class AccountsSaxo extends Global {
       .then((accs) => accs.map((a) => [a.broker_key!, a.a_id] as const));
 
     return Promise.all(
-      acc_keys.map(([key, a_id]) => {
+      acc_keys.map(async ([key, a_id]) => {
         const req = get.balance(key);
         return fetch<b.s.balance_t>(req).then((bal) =>
           frmt.balance(a_id, bal, fx_map),

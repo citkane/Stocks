@@ -6,75 +6,76 @@ const chart_granularity: period_t = [1, "d"];
 const visibility_start: period_t = [1, "y"];
 
 export class InstrumentChart extends WebComponent {
-  static observedAttributes = ["init", "ready", "i_id"];
+  static observedAttributes = ["id", "update"];
 
   constructor() {
     super();
-    this.dom.template_to_self("instrmnt-chart");
-    this.style.height = "200px";
 
-    this.props.watch("init", this.handlers.set_i_id);
-    this.props.watch("i_id", this.handlers.fetch_data);
-    this.props.watch("ready", this.handlers.render);
+    const { dom, style, props, handlers } = this;
+
+    dom.template_to_self("instrmnt-chart");
+    style.height = "200px";
+    props.watch("id", handlers.init);
+    props.watch("update", handlers.update);
   }
 
   private handlers = {
-    render: async (p: pr.prop_callback) => {
-      if (p.old === p.new) return;
+    init: (p: pr.prop_callback) => {
+      if (p.new === p.old) return;
 
-      try {
-        const chart = this.dom.createChart();
-        this.addEventListener("dblclick", () =>
-          this.dom.set_visible_range(chart),
-        );
-
-        const baseline_chart = this.dom.add_baseline_series(chart);
-        const bar_chart = this.dom.add_bar_series(chart);
-        const volume_chart = this.dom.add_volume_series(chart);
-
-        const { bar, price, volume } = this.data.data();
-        price.forEach((p) => {
-          if (isNaN(Number(p.time)) || isNaN(Number(p.value))) logger.error(p);
-        });
-
-        bar_chart.setData(bar);
-        volume_chart.setData(volume);
-        baseline_chart.setData(price);
-
-        this.dom.create_trade_markers(baseline_chart);
-        this.dom.add_buy_lines(baseline_chart);
-        this.dom.set_visible_range(chart);
-      } catch (err) {
-        logger.error(err);
-      }
+      InstrumentChart.charts[this.p_id] = lwc.createChart(this, {
+        autoSize: true,
+      });
+      this.ondblclick = this.charts.set_visible_range;
     },
-    fetch_data: (p: pr.prop_callback) => {
-      if (p.old === p.new) return;
 
-      const { saxo_id, ibkr_id } = this.instrmnt;
-      return this.brokers
-        .chart_data(saxo_id, ibkr_id, chart_span, chart_granularity)
-        .then((data) => this.data.map(data))
-        .then((data) => {
-          this.chart_data = data;
-          this.setAttribute("ready", "true");
-        })
-        .catch((err) => logger.error(err));
-    },
-    set_i_id: () => {
-      const row = this.parentElement!.parentElement!.parentElement!;
-      const i_id = row.getAttribute("i_id")!;
-      this.setAttribute("i_id", i_id);
+    update: async (p: pr.prop_callback) => {
+      if (p.new === p.old) return;
+
+      const { charts, chart } = this;
+      const live_data = await this.data.fetch();
+
+      this.baseline = this.baseline ??= charts.add_baseline_series(chart);
+      this.bar = this.bar ??= charts.add_bar_series(chart);
+      this.volume = this.volume ??= charts.add_volume_series(chart);
+
+      charts.create_trade_markers();
+      charts.add_buy_lines();
+
+      charts.update_data(this.baseline, live_data.price);
+      charts.update_data(this.bar, live_data.bar);
+      charts.update_data(this.volume, live_data.volume);
+
+      chart.timeScale().fitContent();
+      charts.set_visible_range();
     },
   };
   private props = this.api.props();
-  private dom = this.api.dom({
-    createChart: () => lwc.createChart(this),
+  private dom = this.api.dom();
+  private charts = {
+    update_data: <T extends lwc.SeriesType>(
+      series: lwc.ISeriesApi<T>,
+      data: p.lwc_data[keyof p.lwc_data],
+    ) => {
+      if (!data.length) return;
+
+      const ex_data = series.data();
+      if (!ex_data.length) {
+        series.setData(data);
+        return;
+      }
+
+      const last_time = ex_data[ex_data.length - 1]!.time;
+      data.forEach((d) => {
+        if (d.time <= last_time) return;
+        series.update(d);
+      });
+    },
     add_bar_series: (chart: lwc.IChartApi) => {
       const bar = chart.addSeries(lwc.BarSeries, {
         baseValue: { type: "price", price: this.data.baseline() },
         priceScaleId: "bar",
-      } as series_options_t);
+      } as p.series_options);
 
       bar.priceScale().applyOptions({
         scaleMargins: {
@@ -88,7 +89,7 @@ export class InstrumentChart extends WebComponent {
       const baseline = chart.addSeries(lwc.BaselineSeries, {
         baseValue: { type: "price", price: this.data.baseline() },
         priceScaleId: "baseline",
-      } as series_options_t);
+      } as p.series_options);
 
       baseline.priceScale().applyOptions({
         scaleMargins: {
@@ -104,7 +105,7 @@ export class InstrumentChart extends WebComponent {
           type: "volume",
         },
         priceScaleId: "volume",
-      } as series_options_t);
+      } as p.series_options);
       volume.priceScale().applyOptions({
         scaleMargins: {
           top: 0.75,
@@ -113,9 +114,12 @@ export class InstrumentChart extends WebComponent {
       });
       return volume;
     },
-    add_buy_lines: (series: lwc.ISeriesApi<"Baseline">) => {
-      this.data.buys().forEach((p) =>
-        series.createPriceLine({
+    add_buy_lines: () => {
+      const { data, baseline } = this;
+      if (!data.buys.length) return;
+
+      data.buys().forEach((p) =>
+        baseline.createPriceLine({
           price: p.base.traded_price,
           color: util.colours.blue,
           //lineWidth: 2,
@@ -125,54 +129,65 @@ export class InstrumentChart extends WebComponent {
         }),
       );
     },
-    create_trade_markers: (series: lwc.ISeriesApi<"Baseline">) => {
-      const markers = this.positn.transctns.map((t) => {
-        const time = Math.floor(Number(t.date) / 1000);
-        const color = t.kind === "buy" ? util.colours.blue : util.colours.red;
+    create_trade_markers: () => {
+      const { positn, baseline } = this;
+      const markers = positn.transctns
+        .filter((t) => t.kind === "buy" || t.kind === "sell")
+        .map((t) => {
+          const time = Math.floor(Number(t.date) / 1000);
+          const color = t.kind === "buy" ? util.colours.blue : util.colours.red;
 
-        return {
-          price: t.base.traded_price,
-          color,
-          position: "atPriceMiddle",
-          shape: "circle",
-          text: `${t.kind} ${t.amount}`,
-          size: 1.2,
-          time,
-        } as lwc.SeriesMarker<lwc.Time>;
-      });
-      return lwc.createSeriesMarkers(series, markers);
+          return {
+            price: t.base.traded_price,
+            color,
+            position: "atPriceMiddle",
+            shape: "circle",
+            text: `${t.kind} ${t.base.amount}`,
+            size: 1.2,
+            time,
+          } as lwc.SeriesMarker<lwc.Time>;
+        });
+      return lwc.createSeriesMarkers(baseline, markers);
     },
-    set_visible_range: (chart: lwc.IChartApi) => {
-      chart.timeScale().setVisibleRange(this.data.visible_range());
+    set_visible_range: () => {
+      const { data, chart } = this;
+      chart.timeScale().setVisibleRange(data.visible_range());
     },
-  });
+  };
   private data = {
-    data: () => this.chart_data!,
-    map: (data: lv.chart_data[]) => {
+    fetch: async () => {
+      const { instrmnt, brokers, data } = this;
+      const { saxo_id, ibkr_id } = instrmnt;
+
+      return brokers
+        .chart_data(saxo_id, ibkr_id, chart_span, chart_granularity)
+        .then((d) => data.to_series(d));
+    },
+    to_series: (data: lv.chart_data[]) => {
       return data.reduce(
-        (c, point) => {
+        (data, point) => {
           let { open, close, high, low, time: t, volume } = point;
           const time = t as lwc.Time;
           const color = open > close ? util.colours.red : util.colours.green;
           const value = Math.round((high * 100 + low * 100) / 2) / 100;
-          c.bar.push({ close, open, high, low, time });
-          c.volume.push({ time, color, value: volume });
-          c.price.push({ time, value });
-          return c;
+          data.bar.push({ close, open, high, low, time });
+          data.volume.push({ time, color, value: volume });
+          data.price.push({ time, value });
+          return data;
         },
-        { bar: [], volume: [], price: [] } as mapped_data_t,
+        { bar: [], volume: [], price: [] } as p.lwc_data,
       );
     },
     buys: () => {
       return this.positn.transctns.filter(
-        (t) => t.kind === "buy" && t.amount > 0,
+        (t) => t.kind === "buy" && t.base.amount > 0,
       );
     },
     baseline: () => {
-      const buys = this.data.buys();
-      if (!buys.length) return 0;
+      const { data } = this;
+      // if (!buys.length) return 0;
 
-      const vals = this.data.buys().reduce(
+      const vals = data.buys().reduce(
         (values, t) => {
           const { base, amount } = t;
           values.value += base.traded_price * amount;
@@ -181,6 +196,7 @@ export class InstrumentChart extends WebComponent {
         },
         { value: 0, amount: 0 },
       );
+      if (!vals.value || !vals.amount) return 0;
       return Math.round((vals.value * 100) / vals.amount) / 100;
     },
     visible_range: () => {
@@ -193,20 +209,30 @@ export class InstrumentChart extends WebComponent {
     },
   };
 
+  private baseline!: lwc.ISeriesApi<"Baseline">;
+  private bar!: lwc.ISeriesApi<"Bar">;
+  private volume!: lwc.ISeriesApi<"Histogram">;
+  static charts = {} as { [p_id: id.p]: lwc.IChartApi };
+  private get chart() {
+    return InstrumentChart.charts[this.p_id]!;
+  }
   private get positn() {
     return this.cache.get.positns()[this.p_id]!;
   }
   private get instrmnt() {
     return this.cache.get.instrmnts()[this.p_id]!;
   }
-  private chart_data?: mapped_data_t;
 }
 
-type mapped_data_t = {
-  bar: lwc.BarData<lwc.Time>[];
-  price: lwc.BaselineData<lwc.Time>[];
-  volume: lwc.HistogramData<lwc.Time>[];
-};
-type series_options_t = lwc.DeepPartial<
-  lwc.HistogramStyleOptions & lwc.SeriesOptionsCommon
->;
+export { chart_granularity };
+
+namespace p {
+  export type lwc_data = {
+    bar: lwc.BarData<lwc.Time>[];
+    price: lwc.BaselineData<lwc.Time>[];
+    volume: lwc.HistogramData<lwc.Time>[];
+  };
+  export type series_options = lwc.DeepPartial<
+    lwc.HistogramStyleOptions & lwc.SeriesOptionsCommon
+  >;
+}

@@ -43,6 +43,7 @@ export class AppRoot extends WebComponent {
       if (p.new === p.old) return;
       this.el.root_instrmnts.setAttribute("instrmnts", p.new);
       this.el.root_insight.setAttribute("instrmnts", p.new);
+      this.el.root_map.setAttribute("instrmnts", p.new);
     },
     positns: (p: pr.prop_callback) => {
       if (p.new === p.old) return;

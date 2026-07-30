@@ -4,75 +4,50 @@ export class TransactionsIbkr extends Global {
   public update = async (days_ago: number) => {
     if (!days_ago) return [];
 
-    const { db, transctns, frmt, root_currency } = this;
+    const { db, data, frmt, root_currency } = this;
     return Promise.all([
       db.select.instrmnts(["ibkr_id", true]),
       db.select.accounts(["broker", "ibkr"]).then((a) => a.map((a) => a.a_id)),
     ])
       .then(([instrmnts, a_ids]) =>
-        transctns.fetch([a_ids, instrmnts, root_currency, days_ago] as const),
+        data.fetch([a_ids, instrmnts, root_currency, days_ago] as const),
       )
-      .then(frmt.transform)
+      .then(frmt.transctns)
       .then(async (transctns) => {
         await this.db.insert.transctns.last_update("ibkr", util.time.ms_now());
         return transctns;
       });
   };
+
   public last_update_date = async () => {
     let date = await this.db.select.transctns.last_update("ibkr");
     date ??= util.time.ms(conf.ibkr.start_date);
     return util.time.aging_days(date);
-    // const [date] = await this.db.select.transctns.data(
-    //   ["broker", "ibkr"],
-    //   ["date"],
-    //   ["date", "DESC"],
-    // );
-    //const days_ago = date?.date
-    //  ? util.time.aging_days(date)
-    //  : util.time.aging_days(conf.ibkr.start_date);
-    //
-    //return days_ago;
   };
+
   private frmt = {
-    /**
-     * Transforms IBKR transactions to the normalised frontend transaction type.
-     */
-    transform: async ([transctns, instrmnts]: readonly [
+    transctns: async ([trans, instrmnts]: readonly [
       b.i.transaction_t[],
       g.instrmnt[],
     ]) => {
-      const { frmt } = this,
-        cats = frmt.categorise(transctns),
-        instrmt_map = Object.fromEntries(
-          instrmnts.map((i) => [i.ibkr_id!, i]),
-        ) as { [conid: number]: g.instrmnt };
+      const { frmt, data } = this;
+      const views = data.categorise(trans);
+      const instrmt_map = Object.fromEntries(
+        instrmnts.map((i) => [i.ibkr_id!, i]),
+      ) as { [conid: number]: g.instrmnt };
 
-      return Object.values(cats).reduce((transctns, cat) => {
-        frmt
-          .resolve_transfers(cat)
-          .forEach((tr) => transctns.push(frmt.format(tr, instrmt_map)));
-
-        return transctns;
+      return Object.values(views).reduce((trans, cat) => {
+        data
+          .reconcile_transfers(cat)
+          .forEach((tr) => trans.push(frmt.transctn(tr, instrmt_map)));
+        return trans;
       }, [] as g.transctn[]);
     },
-    categorise: (t: b.i.transaction_t[]) => {
-      const transctns = {} as {
-        [conid: number]: p.categorised;
-      };
-      return t.reduce((transctns, t) => {
-        const { type, conid } = t;
-        if (!transctns[conid]) transctns[conid] = {} as any;
-        if (!transctns[conid]![type]) transctns[conid]![type] = [];
-        if (!t.isRealTime) transctns[conid]![type].push(t);
-
-        return transctns;
-      }, transctns);
-    },
-    format: (
+    transctn: (
       transctn: b.i.transaction_t,
       instrmnts: { [conid: number]: g.instrmnt },
     ): g.transctn => {
-      const { frmt } = this;
+      const { data } = this;
       let {
         conid,
         acctid: a_id,
@@ -93,7 +68,7 @@ export class TransactionsIbkr extends Global {
       }
       const { i_id } = instrmnt,
         date = util.time.ms(date_string),
-        id = frmt.make_uid(transctn),
+        id = data.make_uid(transctn),
         broker = "ibkr",
         traded_price = pr || amt;
 
@@ -125,67 +100,8 @@ export class TransactionsIbkr extends Global {
         kind,
       };
     },
-    make_uid: (trnsctn: b.i.transaction_t) => {
-      //  const string = Object.keys(transaction)
-      //    .map((key) => transaction[key as keyof typeof transaction])
-      //    .join("");
-      const hasher = new Bun.CryptoHasher("md5");
-      hasher.update(JSON.stringify(trnsctn));
-      return hasher.digest("hex");
-    },
-    /** Identifies external transfers in and converts them to buy.
-     *  Maps transfer account ids to buys.*/
-    resolve_transfers: (view: p.categorised) => {
-      let { Transfer, Buy } = view;
-      if (!Transfer) return Object.values(view).flat();
-
-      if (!Buy) Buy = [];
-      const transfers = Transfer.sort((a, b) =>
-        b.rawDate.localeCompare(a.rawDate),
-      )
-        .map((transfer) => {
-          let { desc, amt, rawDate } = transfer;
-
-          const kind = amt! > 0 ? "in" : "out";
-          const qty = Number(desc.split("Quantity: ")[1]!.replaceAll(",", ""));
-          let pr = amt / qty;
-          //pr = pr / 100;
-
-          const match = desc.match(/\(([^)]+)\)/);
-          let id = match ? match[0] : "";
-          id = `${id}_${rawDate}_${Math.abs(qty)}`;
-
-          return { ...transfer, ...{ id, kind, pr, qty } };
-        })
-        .map((transfer, _i, original) => {
-          const is_external =
-            original.filter((t) => transfer.id === t.id).length === 1;
-          return is_external
-            ? { ...transfer, ...{ kind: "external" } }
-            : transfer;
-        })
-        .reduce(
-          (transfers, transfer) => {
-            const { kind } = transfer;
-            transfers[kind as keyof typeof transfers].push(transfer);
-            return transfers;
-          },
-          { in: [], out: [], external: [] } as {
-            in: b.i.transaction_t[];
-            out: b.i.transaction_t[];
-            external: b.i.transaction_t[];
-          },
-        );
-      Buy = Buy.map((buy) => {
-        const { acctid } = transfers.in[0]!;
-        return { ...buy, ...{ acctid } };
-      });
-      view.Buy = [...Buy, ...transfers.external];
-
-      return Object.values(view).flat();
-    },
   };
-  private transctns = {
+  private data = {
     fetch: async ([a_ids, instrmnts, currency, days]: readonly [
       string[],
       g.instrmnt[],
@@ -203,7 +119,7 @@ export class TransactionsIbkr extends Global {
        * Rate limits ARE hit!!!
        * Support is NOT fucking interested
        */
-      const promises = conids.map((conid) => {
+      const promises = conids.map(async (conid) => {
         const { url, req_init } = post.transactions([
           a_ids,
           [conid],
@@ -225,16 +141,187 @@ export class TransactionsIbkr extends Global {
       return Promise.all(promises)
         .then((transctns) => transctns.flat())
         .then((t) => {
-          logger.json("IBKR TRNSCTN RAW", t);
+          // logger.json("IBKR TRNSCTN RAW", t);
           return t;
         })
         .then((transctns) => [transctns, instrmnts] as const);
+
       function messg() {
         count++;
         bootstrap(
           `IBKR checked ${count} of ${conids.length} positions for new transactions`,
         );
       }
+    },
+
+    reconcile_transfers: (views: p.categorised) => {
+      let { Transfer, Buy, Sell } = views;
+
+      if (!Transfer.length) return Object.values(views).flat();
+
+      Transfer = Transfer.map(normalise_trans_vals);
+      const transfers = split_buy_sell_trans(Transfer);
+      Object.values(transfers).forEach(({ trans_b, trans_s }) => {
+        trans_s = discard_matching_sells(trans_b, trans_s);
+        trans_s.forEach((s) => {
+          s.type = "Sell";
+          Sell.push(s);
+        });
+        trans_b = res_buys_acc_or_ext(trans_b);
+        Buy = Buy.filter((b) => de_dupe_buys(b, trans_b));
+        Buy = [...Buy, ...trans_b];
+      });
+      return [...Buy, ...Sell, ...views["Dividend Payment"]];
+
+      function normalise_trans_vals(t: b.i.transaction_t) {
+        const { qty, desc } = extrude_desc(t.desc);
+        const pr = t.amt / qty;
+        t.qty = qty;
+        t.pr = pr;
+        t.desc = desc;
+        return t;
+      }
+
+      function extrude_desc(desc: string) {
+        const [part_desc, part_qty] = desc.split("Quantity: ") as [
+          string,
+          string,
+        ];
+        const qty = Number(part_qty.trim().replaceAll(",", ""));
+        desc = part_desc.trim().replace(/\s*\([^()]*\)\s*$/, "");
+        return { qty, desc };
+      }
+      function split_buy_sell_trans(transfers: b.i.transaction_t[]) {
+        return transfers.reduce(
+          (transfers, transctn) => {
+            const { conid, amt } = transctn;
+            transfers[conid] ??= { trans_b: [], trans_s: [] };
+            amt > 0
+              ? transfers[conid].trans_b.push(transctn)
+              : transfers[conid].trans_s.push(transctn);
+            return transfers;
+          },
+          {} as {
+            [conid: number]: {
+              trans_b: b.i.transaction_t[];
+              trans_s: b.i.transaction_t[];
+            };
+          },
+        );
+      }
+
+      function res_buys_acc_or_ext(ins: b.i.transaction_t[]) {
+        const potential_buys = Buy.filter((b) =>
+          ins.find((i) => match_buy(i, b)),
+        );
+        const total_qty = ins.reduce((tally, { qty }) => {
+          tally += qty!;
+          return tally;
+        }, 0);
+        const matching_buys = find_buy_subset(potential_buys, total_qty);
+        if (!matching_buys)
+          return ins.map((i) => {
+            i.type = "Buy";
+            return i;
+          });
+
+        const current_acc = ins.sort((a, b) =>
+          b.rawDate.localeCompare(a.rawDate),
+        )[ins.length - 1]!.acctid;
+        return matching_buys.map((b) => {
+          b.acctid = current_acc;
+          return b;
+        });
+      }
+      function find_buy_subset(
+        potential_buys: b.i.transaction_t[],
+        total_qty: number,
+      ) {
+        const parent = new Map<
+          number,
+          { item: b.i.transaction_t; prev: number }
+        >();
+        const achievable = new Set([0]);
+        const result: b.i.transaction_t[] = [];
+
+        for (const buy of potential_buys) {
+          const sums = Array.from(achievable);
+          for (const sum of sums) {
+            const next_sum = sum + buy.qty!;
+            if (next_sum > total_qty) continue;
+
+            if (!achievable.has(next_sum)) {
+              achievable.add(next_sum);
+              parent.set(next_sum, { item: buy, prev: sum });
+            }
+          }
+          if (achievable.has(total_qty)) break;
+        }
+
+        if (!achievable.has(total_qty)) {
+          return null;
+        }
+
+        let curr = total_qty;
+        while (curr > 0) {
+          const { item, prev } = parent.get(curr)!;
+          result.push(item);
+          curr = prev;
+        }
+        return result;
+      }
+
+      function discard_matching_sells(
+        ins: b.i.transaction_t[],
+        outs: b.i.transaction_t[],
+      ) {
+        return outs.filter((o) => !ins.find((i) => match_transfer(o, i)));
+      }
+
+      function match_transfer(src: b.i.transaction_t, targ: b.i.transaction_t) {
+        return (
+          src.conid === targ.conid && Math.abs(src.amt) === Math.abs(targ.amt)
+        );
+      }
+      function match_buy(i: b.i.transaction_t, b: b.i.transaction_t) {
+        return (
+          i.conid === b.conid &&
+          util.time.ms(b.date) <= util.time.ms(i.date) &&
+          b.qty! <= i.qty!
+        );
+      }
+      function de_dupe_buys(
+        b: b.i.transaction_t,
+        transfers: b.i.transaction_t[],
+      ) {
+        return !transfers.find(
+          (t) => t.qty === b.qty && t.conid === b.conid && t.date === b.date,
+        );
+      }
+    },
+
+    categorise: (t: b.i.transaction_t[]) => {
+      const transctns = {} as {
+        [conid: number]: p.categorised;
+      };
+      return t.reduce((transctns, t) => {
+        const { type, conid } = t;
+        transctns[conid] ??= {
+          Buy: [],
+          Sell: [],
+          Transfer: [],
+          "Dividend Payment": [],
+        };
+        if (!t.isRealTime) transctns[conid]![type].push(t);
+
+        return transctns;
+      }, transctns);
+    },
+
+    make_uid: (trnsctn: b.i.transaction_t) => {
+      const hasher = new Bun.CryptoHasher("md5");
+      hasher.update(JSON.stringify(trnsctn));
+      return hasher.digest("hex");
     },
   };
 }
@@ -244,7 +331,3 @@ namespace p {
     [key in events]: b.i.transaction_t[];
   };
 }
-//type view_t = { [key in b.i.transaction_t["type"]]: b.i.transaction_t[] };
-//type categorise_t = {
-//  [key: number]: view_t;
-//};
