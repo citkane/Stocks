@@ -26,14 +26,14 @@ export class BrokerIbkr extends Global {
     return this.auth.state;
   }
   protected update = {
-    accounts: () => {
+    accounts: async () => {
       const { accnts: accounts, db, bootstrap } = this;
       return accounts
         .update()
         .then(db.insert.accounts)
         .then(() => bootstrap("IBKR accounts updated"));
     },
-    instruments: () => {
+    instruments: async () => {
       const { bootstrap, instruments, db } = this;
       return instruments
         .update()

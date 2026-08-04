@@ -3,7 +3,7 @@ import { Messenger, Ws } from "common";
 export class ClientWs extends Ws {
   constructor() {
     super();
-    const ws = new WebSocket(`ws://0.0.0:${conf.ws_port}`);
+    const ws = new WebSocket(`ws://127.0.0:${conf.ws_port}`);
     this.messenger = new Messenger(ws, "frontend");
 
     ws.addEventListener("message", (event) => this.router(event.data));

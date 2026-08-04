@@ -55,7 +55,7 @@ export class Global {
         }, 10);
       })
       .catch((err) => {
-        //logger.error(err);
+        console.error(err);
         //process.exit(1);
       });
   };

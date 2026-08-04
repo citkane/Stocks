@@ -2,6 +2,7 @@
 
 temp_dir="$(pwd)/.temp"
 log_dir="$(pwd)/.logs"
+cwd=$(pwd -P)
 
 app_pid_file="$temp_dir/app.pid"
 app_index="$(pwd)/src/backend/index.ts"
@@ -50,9 +51,12 @@ function process_stop {
 	pid_file=$1
 	[ ! -f "$pid_file" ] && return 1
 	! process_running "$pid_file" && return 0
+
 	pid=$(cat "$pid_file")
 	rm "$pid_file"
-	kill -HUP "$pid"
+	# kill -HUP "$pid"
+	pkill -P "$pid"
+	kill "$pid"
 }
 
 #function _chrome_bin {

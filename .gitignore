@@ -29,7 +29,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # IntelliJ based IDEs
 .idea
-
 *.vim
 
 # Finder (MacOS) folder config
@@ -44,4 +43,5 @@ conf.jsonc
 .logs
 *.sqlite
 .playpen
+.ibkr_portal
 

@@ -14,27 +14,40 @@ const req_max_per_s = 100,
 export class IbkrApi {
   public get = {
     accounts: () => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       return {
         url: `${url.api}/portfolio/accounts`,
-        req_init: this.fetcher.req_init(),
+        req_init: this.fetcher.req_init(init),
       };
     },
     balance: (a_id: string) => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       return {
         url: `${url.api}/portfolio/${a_id}/ledger`,
-        req_init: this.fetcher.req_init(),
+        req_init: fetcher.req_init(init),
       };
     },
     tickle: () => {
-      return { url: `${url.api}/tickle`, req_init: this.fetcher.req_init() };
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
+      return {
+        url: `${url.api}/tickle`,
+        req_init: this.fetcher.req_init(init),
+      };
     },
     fx_rate: (source: string, target: string) => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       return {
         url: `${url.api}/iserver/exchangerate?Source=${source}&Target=${target}`,
-        req_init: this.fetcher.req_init(),
+        req_init: this.fetcher.req_init(init),
       };
     },
     bar_data: (conid: string, period: string, granularity: string) => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       const params = new URLSearchParams({
         conid,
         period,
@@ -42,25 +55,31 @@ export class IbkrApi {
       }).toString();
       return {
         url: `${url.api}/iserver/marketdata/history?${params}`,
-        req_init: this.fetcher.req_init(),
+        req_init: this.fetcher.req_init(init),
       };
     },
     positions: (a_id: string) => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       return {
         url: `${url.api}/portfolio2/${a_id}/positions`,
-        req_init: this.fetcher.req_init(),
+        req_init: this.fetcher.req_init(init),
       };
     },
     position: (a_id: string, con_id: number) => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       return {
         url: `${url.api}/portfolio/${a_id}/position/${con_id}`,
-        req_init: this.fetcher.req_init(),
+        req_init: this.fetcher.req_init(init),
       };
     },
     validate_sso: () => {
+      const { fetcher } = this;
+      const init = { headers: fetcher.headers() };
       return {
         url: `${url.api}/sso/validate`,
-        req_init: this.fetcher.req_init(),
+        req_init: this.fetcher.req_init(init),
       };
     },
   };
@@ -71,6 +90,9 @@ export class IbkrApi {
       string,
       number,
     ]) => {
+      const { fetcher } = this;
+      const headers = fetcher.headers();
+      headers.append("Content-Type", "application/json");
       const body = JSON.stringify({
         acctIds,
         conids,
@@ -79,31 +101,33 @@ export class IbkrApi {
       });
       return {
         url: `https://localhost:5000/v1/api/pa/transactions`,
-        req_init: this.fetcher.req_init({
+        req_init: fetcher.req_init({
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body,
         }),
       };
     },
     logout: () => {
+      const { fetcher } = this;
+      const init = { method: "POST", headers: fetcher.headers() };
       return {
         url: `${url.api}/logout`,
-        req_init: this.fetcher.req_init({ method: "POST" }),
+        req_init: this.fetcher.req_init(init),
       };
     },
     auth_status: () => {
-      return {
-        url: `${url.api}/iserver/auth/status`,
-        req_init: this.fetcher.req_init({ method: "POST" }),
-      };
+      // req_init: (req_init: RequestInit = {}): RequestInit => {
     },
     init_broker: () => {
+      const { fetcher } = this;
+      const headers = fetcher.headers();
+      headers.append("Content-Type", "application/json");
       return {
         url: `${url.api}/iserver/auth/ssodh/init`,
         req_init: this.fetcher.req_init({
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ publish: true, compete: true }),
         }),
       };
@@ -111,7 +135,12 @@ export class IbkrApi {
   };
 
   private fetcher = {
-    req_init: (req_init: RequestInit = {}): RequestInit => {
+    headers: () => {
+      const headers = new Headers();
+      headers.append("User-Agent", "StocksApp/0.0 Portfolio viewer app");
+      return headers;
+    },
+    req_init: (req_init: RequestInit): RequestInit => {
       return { tls, ...req_init } as RequestInit;
     },
     response_cb: async (res: Response) => {

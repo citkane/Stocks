@@ -17,7 +17,17 @@ export class AuthIbkr extends Auth {
     const { url, req_init } = post.logout();
     return this.revoke_auth(fetch(url, req_init));
   };
-  private check_auth = () => {
+  private check_auth = async () => {
+    // const { post, fetch } = this.ibkr.api;
+    // const { url, req_init } = post.auth_status();
+    // console.log({ url, req_init });
+    // return fetch(url, req_init)
+    //   .then((res) => console.log({ res }))
+    //   .then(() => false)
+    //   .catch((err) => {
+    //     console.log(err);
+    //     return false;
+    //   });
     const { get, fetch } = this.ibkr.api;
     const { url, req_init } = get.tickle();
     return fetch<b.i.tickle_t>(url, req_init)

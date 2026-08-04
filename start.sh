@@ -6,4 +6,3 @@ source src/scripts/app.sh
 
 ibkr_start
 app_start
-

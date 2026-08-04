@@ -73,6 +73,7 @@ export class Database extends Sql {
   public insert = {
     transctns: {
       data: async (transactions: db.data<"transactions">[]) => {
+        console.log({ transactions });
         if (!transactions.length) return undefined;
         return this.sql.insert("transactions", transactions);
       },

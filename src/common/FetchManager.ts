@@ -127,7 +127,6 @@ export default class FetchManager<G extends fm.kind> {
       }
       reqs.decr_concurrent();
       if (!resp.ok) return error(ctx, resp);
-
       if (pager_cb) return pager(ctx, resp, pager_cb);
       if (!response_cb) return resp;
 
