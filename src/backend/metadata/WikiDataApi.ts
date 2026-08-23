@@ -1,4 +1,5 @@
-import Fetch, { LibCallback } from "@common/FetchManager";
+import Fetch from "fetch-manager";
+import LibCallback from "fetch-manager/lib";
 import { Global } from "@backend/Global";
 
 const lib_cb = new LibCallback<"req">();
@@ -159,7 +160,7 @@ LIMIT 1`;
   };
   private fetcher = {
     retry_cb: lib_cb.retry.generic_factory(),
-    timeout_cb: lib_cb.timeout.response_factory(
+    wait_cb: lib_cb.wait.response_factory(
       "retry-after",
       (time: string | null | Error) => {
         if (time instanceof Error) throw time;
@@ -177,7 +178,7 @@ LIMIT 1`;
       ...new Set(Object.values(api).map((url) => new URL(url).hostname)),
     ],
     constructor: () => {
-      const { retry_cb, timeout_cb, response_cb } = this.fetcher;
+      const { retry_cb, wait_cb: timeout_cb, response_cb } = this.fetcher;
       return [
         req_per_min_max,
         concurrency_max,
@@ -215,12 +216,12 @@ LIMIT 1`;
       ctx: K,
       geo: g.meta_geo,
       search?: string,
-    ): db.data<p.db_tbl> => {
+    ): db.data<p.db_tbl<K>> => {
       const db_data = {
         qid: geo[`${ctx}_qid`],
         name: geo[ctx],
         wiki_link: geo[`${ctx}_link`],
-      } as db.data<p.db_tbl>;
+      } as db.data<p.db_tbl<p.ctx>>;
 
       if (["country", "place"].includes(ctx)) {
         (db_data as db.data<p.db_tbl<"country" | "place">>).search = search
@@ -241,7 +242,7 @@ LIMIT 1`;
         (db_data as db.data<p.db_tbl<"place">>).region_qid = geo.region_qid!;
       }
 
-      return db_data;
+      return db_data as unknown as db.data<p.db_tbl<K>>;
     },
     merge_geo: (...geo: (g.meta_geo | undefined)[]) => {
       let geo_merged: g.meta_geo = {};
@@ -404,17 +405,17 @@ declare global {
 }
 
 export namespace p {
-  type tbls = "geo_country" | "geo_place" | "geo_region";
+  // type tbls = "geo_country" | "geo_place" | "geo_region";
 
   export type ctx = "country" | "region" | "place";
   export type search = { p_srchd: string[]; c_srchd?: string[] };
-  export type db_tbl<K extends p.ctx | null = null> = K extends "country"
+  export type db_tbl<K extends p.ctx> = K extends "country"
     ? "geo_country"
     : K extends "region"
       ? "geo_region"
       : K extends "place"
         ? "geo_place"
-        : tbls;
+        : never;
 
   export type mem = {
     place: { [place: string]: g.meta_geo };

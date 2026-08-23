@@ -1,4 +1,5 @@
-import Fetch, { LibCallback } from "@common/FetchManager";
+import FetchManager from "fetch-manager";
+import LibCallback from "fetch-manager/lib";
 
 const req_max_per_s = 100,
   req_max_concurrent = 10,
@@ -149,8 +150,8 @@ export class IbkrApi {
       return data;
     },
     constructor: () => {
-      const { retry, timeout } = new LibCallback<"url">(),
-        timeout_cb = timeout.backoff_factory(),
+      const { retry, wait } = new LibCallback<"url">(),
+        timeout_cb = wait.backoff_factory(),
         retry_cb = retry.generic_factory(),
         { response_cb } = this.fetcher;
 
@@ -167,5 +168,5 @@ export class IbkrApi {
       ] as const;
     },
   };
-  public fetch = new Fetch(...this.fetcher.constructor()).fetch;
+  public fetch = new FetchManager(...this.fetcher.constructor()).fetch;
 }

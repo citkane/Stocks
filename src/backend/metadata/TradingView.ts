@@ -1,4 +1,5 @@
-import Fetch, { LibCallback } from "@common/FetchManager";
+import Fetch from "fetch-manager";
+import LibCallback from "fetch-manager/lib";
 import { Tables } from "@backend/database/Tables";
 import { Global } from "@backend/Global";
 
@@ -382,7 +383,7 @@ export class TradingView extends Global {
   };
   protected fetcher = {
     retry_cb: lib_cb.retry.generic_factory(),
-    timeout_cb: lib_cb.timeout.backoff_factory(),
+    wait_cb: lib_cb.wait.backoff_factory(),
     response_cb: lib_cb.response.generic,
     trace_cb: lib_cb.trace.generic,
     hosts: [
@@ -392,7 +393,12 @@ export class TradingView extends Global {
       "s3-symbol-logo.tradingview.com",
     ],
     constructor: () => {
-      const { hosts, timeout_cb, retry_cb, response_cb } = this.fetcher;
+      const {
+        hosts,
+        wait_cb: timeout_cb,
+        retry_cb,
+        response_cb,
+      } = this.fetcher;
       return [
         rpp_max,
         concurrency_max,

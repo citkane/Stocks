@@ -1,6 +1,6 @@
 import { Global } from "@backend/Global";
-import Fetch, { LibCallback, type fm } from "@common/FetchManager";
-import "@common/FetchManager";
+import FetchManager from "fetch-manager";
+import LibCallback from "fetch-manager/lib";
 
 const lib_callback = new LibCallback<"req">();
 const { redirect, app_key, app_secret } = conf.saxo,
@@ -25,7 +25,7 @@ export class SaxoApi extends Global {
   constructor() {
     super();
     const pms = this.fetcher.constructor();
-    this.fetch = new Fetch<"req">(...pms).fetch;
+    this.fetch = new FetchManager<"req">(...pms).fetch;
   }
   public get = {
     accounts: () => {
@@ -170,7 +170,7 @@ export class SaxoApi extends Global {
         Authorization: `Bearer ${this.saxo.auth_bearer}`,
       },
     }),
-    hosts: <T extends fm.kind>(): fm.host<T>[] => {
+    targets: <T extends fm.kind>(): fm.opts.target<T>[] => {
       const urls = Object.values(api).map((url) => new URL(url).hostname);
       return [...new Set(urls)];
     },
@@ -182,7 +182,7 @@ export class SaxoApi extends Global {
         req_max_per_s,
         req_max_concurrent,
         "sec",
-        this.fetcher.hosts(),
+        this.fetcher.targets(),
         {
           response_cb,
         },
@@ -190,7 +190,7 @@ export class SaxoApi extends Global {
     },
   };
 
-  public fetch: InstanceType<typeof Fetch>["fetch"];
+  public fetch: InstanceType<typeof FetchManager>["fetch"];
   private get api_context() {
     return SaxoApi.api_context;
   }
