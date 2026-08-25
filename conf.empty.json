@@ -8,8 +8,8 @@
   "ws_port": 5002,
   "saxo": {
     "start_date": "2025-10-01",
-    "app_key": "af14b9ff1672459b8eb932889a993fbb",
-    "app_secret": "38952a9d5f734bdfb502d949f340a8e1",
+    "app_key": "",
+    "app_secret": "",
     "redirect": "saxo/code"
   },
   "ibkr": {
